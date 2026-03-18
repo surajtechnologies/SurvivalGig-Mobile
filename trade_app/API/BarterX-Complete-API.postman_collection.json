@@ -1,0 +1,2014 @@
+{
+  "info": {
+    "name": "BarterX API - Complete Collection",
+    "description": "Complete API collection for BarterX barter marketplace",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "listingId",
+      "value": ""
+    },
+    {
+      "key": "tradeId",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": ""
+    },
+    {
+      "key": "reportId",
+      "value": ""
+    },
+    {
+      "key": "reviewId",
+      "value": ""
+    },
+    {
+      "key": "uploadedImageUrl",
+      "value": ""
+    },
+    {
+      "key": "messageId",
+      "value": ""
+    },
+    {
+      "key": "lastMessageTimestamp",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register User (JSON)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@test.com\",\n  \"password\": \"Test@123\",\n  \"name\": \"Test User\",\n  \"location\": \"New York\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "description": "Register a new user with JSON body (existing flow). No avatar upload."
+          }
+        },
+        {
+          "name": "Register User with Avatar (Form-Data)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "    if (response.user && response.user.avatarUrl) {",
+                  "        console.log('Avatar URL:', response.user.avatarUrl);",
+                  "    }",
+                  "    if (response.warning) {",
+                  "        console.warn('Warning:', response.warning);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "email",
+                  "value": "user-with-avatar@test.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "Test@123",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "Test User With Avatar",
+                  "type": "text"
+                },
+                {
+                  "key": "location",
+                  "value": "San Francisco",
+                  "type": "text"
+                },
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": "",
+                  "description": "Profile picture (optional). Max 5MB. Formats: JPG, PNG, GIF, WebP"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "description": "Register a new user with form-data including optional avatar upload. Avatar will be resized to 400x400 and uploaded to barterx/avatars folder. If avatar upload fails, user is still registered but a warning is returned."
+          }
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@test.com\",\n  \"password\": \"Test@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@barterx.com\",\n  \"password\": \"Admin@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/logout"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/auth/refresh-token"
+          }
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"verification-token-from-email\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/verify-email"
+          }
+        },
+        {
+          "name": "Resend Verification Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/resend-verification"
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@test.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/forgot-password"
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"reset-token-from-email\",\n  \"password\": \"NewPassword@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/reset-password"
+          }
+        },
+        {
+          "name": "OAuth - Google",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"google-id-token-from-client\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/mobile/google"
+          }
+        },
+        {
+          "name": "OAuth - Facebook",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accessToken\": \"facebook-access-token-from-client\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/mobile/facebook"
+          }
+        },
+        {
+          "name": "Send Phone OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/send-phone-otp"
+          }
+        },
+        {
+          "name": "Verify Phone OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\",\n  \"otp\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/verify-phone-otp"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Users",
+      "item": [
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me"
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"location\": \"New York, NY\",\n  \"phone\": \"+1234567890\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/users/me"
+          }
+        },
+        {
+          "name": "Get User Public Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/users/{{userId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Wallet",
+      "item": [
+        {
+          "name": "Get Wallet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me/wallet"
+          }
+        },
+        {
+          "name": "Get Wallet Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/wallet/transactions?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me", "wallet", "transactions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Categories",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/categories"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Listings",
+      "item": [
+        {
+          "name": "Create Listing (Item - Points)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('listingId', response.listing.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"ITEM_OFFERING\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"iPhone 12 Pro\",\n  \"description\": \"Excellent condition, 256GB, Space Gray\",\n  \"condition\": \"Excellent\",\n  \"location\": \"San Francisco, CA\",\n  \"priceMode\": \"POINTS\",\n  \"pricePoints\": 500,\n  \"photos\": [\"https://example.com/photo1.jpg\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/listings"
+          }
+        },
+        {
+          "name": "Create Listing (Service - Barter)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"SERVICE_OFFERING\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Guitar Lessons\",\n  \"description\": \"1 hour beginner guitar lessons\",\n  \"location\": \"Online or In-Person\",\n  \"priceMode\": \"BARTER\",\n  \"barterWanted\": \"Willing to trade for home-cooked meals or cleaning services\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/listings"
+          }
+        },
+        {
+          "name": "Create Listing (Item - Both)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"ITEM_OFFERING\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Mountain Bike\",\n  \"description\": \"Trek mountain bike, 21-speed, great condition\",\n  \"condition\": \"Good\",\n  \"location\": \"Portland, OR\",\n  \"priceMode\": \"BOTH\",\n  \"pricePoints\": 350,\n  \"barterWanted\": \"Or trade for camping gear\",\n  \"photos\": [\"https://example.com/bike1.jpg\", \"https://example.com/bike2.jpg\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/listings"
+          }
+        },
+        {
+          "name": "Get All Listings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/listings?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["listings"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of items per page"
+                },
+                {
+                  "key": "type",
+                  "value": "ITEM_OFFERING",
+                  "disabled": true,
+                  "description": "Filter by listing type: ITEM_OFFERING, ITEM_NEED, SERVICE_OFFERING, SERVICE_NEED"
+                },
+                {
+                  "key": "intent",
+                  "value": "OFFERING",
+                  "disabled": true,
+                  "description": "Filter by intent: OFFERING (items/services offered) or NEED (items/services needed)"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "{{categoryId}}",
+                  "disabled": true,
+                  "description": "Filter by category UUID"
+                },
+                {
+                  "key": "priceMode",
+                  "value": "POINTS",
+                  "disabled": true,
+                  "description": "Filter by price mode: POINTS, BARTER, BOTH"
+                },
+                {
+                  "key": "minPoints",
+                  "value": "10",
+                  "disabled": true,
+                  "description": "Minimum price points"
+                },
+                {
+                  "key": "maxPoints",
+                  "value": "100",
+                  "disabled": true,
+                  "description": "Maximum price points"
+                },
+                {
+                  "key": "location",
+                  "value": "New York",
+                  "disabled": true,
+                  "description": "Filter by location (partial match)"
+                },
+                {
+                  "key": "search",
+                  "value": "iphone",
+                  "disabled": true,
+                  "description": "Search in title and description"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Listing by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/listings/{{listingId}}"
+          }
+        },
+        {
+          "name": "Update Listing",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"iPhone 12 Pro - Updated\",\n  \"pricePoints\": 450,\n  \"description\": \"Updated description with more details\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/listings/{{listingId}}"
+          }
+        },
+        {
+          "name": "Get My Listings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/listings/me/listings?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["listings", "me", "listings"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Listing",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/listings/{{listingId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Trades",
+      "item": [
+        {
+          "name": "Create Trade Offer (Points)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('tradeId', response.trade.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"offerType\": \"points\",\n  \"offerPoints\": 100,\n  \"message\": \"I would like to request guitar lessons\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades"
+          }
+        },
+        {
+          "name": "Create Trade Offer (Item)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"offerType\": \"item\",\n  \"offerItem\": {\n    \"description\": \"In exchange for this job, I would like to request any used iron you may have.\",\n    \"images\": [\n      \"{{uploadedImageUrl}}\"\n    ]\n  },\n  \"message\": \"Optional additional message\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades"
+          }
+        },
+        {
+          "name": "Create Trade Offer (Skill)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"offerType\": \"skill\",\n  \"offerSkill\": {\n    \"description\": \"In exchange for this job, I would like to ask if you could teach me how to play the piano. I noticed that you teach piano.\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades"
+          }
+        },
+        {
+          "name": "Get All My Trades",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trades?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["trades"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                },
+                {
+                  "key": "role",
+                  "value": "buyer",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Trade by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/{{tradeId}}"
+          }
+        },
+        {
+          "name": "Submit Counter Offer (Points)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offerType\": \"points\",\n  \"offerPoints\": 120,\n  \"message\": \"Counter offer with points\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/counter"
+          }
+        },
+        {
+          "name": "Submit Counter Offer (Item)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offerType\": \"item\",\n  \"offerItem\": {\n    \"description\": \"I can offer a vintage camera instead\",\n    \"images\": [\n      \"{{uploadedImageUrl}}\"\n    ]\n  },\n  \"message\": \"Counter with item\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/counter"
+          }
+        },
+        {
+          "name": "Submit Counter Offer (Skill)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offerType\": \"skill\",\n  \"offerSkill\": {\n    \"description\": \"I can teach you piano basics instead\"\n  },\n  \"message\": \"Counter offer with skill\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/counter"
+          }
+        },
+        {
+          "name": "Accept Trade Offer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/{{tradeId}}/accept"
+          }
+        },
+        {
+          "name": "Reject Trade Offer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Price is too low for this item\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/reject"
+          }
+        },
+        {
+          "name": "Cancel Trade",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Changed my mind\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/cancel"
+          }
+        },
+        {
+          "name": "Buy Now (Direct Purchase)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('tradeId', response.trade.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"I want to buy this now!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/buy-now/{{listingId}}",
+            "description": "Instantly purchase a listing at its listed price without negotiation. Creates a trade with ACCEPTED status. Points are escrowed immediately. Both parties must still confirm delivery. Message is optional - can send empty body {}."
+          }
+        },
+        {
+          "name": "Confirm Trade Completion",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/{{tradeId}}/confirm"
+          }
+        },
+        {
+          "name": "Chat - Send Message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('messageId', response.data.id);",
+                  "    pm.collectionVariables.set('lastMessageTimestamp', response.data.createdAt);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Hi! I have a question about the trade.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/messages",
+            "description": "Send a message in the trade chat. Available for PENDING, ACCEPTED, and COMPLETED (read-only) trades. Blocked for CANCELLED trades. Maximum content length: 2000 characters."
+          }
+        },
+        {
+          "name": "Chat - Send Message (Empty Content - Validation Error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/messages",
+            "description": "Test validation: Empty message content should return 400 error."
+          }
+        },
+        {
+          "name": "Chat - Send Message (Content Too Long - Validation Error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"{{$randomLoremParagraphs}}{{$randomLoremParagraphs}}{{$randomLoremParagraphs}}{{$randomLoremParagraphs}}{{$randomLoremParagraphs}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/messages",
+            "description": "Test validation: Message content exceeding 2000 characters should return 400 error."
+          }
+        },
+        {
+          "name": "Chat - Send Message (Trade Not Found)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This should fail\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/non-existent-trade-id/messages",
+            "description": "Test error handling: Sending message to non-existent trade should return 404 error."
+          }
+        },
+        {
+          "name": "Chat - Get Messages (Default Pagination)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages?page=1&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["trades", "{{tradeId}}", "messages"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "description": "Messages per page (10-100, default: 50)"
+                }
+              ]
+            },
+            "description": "Retrieve chat messages for a trade with pagination. Returns messages in reverse chronological order (newest first)."
+          }
+        },
+        {
+          "name": "Chat - Get Messages (Custom Pagination)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages?page=2&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["trades", "{{tradeId}}", "messages"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Test pagination: Get second page with 20 messages per page."
+          }
+        },
+        {
+          "name": "Chat - Get Messages (Polling with 'since')",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages?since={{lastMessageTimestamp}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["trades", "{{tradeId}}", "messages"],
+              "query": [
+                {
+                  "key": "since",
+                  "value": "{{lastMessageTimestamp}}",
+                  "description": "ISO timestamp - Get only messages after this time (for polling)"
+                }
+              ]
+            },
+            "description": "Polling mode: Fetch only new messages created after the specified timestamp. Useful for real-time chat updates."
+          }
+        },
+        {
+          "name": "Chat - Get Messages (Trade Not Found)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/non-existent-trade-id/messages",
+            "description": "Test error handling: Getting messages from non-existent trade should return 404 error."
+          }
+        },
+        {
+          "name": "Chat - Mark Messages as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/{{tradeId}}/messages/read",
+            "description": "Mark all unread messages from the other participant as read. Returns count of messages marked."
+          }
+        },
+        {
+          "name": "Chat - Mark Messages as Read (Trade Not Found)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/non-existent-trade-id/messages/read",
+            "description": "Test error handling: Marking messages as read for non-existent trade should return 404 error."
+          }
+        },
+        {
+          "name": "Chat - Get Unread Count (Single Trade)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/{{tradeId}}/messages/unread-count",
+            "description": "Get the count of unread messages from the other participant for this specific trade."
+          }
+        },
+        {
+          "name": "Chat - Get Unread Count (Trade Not Found)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/non-existent-trade-id/messages/unread-count",
+            "description": "Test error handling: Getting unread count for non-existent trade should return 404 error."
+          }
+        },
+        {
+          "name": "Chat - Get All Unread Counts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/messages/unread-counts",
+            "description": "Get unread message counts for all trades where the user is a participant. Returns array of {tradeId, unreadCount} objects."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Reviews",
+      "item": [
+        {
+          "name": "Create Review",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('reviewId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Great trade! Item was exactly as described and delivery was prompt.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/review"
+          }
+        },
+        {
+          "name": "Get User Reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/reviews?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "reviews"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Review by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reviews/{{reviewId}}"
+          }
+        },
+        {
+          "name": "Get Trade Reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/{{tradeId}}/reviews"
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Reports",
+      "item": [
+        {
+          "name": "Create Report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('reportId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetType\": \"USER\",\n  \"targetId\": \"user-id-here\",\n  \"reason\": \"FRAUD\",\n  \"description\": \"User attempted to scam me by not delivering the item after trade completion.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/reports"
+          }
+        },
+        {
+          "name": "Get My Reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/me?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "me"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Report by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reports/{{reportId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Uploads",
+      "item": [
+        {
+          "name": "Upload Images",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.length > 0) {",
+                  "        pm.collectionVariables.set('uploadedImageUrl', response.data[0].url);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"images\": [\n    \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...\",\n    \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA...\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/uploads"
+          }
+        },
+        {
+          "name": "Delete Images",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imageUrls\": [\n    \"https://res.cloudinary.com/your-cloud/image/upload/v123456789/barterx/abc123.jpg\",\n    \"https://res.cloudinary.com/your-cloud/image/upload/v123456789/barterx/def456.jpg\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/uploads"
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Admin",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Verify User ID",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}/verify"
+          }
+        },
+        {
+          "name": "Ban User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Violation of terms of service - fraudulent activity\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/users/{{userId}}/ban"
+          }
+        },
+        {
+          "name": "Unban User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}/unban"
+          }
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"ADMIN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/users/{{userId}}/role"
+          }
+        },
+        {
+          "name": "Get All Trades (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/trades?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "trades"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Trade Details (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/trades/{{tradeId}}"
+          }
+        },
+        {
+          "name": "Resolve Trade Dispute",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resolution\": \"approved\",\n  \"notes\": \"Trade approved after review\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/trades/{{tradeId}}/resolve"
+          }
+        },
+        {
+          "name": "Get All Listings (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/listings?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "listings"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "ITEM_OFFERING",
+                  "disabled": true,
+                  "description": "Filter by listing type: ITEM_OFFERING, ITEM_NEED, SERVICE_OFFERING, SERVICE_NEED"
+                },
+                {
+                  "key": "intent",
+                  "value": "OFFERING",
+                  "disabled": true,
+                  "description": "Filter by intent: OFFERING (items/services offered) or NEED (items/services needed)"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "{{categoryId}}",
+                  "disabled": true,
+                  "description": "Filter by category UUID"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Listing (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/listings/{{listingId}}"
+          }
+        },
+        {
+          "name": "Create Category (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Category\",\n  \"icon\": \"📦\",\n  \"sortOrder\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/categories"
+          }
+        },
+        {
+          "name": "Update Category (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Category\",\n  \"isActive\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Delete Category (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Get All Reports (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/reports?page=1&limit=20&status=PENDING",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "reports"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Report Status (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\",\n  \"adminNotes\": \"User has been warned and issue resolved.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/reports/{{reportId}}"
+          }
+        },
+        {
+          "name": "Analytics - Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/analytics/overview"
+          }
+        },
+        {
+          "name": "Analytics - Trades",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/analytics/trades?startDate=2025-01-01&endDate=2025-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "analytics", "trades"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-12-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Analytics - Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/analytics/users?startDate=2025-01-01&endDate=2025-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "analytics", "users"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-12-31"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

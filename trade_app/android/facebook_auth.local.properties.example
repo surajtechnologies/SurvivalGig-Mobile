@@ -1,0 +1,5 @@
+# Deprecated example.
+# Use project-root facebook_auth.local.env instead.
+
+FACEBOOK_APP_ID=
+FACEBOOK_CLIENT_TOKEN=

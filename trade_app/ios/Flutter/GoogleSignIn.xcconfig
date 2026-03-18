@@ -1,0 +1,10 @@
+GOOGLE_IOS_CLIENT_ID=
+GOOGLE_SERVER_CLIENT_ID=
+GOOGLE_REVERSED_CLIENT_ID=
+
+// Local-only OAuth values. Do not commit this file.
+// Example:
+// GOOGLE_IOS_CLIENT_ID=123-your-ios-client-id.apps.googleusercontent.com
+// GOOGLE_SERVER_CLIENT_ID=123-your-web-client-id.apps.googleusercontent.com
+// GOOGLE_REVERSED_CLIENT_ID=com.googleusercontent.apps.123-your-ios-client-id
+#include? "GoogleSignIn.local.xcconfig"
