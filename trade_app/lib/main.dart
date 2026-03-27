@@ -7,6 +7,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
 import 'package:trade_app/config/di/service_locator.dart';
 import 'package:trade_app/core/theme/app_theme.dart';
 import 'package:trade_app/core/utils/fcm_notifications.dart';
@@ -60,6 +61,10 @@ Future<void> main() async {
   await runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
 
       final shouldEnableFirebase = _isFirebaseSupportedPlatform();
 

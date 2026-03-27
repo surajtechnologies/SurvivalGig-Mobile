@@ -48,3 +48,6 @@ app.*.map.json
 ios/Flutter/GoogleSignIn.local.xcconfig
 google_sign_in.local.env
 facebook_auth.local.env
+
+
+lib/Social Login/
