@@ -3,6 +3,7 @@ import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
 import '../models/device_token_dto.dart';
+import '../models/apple_auth_dto.dart';
 import '../models/facebook_auth_dto.dart';
 import '../models/google_auth_dto.dart';
 import '../models/login_dto.dart';
@@ -18,6 +19,9 @@ abstract class AuthRemoteDataSource {
   );
   Future<LoginResponseModel> loginWithFacebook(
     FacebookMobileAuthRequestModel request,
+  );
+  Future<LoginResponseModel> loginWithApple(
+    AppleMobileAuthRequestModel request,
   );
   Future<RegisterResponseModel> register(RegisterRequestModel request);
   Future<String> forgotPassword(String email);
@@ -78,6 +82,25 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return _parseLoginResponse(
         response,
         defaultErrorCode: 'FACEBOOK_LOGIN_FAILED',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<LoginResponseModel> loginWithApple(
+    AppleMobileAuthRequestModel request,
+  ) async {
+    try {
+      final response = await dioClient.dio.post(
+        ApiEndpoints.oauthApple,
+        data: request.toJson(),
+      );
+
+      return _parseLoginResponse(
+        response,
+        defaultErrorCode: 'APPLE_LOGIN_FAILED',
       );
     } on DioException catch (e) {
       throw _handleDioError(e);

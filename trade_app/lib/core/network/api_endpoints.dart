@@ -26,6 +26,7 @@ class ApiEndpoints {
   static const String refreshToken = '/auth/refresh-token';
   static const String mobileGoogle = '/auth/mobile/google';
   static const String mobileFacebook = '/auth/mobile/facebook';
+  static const String oauthApple = '/auth/mobile/apple';
 
   // User endpoints
   static const String currentUser = '/users/me';

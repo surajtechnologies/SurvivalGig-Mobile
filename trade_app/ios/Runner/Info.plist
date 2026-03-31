@@ -29,8 +29,9 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
+				<string>com.googleusercontent.apps.587030542974-tvk3h0h7fibn2e5s3tfscgbfgo46h5o5</string>
 				<string>$(FACEBOOK_URL_SCHEME)</string>
+				<string>com.app.survivalgig</string>
 			</array>
 		</dict>
 	</array>
@@ -42,10 +43,14 @@
 	<string>$(FACEBOOK_CLIENT_TOKEN)</string>
 	<key>FacebookDisplayName</key>
 	<string>$(FACEBOOK_DISPLAY_NAME)</string>
+	<key>FacebookAdvertiserIDCollectionEnabled</key>
+	<true/>
+	<key>FacebookAutoLogAppEventsEnabled</key>
+	<true/>
 	<key>GIDClientID</key>
-	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
+	<string>587030542974-tvk3h0h7fibn2e5s3tfscgbfgo46h5o5.apps.googleusercontent.com</string>
 	<key>GIDServerClientID</key>
-	<string>$(GOOGLE_SERVER_CLIENT_ID)</string>
+	<string>587030542974-7k96p53utr96f10be038mf15mcdleqjg.apps.googleusercontent.com</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>fbapi</string>

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:trade_app/config/di/service_locator.dart';
@@ -183,6 +184,21 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                     ),
                   ],
                 ),
+
+                // Apple Sign-In button (iOS only)
+                if (Platform.isIOS) ...[
+                  const SizedBox(height: 12),
+                  _SocialLoginButton(
+                    label: 'Apple',
+                    icon: const Icon(
+                      Icons.apple,
+                      color: Colors.black,
+                      size: 24,
+                    ),
+                    onTap: () =>
+                        context.read<AuthCubit>().signInWithApple(),
+                  ),
+                ],
 
                 const SizedBox(height: 16),
 

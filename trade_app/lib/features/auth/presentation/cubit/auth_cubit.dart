@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../domain/usecases/apple_sign_in_usecase.dart';
 import '../../domain/usecases/facebook_sign_in_usecase.dart';
 import '../../domain/usecases/forgot_password_usecase.dart';
 import '../../domain/usecases/google_sign_in_usecase.dart';
@@ -11,6 +12,7 @@ import 'auth_state.dart';
 /// Auth cubit for managing authentication state
 class AuthCubit extends Cubit<AuthState> {
   final LoginUseCase loginUseCase;
+  final AppleSignInUseCase appleSignInUseCase;
   final FacebookSignInUseCase facebookSignInUseCase;
   final GoogleSignInUseCase googleSignInUseCase;
   final RegisterUseCase registerUseCase;
@@ -20,6 +22,7 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit({
     required this.loginUseCase,
+    required this.appleSignInUseCase,
     required this.facebookSignInUseCase,
     required this.googleSignInUseCase,
     required this.registerUseCase,
@@ -70,6 +73,25 @@ class AuthCubit extends Cubit<AuthState> {
     result.fold(
       (failure) {
         if (failure.code == 'FACEBOOK_SIGN_IN_CANCELLED') {
+          emit(const AuthInitial());
+          return;
+        }
+        emit(AuthFailure(message: failure.message, code: failure.code));
+      },
+      (data) =>
+          emit(LoginSuccess(userId: data.user.id, userName: data.user.name)),
+    );
+  }
+
+  /// Login with Apple OAuth
+  Future<void> signInWithApple() async {
+    emit(const AuthLoading());
+
+    final result = await appleSignInUseCase();
+
+    result.fold(
+      (failure) {
+        if (failure.code == 'APPLE_SIGN_IN_CANCELLED') {
           emit(const AuthInitial());
           return;
         }

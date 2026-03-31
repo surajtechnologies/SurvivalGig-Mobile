@@ -9,8 +9,10 @@ import '../../domain/entities/device_token.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
+import '../datasources/apple_sign_in_local_datasource.dart';
 import '../datasources/facebook_sign_in_local_datasource.dart';
 import '../datasources/google_sign_in_local_datasource.dart';
+import '../models/apple_auth_dto.dart';
 import '../models/device_token_dto.dart';
 import '../models/facebook_auth_dto.dart';
 import '../models/google_auth_dto.dart';
@@ -23,6 +25,7 @@ import '../models/register_dto.dart';
 /// Maps exceptions → failures
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
+  final AppleSignInLocalDataSource appleSignInLocalDataSource;
   final FacebookSignInLocalDataSource facebookSignInLocalDataSource;
   final GoogleSignInLocalDataSource googleSignInLocalDataSource;
   final DioClient dioClient;
@@ -30,6 +33,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   AuthRepositoryImpl({
     required this.remoteDataSource,
+    required this.appleSignInLocalDataSource,
     required this.facebookSignInLocalDataSource,
     required this.googleSignInLocalDataSource,
     required this.dioClient,
@@ -187,6 +191,55 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     } catch (e, stackTrace) {
       debugPrint('Unexpected Facebook login error: $e\n$stackTrace');
+      return Left(
+        ServerFailure(
+          message: 'An unexpected error occurred',
+          code: 'UNKNOWN_ERROR',
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, ({User user, AuthToken token})>>
+  signInWithApple() async {
+    try {
+      final credentials = await appleSignInLocalDataSource.getCredentials();
+      final request = AppleMobileAuthRequestModel(
+        identityToken: credentials.identityToken,
+        authorizationCode: credentials.authorizationCode,
+      );
+      final response = await remoteDataSource.loginWithApple(request);
+
+      await dioClient.saveAccessToken(response.accessToken);
+      await dioClient.saveRefreshToken(response.refreshToken);
+
+      final user = response.user.toEntity();
+      await userSession.setUser(user);
+
+      final token = AuthToken(
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+      );
+
+      return Right((user: user, token: token));
+    } on CacheException catch (e) {
+      return Left(AuthFailure(message: e.message, code: e.code));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message, code: e.code));
+    } on ServerException catch (e) {
+      if (e.statusCode == 401) {
+        return Left(AuthFailure(message: e.message, code: e.code));
+      }
+      return Left(
+        ServerFailure(
+          message: e.message,
+          code: e.code,
+          statusCode: e.statusCode,
+        ),
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Unexpected Apple login error: $e\n$stackTrace');
       return Left(
         ServerFailure(
           message: 'An unexpected error occurred',

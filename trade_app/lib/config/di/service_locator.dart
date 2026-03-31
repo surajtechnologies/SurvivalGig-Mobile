@@ -6,10 +6,12 @@ import '../../core/network/dio_client.dart';
 import '../../core/network/connectivity_service.dart';
 import '../../core/utils/user_session.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
+import '../../features/auth/data/datasources/apple_sign_in_local_datasource.dart';
 import '../../features/auth/data/datasources/facebook_sign_in_local_datasource.dart';
 import '../../features/auth/data/datasources/google_sign_in_local_datasource.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
+import '../../features/auth/domain/usecases/apple_sign_in_usecase.dart';
 import '../../features/auth/domain/usecases/facebook_sign_in_usecase.dart';
 import '../../features/auth/domain/usecases/forgot_password_usecase.dart';
 import '../../features/auth/domain/usecases/google_sign_in_usecase.dart';
@@ -137,9 +139,14 @@ void setupServiceLocator() {
     () => FacebookSignInLocalDataSourceImpl(),
   );
 
+  sl.registerLazySingleton<AppleSignInLocalDataSource>(
+    () => AppleSignInLocalDataSourceImpl(),
+  );
+
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
       remoteDataSource: sl(),
+      appleSignInLocalDataSource: sl(),
       facebookSignInLocalDataSource: sl(),
       googleSignInLocalDataSource: sl(),
       dioClient: sl(),
@@ -156,6 +163,10 @@ void setupServiceLocator() {
 
   sl.registerLazySingleton<FacebookSignInUseCase>(
     () => FacebookSignInUseCase(sl()),
+  );
+
+  sl.registerLazySingleton<AppleSignInUseCase>(
+    () => AppleSignInUseCase(sl()),
   );
 
   sl.registerLazySingleton<RegisterUseCase>(() => RegisterUseCase(sl()));
@@ -178,6 +189,7 @@ void setupServiceLocator() {
   sl.registerFactory<AuthCubit>(
     () => AuthCubit(
       loginUseCase: sl(),
+      appleSignInUseCase: sl(),
       facebookSignInUseCase: sl(),
       googleSignInUseCase: sl(),
       registerUseCase: sl(),

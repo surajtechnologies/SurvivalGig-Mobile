@@ -19,6 +19,9 @@ abstract class AuthRepository {
   /// Login with Facebook OAuth
   Future<Either<Failure, ({User user, AuthToken token})>> signInWithFacebook();
 
+  /// Login with Apple OAuth
+  Future<Either<Failure, ({User user, AuthToken token})>> signInWithApple();
+
   /// Register new user
   Future<Either<Failure, ({User user, AuthToken? token, String? message})>>
   register({
