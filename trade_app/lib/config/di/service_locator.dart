@@ -1,5 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:get_it/get_it.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/network/dio_client.dart';
@@ -92,6 +93,17 @@ import '../../features/trades/domain/usecases/send_trade_message_usecase.dart';
 import '../../features/trades/domain/usecases/submit_trade_review_usecase.dart';
 import '../../features/trades/presentation/cubit/trade_detail_cubit.dart';
 import '../../features/trades/presentation/cubit/trades_cubit.dart';
+import '../../features/app_update/data/datasources/app_update_remote_datasource.dart';
+import '../../features/app_update/data/datasources/app_update_local_datasource.dart';
+import '../../features/app_update/data/datasources/play_store_update_datasource.dart';
+import '../../features/app_update/data/repositories/app_update_repository_impl.dart';
+import '../../features/app_update/domain/repositories/app_update_repository.dart';
+import '../../features/app_update/domain/usecases/check_for_update_usecase.dart';
+import '../../features/app_update/domain/usecases/initialize_update_usecase.dart';
+import '../../features/app_update/domain/usecases/open_store_usecase.dart';
+import '../../features/app_update/domain/usecases/perform_native_update_usecase.dart';
+import '../../features/app_update/domain/usecases/snooze_update_usecase.dart';
+import '../../features/app_update/presentation/cubit/app_update_cubit.dart';
 
 /// Global service locator instance
 final sl = GetIt.instance;
@@ -487,6 +499,65 @@ void setupServiceLocator() {
       getTradeMessagesUseCase: sl(),
       sendTradeMessageUseCase: sl(),
       submitTradeReviewUseCase: sl(),
+    ),
+  );
+
+  // App Update - Core
+  sl.registerLazySingleton<FirebaseRemoteConfig>(
+    () => FirebaseRemoteConfig.instance,
+  );
+
+  // App Update - Data Layer
+  sl.registerLazySingleton<AppUpdateRemoteDataSource>(
+    () => AppUpdateRemoteDataSourceImpl(remoteConfig: sl()),
+  );
+
+  sl.registerLazySingleton<AppUpdateLocalDataSource>(
+    () => AppUpdateLocalDataSourceImpl(),
+  );
+
+  sl.registerLazySingleton<PlayStoreUpdateDataSource>(
+    () => PlayStoreUpdateDataSourceImpl(),
+  );
+
+  sl.registerLazySingleton<AppUpdateRepository>(
+    () => AppUpdateRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+      playStoreUpdateDataSource: sl(),
+      remoteConfig: sl(),
+    ),
+  );
+
+  // App Update - Domain Layer
+  sl.registerLazySingleton<InitializeUpdateUseCase>(
+    () => InitializeUpdateUseCase(repository: sl()),
+  );
+
+  sl.registerLazySingleton<CheckForUpdateUseCase>(
+    () => CheckForUpdateUseCase(repository: sl()),
+  );
+
+  sl.registerLazySingleton<OpenStoreUseCase>(
+    () => OpenStoreUseCase(repository: sl()),
+  );
+
+  sl.registerLazySingleton<SnoozeUpdateUseCase>(
+    () => SnoozeUpdateUseCase(repository: sl()),
+  );
+
+  sl.registerLazySingleton<PerformNativeUpdateUseCase>(
+    () => PerformNativeUpdateUseCase(repository: sl()),
+  );
+
+  // App Update - Presentation Layer (Factory - new instance each time)
+  sl.registerFactory<AppUpdateCubit>(
+    () => AppUpdateCubit(
+      initializeUpdateUseCase: sl(),
+      checkForUpdateUseCase: sl(),
+      openStoreUseCase: sl(),
+      snoozeUpdateUseCase: sl(),
+      performNativeUpdateUseCase: sl(),
     ),
   );
 }

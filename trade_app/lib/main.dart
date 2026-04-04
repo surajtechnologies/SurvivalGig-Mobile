@@ -16,6 +16,9 @@ import 'package:trade_app/features/auth/presentation/screens/login_landing_scree
 import 'package:trade_app/features/common/presentation/cubit/loading_cubit.dart';
 import 'package:trade_app/features/home/presentation/screens/home_screen.dart';
 import 'package:trade_app/features/startup_screen/presentation/screens/startup_screen.dart';
+import 'package:trade_app/features/app_update/presentation/cubit/app_update_cubit.dart';
+import 'package:trade_app/features/app_update/presentation/widgets/update_guard.dart';
+import 'package:trade_app/features/app_update/domain/usecases/perform_native_update_usecase.dart';
 import 'package:trade_app/shared/widgets/loading_overlay.dart';
 
 @pragma('vm:entry-point')
@@ -101,6 +104,11 @@ Future<void> main() async {
         if (defaultTargetPlatform == TargetPlatform.iOS) {
           await _initializeIosFcmTokenFlow();
         }
+
+        // Attempt Android native Play Store in-app update
+        if (defaultTargetPlatform == TargetPlatform.android) {
+          sl<PerformNativeUpdateUseCase>().call();
+        }
       }
 
       runApp(const MyApp());
@@ -134,8 +142,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final userSession = sl<UserSession>();
 
-    return BlocProvider<LoadingCubit>(
-      create: (context) => sl<LoadingCubit>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<LoadingCubit>(
+          create: (context) => sl<LoadingCubit>(),
+        ),
+        BlocProvider<AppUpdateCubit>(
+          create: (context) => sl<AppUpdateCubit>(),
+        ),
+      ],
       child: MaterialApp(
         title: 'SurvivalGig',
         theme: AppTheme.lightTheme,
@@ -155,7 +170,7 @@ class MyApp extends StatelessWidget {
     if (userSession.isFirstLaunch) {
       return const StartupScreen();
     } else if (userSession.isLoggedIn) {
-      return const HomeScreen();
+      return const UpdateGuard(child: HomeScreen());
     } else {
       return const LoginLandingScreen();
     }
