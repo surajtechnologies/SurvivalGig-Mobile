@@ -32,6 +32,7 @@ class ApiEndpoints {
   static const String currentUser = '/users/me';
   static String getUserById(String id) => '/users/$id';
   static const String updateProfile = '/users/me';
+  static const String deleteAccount = '/users/me';
   static const String uploadIdDocument = '/users/me/id-document';
   static const String wallet = '/users/me/wallet';
   static const String walletTransactions = '/users/me/wallet/transactions';

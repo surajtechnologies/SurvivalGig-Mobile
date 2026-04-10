@@ -18,9 +18,18 @@ plugins {
 }
 
 val facebookAuthLocalProperties = Properties().apply {
-    val file = rootProject.file("../facebook_auth.local.env")
-    if (file.exists()) {
-        file.inputStream().use { load(it) }
+    // Primary: project-root facebook_auth.local.env (gitignored, optional override)
+    val envFile = rootProject.file("../facebook_auth.local.env")
+    if (envFile.exists()) {
+        envFile.inputStream().use { load(it) }
+    }
+    // Fallback: committed local properties file
+    val propsFile = rootProject.file("facebook_auth.local.properties")
+    if (propsFile.exists()) {
+        // Only load keys not already set by the env file
+        val fallback = Properties()
+        propsFile.inputStream().use { fallback.load(it) }
+        fallback.forEach { k, v -> if (!containsKey(k)) setProperty(k.toString(), v.toString()) }
     }
 }
 

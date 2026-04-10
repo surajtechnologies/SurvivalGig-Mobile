@@ -14,6 +14,7 @@ import '../cubit/profile_state.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/profile_info_tile.dart';
 import '../widgets/profile_section_header.dart';
+import '../../../auth/presentation/screens/login_landing_screen.dart';
 
 /// Profile settings screen
 class ProfileScreen extends StatelessWidget {
@@ -154,6 +155,22 @@ class _ProfileViewState extends State<_ProfileView> {
   Widget build(BuildContext context) {
     return BlocConsumer<ProfileCubit, ProfileState>(
       listener: (context, state) {
+        if (state is AccountDeleted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const LoginLandingScreen(),
+            ),
+          );
+          return;
+        }
+
         if (state is ProfileLoaded && state.statusMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -241,6 +258,8 @@ class _ProfileViewState extends State<_ProfileView> {
           _buildSecurityTile(),
           SizedBox(height: AppDimensions.spacingXl),
           _buildLogoutButton(),
+          SizedBox(height: AppDimensions.spacingMd),
+          _buildDeleteAccountButton(state),
           SizedBox(height: AppDimensions.spacingMd),
           _buildVersionText(),
           SizedBox(height: AppDimensions.spacingMd),
@@ -611,6 +630,103 @@ class _ProfileViewState extends State<_ProfileView> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDeleteAccountButton(ProfileLoaded state) {
+    return GestureDetector(
+      onTap: state.isDeletingAccount
+          ? null
+          : () => _showDeleteAccountConfirmation(),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: AppDimensions.spacingMd),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (state.isDeletingAccount)
+              SizedBox(
+                width: AppDimensions.iconSizeMd,
+                height: AppDimensions.iconSizeMd,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.error,
+                ),
+              )
+            else
+              Icon(
+                Icons.delete_forever_rounded,
+                color: AppColors.error,
+                size: AppDimensions.iconSizeMd,
+              ),
+            SizedBox(width: AppDimensions.spacingSm),
+            Text(
+              state.isDeletingAccount ? 'DELETING...' : 'DELETE ACCOUNT',
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: AppColors.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteAccountConfirmation() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppColors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+          ),
+          title: Text(
+            'Delete Account',
+            style: AppTextStyles.headlineMedium.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete your account? This action will initiate account deletion and your account will be permanently deleted in 14 days.',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'Cancel',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                context.read<ProfileCubit>().deleteAccount();
+              },
+              child: Text(
+                'Delete',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

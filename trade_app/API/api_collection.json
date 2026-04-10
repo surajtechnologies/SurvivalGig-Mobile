@@ -1,2844 +1,9 @@
 {
   "info": {
-    "_postman_id": "93e0e513-d02c-4089-b5cb-507f2827c1f5",
-    "name": "BarterX API - Complete Collection Copy",
+    "name": "BarterX API - Complete Collection",
     "description": "Complete API collection for BarterX barter marketplace",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "31722837",
-    "_collection_link": "https://go.postman.co/collection/31722837-93e0e513-d02c-4089-b5cb-507f2827c1f5?source=collection_link"
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
-  "item": [
-    {
-      "name": "1. Authentication",
-      "item": [
-        {
-          "name": "Register User (JSON)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
-                  "    pm.collectionVariables.set('userId', response.user.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"user@test.com\",\n  \"password\": \"Test@123\",\n  \"name\": \"Test User\",\n  \"location\": \"New York\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/register",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "register"
-              ]
-            },
-            "description": "Register a new user with JSON body (existing flow). No avatar upload."
-          },
-          "response": []
-        },
-        {
-          "name": "Register User with Avatar (Form-Data)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
-                  "    pm.collectionVariables.set('userId', response.user.id);",
-                  "    if (response.user && response.user.avatarUrl) {",
-                  "        console.log('Avatar URL:', response.user.avatarUrl);",
-                  "    }",
-                  "    if (response.warning) {",
-                  "        console.warn('Warning:', response.warning);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "email",
-                  "value": "user-with-avatar@test.com",
-                  "type": "text"
-                },
-                {
-                  "key": "password",
-                  "value": "Test@123",
-                  "type": "text"
-                },
-                {
-                  "key": "name",
-                  "value": "Test User With Avatar",
-                  "type": "text"
-                },
-                {
-                  "key": "location",
-                  "value": "San Francisco",
-                  "type": "text"
-                },
-                {
-                  "key": "avatar",
-                  "type": "file",
-                  "description": "Profile picture (optional). Max 5MB. Formats: JPG, PNG, GIF, WebP",
-                  "value": ""
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/register",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "register"
-              ]
-            },
-            "description": "Register a new user with form-data including optional avatar upload. Avatar will be resized to 400x400 and uploaded to barterx/avatars folder. If avatar upload fails, user is still registered but a warning is returned."
-          },
-          "response": []
-        },
-        {
-          "name": "Login User",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
-                  "    pm.collectionVariables.set('userId', response.user.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"user@test.com\",\n  \"password\": \"Test@123\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Login Admin",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
-                  "    pm.collectionVariables.set('userId', response.user.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@barterx.com\",\n  \"password\": \"Admin@123\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Logout",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/auth/logout",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "logout"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Refresh Token",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/auth/refresh-token",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "refresh-token"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Verify Email",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"token\": \"verification-token-from-email\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/verify-email",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "verify-email"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Resend Verification Email",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/auth/resend-verification",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "resend-verification"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Forgot Password",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"user@test.com\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/forgot-password",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "forgot-password"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Reset Password",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"token\": \"reset-token-from-email\",\n  \"password\": \"NewPassword@123\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/reset-password",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "reset-password"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "OAuth - Google",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
-                  "    pm.collectionVariables.set('userId', response.user.id);",
-                  "}"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"idToken\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IjI1MDdmNTFhZjJhMTYyNDY3MDc0ODQ2NzRhNDJhZTNjMmI2MjMxOWMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI1ODcwMzA1NDI5NzQtcGx0dDNtZzcwN3JvcjFhajk5MmNqbm80bzFhdTg0ZmguYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI1ODcwMzA1NDI5NzQtMWk0NzE2ZTc2NDl1cjZ1cTFsYzliZWJkdGlxN210MGEuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMDU4MDcxOTMyMzk4NTY3NTc3MDEiLCJlbWFpbCI6Iml0enptZWFkYWlrYWxAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImF0X2hhc2giOiJoYnM2MnZBaDJqQ09pZVhQZkxIOGV3Iiwibm9uY2UiOiJ2QVlCMjhuSm1GRTJSTWxaU1BSUUxXSUhSeENwSl9mWGp0OEhnUi1wZDJRIiwibmFtZSI6IkFkYWlrYWwgUmFqIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0pnX3FrX0NKSUNVOXJIa18ySzhaS3NRaDNpU1FFR1l3eE1KcWZhTzZvLVVQS1NaU1ZuPXM5Ni1jIiwiZ2l2ZW5fbmFtZSI6IkFkYWlrYWwiLCJmYW1pbHlfbmFtZSI6IlJhaiIsImlhdCI6MTc3MjY5Mjk0MywiZXhwIjoxNzcyNjk2NTQzfQ.G29lXjTNqjPpG9rTEbH03CYnOZzmlZLPQKBcGazs3ISfzfHwNQodc2K2gFaLle9rCidwSgmwwW-ha6lSzum-wnSKquIcpS6rDsKBWfZLpmmXSMEXefrz0AlUT6cIFTgUkZlYzWU687AA_0MwOOnoJag6opdw6jn7yXtgMrwWqueNWt-lX3UNJyLNLNUkxibNY-W6MEG8H4_5PWQaIUt84gddOm7bgNAzmuN16kYtOgstNPL1jNVKGK3k1R-3lBfzEaFQU30QWmtKD5vXSoU-mK0BftoASp0c9qGB2zc6f-nYNAypOgK8KrNq84VRx1U4gXrjyH5EtdpiYHDW8xCkQg\"}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/mobile/google",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "mobile",
-                "google"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "OAuth - Facebook",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
-                  "    pm.collectionVariables.set('userId', response.user.id);",
-                  "}"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"accessToken\": \"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImEyZjQ4NjQ3MjRiODMzZWFmNzllYmYyZWIxZTMwMjJhZjVlZmJjODAifQ.eyJpc3MiOiJodHRwczpcL1wvd3d3LmZhY2Vib29rLmNvbSIsImF1ZCI6IjE0Njc1ODQ0NDE1NjMyOTUiLCJzdWIiOiIyNTA2NjUyNjYzOTY5MDgxOSIsImlhdCI6MTc3MjcwNDI0NiwiZXhwIjoxNzcyNzA3ODQ2LCJqdGkiOiJicmpoLmViOWY3ZDIwMTkyMDc2NjNlNWI4NTVmZDA2NGViOWEyMmZjNDU2YzcyODFmODgxNjliYjc1MTY1N2I4NDRmZDgiLCJub25jZSI6IjY3OEZCOTM3LTZGQ0EtNDJDNy05NTRELTdFNUZBOUY4QTBFQyIsImVtYWlsIjoiYWRhaWthbG1lcmN5XHUwMDQwZ21haWwuY29tIiwiZ2l2ZW5fbmFtZSI6IkFkYWlrYWwiLCJtaWRkbGVfbmFtZSI6IlJhaiIsImZhbWlseV9uYW1lIjoiQWoiLCJuYW1lIjoiQWRhaWthbCBSYWogQWoiLCJwaWN0dXJlIjoiaHR0cHM6XC9cL3BsYXRmb3JtLWxvb2thc2lkZS5mYnNieC5jb21cL3BsYXRmb3JtXC9wcm9maWxlcGljXC8_YXNpZD0yNTA2NjUyNjYzOTY5MDgxOSZoZWlnaHQ9MTAwJndpZHRoPTEwMCZleHQ9MTc3NTI5NjI0NyZoYXNoPUFUOU1qcTRMcVQyM2VRM0JMUWFFRG1aRyJ9.kEVjvNgpQ1ML8laqyxO_ZQYRdC2GkHp7mqdDai4C4D5fY2Xl2Z-3bvRjOK8SloOJYpYMeyKM__qDKyNImS9CHUnn1OGopUNEe1iAlOK6Lme1q4HLJ78ExiWb_38pINx-A7I2yzZplIgnT55faWx7S4iT6OfKSR-was5_TsdpIQsu9ZXC1WhkORKpjhL8Ylro9wxaqF1Uppdyy4-hGrPkBsy6BWWYKstOKtHuBeLOqc6xW4JRWM9zajkPjrvMOPtDpWukUuLYMETQpYmjiuDSf2LiYhMvpJMDotDNbyy8BlMkRlfYlODq_3jSN-MSvrP4Hw7ZRQP59PTQeq_mJfEffg\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/mobile/facebook",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "mobile",
-                "facebook"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "OAuth - Apple",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
-                  "    pm.collectionVariables.set('userId', response.user.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"identityToken\": \"apple-identity-token-from-client\",\n  \"authorizationCode\": \"apple-auth-code-from-client\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/oauth/apple",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "oauth",
-                "apple"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Send Phone OTP",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"phone\": \"+1234567890\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/send-phone-otp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "send-phone-otp"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Verify Phone OTP",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"phone\": \"+1234567890\",\n  \"otp\": \"123456\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/verify-phone-otp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "verify-phone-otp"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "2. Users",
-      "item": [
-        {
-          "name": "Get Current User",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/users/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users",
-                "me"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Profile",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Name\",\n  \"location\": \"New York, NY\",\n  \"phone\": \"+1234567890\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/users/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users",
-                "me"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get User Public Profile",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/users/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users",
-                "{{userId}}"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "3. Wallet",
-      "item": [
-        {
-          "name": "Get Wallet",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/users/me/wallet",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users",
-                "me",
-                "wallet"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Wallet Transactions",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/users/me/wallet/transactions?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users",
-                "me",
-                "wallet",
-                "transactions"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "4. Categories",
-      "item": [
-        {
-          "name": "Get All Categories",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/categories",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "categories"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "5. Listings",
-      "item": [
-        {
-          "name": "Create Listing (Item - Points)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('listingId', response.listing.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"type\": \"ITEM_OFFERING\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"iPhone 12 Pro\",\n  \"description\": \"Excellent condition, 256GB, Space Gray\",\n  \"condition\": \"Excellent\",\n  \"location\": \"San Francisco, CA\",\n  \"priceMode\": \"POINTS\",\n  \"pricePoints\": 500,\n  \"photos\": [\"https://example.com/photo1.jpg\"]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/listings",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "listings"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Listing (Service - Barter)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"type\": \"SERVICE_OFFERING\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Guitar Lessons\",\n  \"description\": \"1 hour beginner guitar lessons\",\n  \"location\": \"Online or In-Person\",\n  \"priceMode\": \"BARTER\",\n  \"barterWanted\": \"Willing to trade for home-cooked meals or cleaning services\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/listings",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "listings"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Listing (Item - Both)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"type\": \"ITEM_OFFERING\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Mountain Bike\",\n  \"description\": \"Trek mountain bike, 21-speed, great condition\",\n  \"condition\": \"Good\",\n  \"location\": \"Portland, OR\",\n  \"priceMode\": \"BOTH\",\n  \"pricePoints\": 350,\n  \"barterWanted\": \"Or trade for camping gear\",\n  \"photos\": [\"https://example.com/bike1.jpg\", \"https://example.com/bike2.jpg\"]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/listings",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "listings"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Listings",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{user_token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/listings?page=1&limit=20&intent=NEED",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "listings"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1",
-                  "description": "Page number for pagination"
-                },
-                {
-                  "key": "limit",
-                  "value": "20",
-                  "description": "Number of items per page"
-                },
-                {
-                  "key": "type",
-                  "value": "ITEM_OFFERING",
-                  "description": "Filter by listing type: ITEM_OFFERING, ITEM_NEED, SERVICE_OFFERING, SERVICE_NEED",
-                  "disabled": true
-                },
-                {
-                  "key": "intent",
-                  "value": "NEED",
-                  "description": "Filter by intent: OFFERING (items/services offered) or NEED (items/services needed)"
-                },
-                {
-                  "key": "categoryId",
-                  "value": "{{categoryId}}",
-                  "description": "Filter by category UUID",
-                  "disabled": true
-                },
-                {
-                  "key": "priceMode",
-                  "value": "POINTS",
-                  "description": "Filter by price mode: POINTS, BARTER, BOTH",
-                  "disabled": true
-                },
-                {
-                  "key": "minPoints",
-                  "value": "10",
-                  "description": "Minimum price points",
-                  "disabled": true
-                },
-                {
-                  "key": "maxPoints",
-                  "value": "100",
-                  "description": "Maximum price points",
-                  "disabled": true
-                },
-                {
-                  "key": "location",
-                  "value": "New York",
-                  "description": "Filter by location (partial match)",
-                  "disabled": true
-                },
-                {
-                  "key": "search",
-                  "value": "iphone",
-                  "description": "Search in title and description",
-                  "disabled": true
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Listing by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/listings/{{listingId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "listings",
-                "{{listingId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Listing",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"iPhone 12 Pro - Updated\",\n  \"pricePoints\": 450,\n  \"description\": \"Updated description with more details\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/listings/{{listingId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "listings",
-                "{{listingId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get My Listings",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/listings/me/listings?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "listings",
-                "me",
-                "listings"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                },
-                {
-                  "key": "status",
-                  "value": "ACTIVE",
-                  "disabled": true
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Listing",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/listings/{{listingId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "listings",
-                "{{listingId}}"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "6. Trades",
-      "item": [
-        {
-          "name": "Create Trade Offer (Points)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('tradeId', response.trade.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"offerType\": \"points\",\n  \"offerPoints\": 100,\n  \"message\": \"I would like to request guitar lessons\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Trade Offer (Item)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"offerType\": \"item\",\n  \"offerItem\": {\n    \"description\": \"In exchange for this job, I would like to request any used iron you may have.\",\n    \"images\": [\n      \"{{uploadedImageUrl}}\"\n    ]\n  },\n  \"message\": \"Optional additional message\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Trade Offer (Skill)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"offerType\": \"skill\",\n  \"offerSkill\": {\n    \"description\": \"In exchange for this job, I would like to ask if you could teach me how to play the piano. I noticed that you teach piano.\"\n  }\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All My Trades",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                },
-                {
-                  "key": "status",
-                  "value": "PENDING",
-                  "disabled": true
-                },
-                {
-                  "key": "role",
-                  "value": "buyer",
-                  "disabled": true
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Trade by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Submit Counter Offer (Points)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"offerType\": \"points\",\n  \"offerPoints\": 120,\n  \"message\": \"Counter offer with points\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/counter",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "counter"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Submit Counter Offer (Item)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"offerType\": \"item\",\n  \"offerItem\": {\n    \"description\": \"I can offer a vintage camera instead\",\n    \"images\": [\n      \"{{uploadedImageUrl}}\"\n    ]\n  },\n  \"message\": \"Counter with item\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/counter",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "counter"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Submit Counter Offer (Skill)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"offerType\": \"skill\",\n  \"offerSkill\": {\n    \"description\": \"I can teach you piano basics instead\"\n  },\n  \"message\": \"Counter offer with skill\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/counter",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "counter"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Accept Trade Offer",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/accept",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "accept"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Reject Trade Offer",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reason\": \"Price is too low for this item\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/reject",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "reject"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Cancel Trade",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reason\": \"Changed my mind\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/cancel",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "cancel"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Buy Now (Direct Purchase)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('tradeId', response.trade.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"message\": \"I want to buy this now!\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades/buy-now/{{listingId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "buy-now",
-                "{{listingId}}"
-              ]
-            },
-            "description": "Instantly purchase a listing at its listed price without negotiation. Creates a trade with ACCEPTED status. Points are escrowed immediately. Both parties must still confirm delivery. Message is optional - can send empty body {}."
-          },
-          "response": []
-        },
-        {
-          "name": "Confirm Trade Completion",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/confirm",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "confirm"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Chat - Send Message",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('messageId', response.data.id);",
-                  "    pm.collectionVariables.set('lastMessageTimestamp', response.data.createdAt);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"content\": \"Hi! I have a question about the trade.\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "messages"
-              ]
-            },
-            "description": "Send a message in the trade chat. Available for PENDING, ACCEPTED, and COMPLETED (read-only) trades. Blocked for CANCELLED trades. Maximum content length: 2000 characters."
-          },
-          "response": []
-        },
-        {
-          "name": "Chat - Send Message (Empty Content - Validation Error)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"content\": \"\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "messages"
-              ]
-            },
-            "description": "Test validation: Empty message content should return 400 error."
-          },
-          "response": []
-        },
-        {
-          "name": "Chat - Send Message (Content Too Long - Validation Error)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"content\": \"{{$randomLoremParagraphs}}{{$randomLoremParagraphs}}{{$randomLoremParagraphs}}{{$randomLoremParagraphs}}{{$randomLoremParagraphs}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "messages"
-              ]
-            },
-            "description": "Test validation: Message content exceeding 2000 characters should return 400 error."
-          },
-          "response": []
-        },
-        {
-          "name": "Chat - Send Message (Trade Not Found)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"content\": \"This should fail\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades/non-existent-trade-id/messages",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "non-existent-trade-id",
-                "messages"
-              ]
-            },
-            "description": "Test error handling: Sending message to non-existent trade should return 404 error."
-          },
-          "response": []
-        },
-        {
-          "name": "Chat - Get Messages (Default Pagination)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages?page=1&limit=50",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "messages"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1",
-                  "description": "Page number (default: 1)"
-                },
-                {
-                  "key": "limit",
-                  "value": "50",
-                  "description": "Messages per page (10-100, default: 50)"
-                }
-              ]
-            },
-            "description": "Retrieve chat messages for a trade with pagination. Returns messages in reverse chronological order (newest first)."
-          },
-          "response": []
-        },
-        {
-          "name": "Chat - Get Messages (Custom Pagination)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages?page=2&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "messages"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "2"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
-              ]
-            },
-            "description": "Test pagination: Get second page with 20 messages per page."
-          },
-          "response": []
-        },
-        {
-          "name": "Chat - Get Messages (Polling with 'since')",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages?since={{lastMessageTimestamp}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "messages"
-              ],
-              "query": [
-                {
-                  "key": "since",
-                  "value": "{{lastMessageTimestamp}}",
-                  "description": "ISO timestamp - Get only messages after this time (for polling)"
-                }
-              ]
-            },
-            "description": "Polling mode: Fetch only new messages created after the specified timestamp. Useful for real-time chat updates."
-          },
-          "response": []
-        },
-        {
-          "name": "Chat - Get Messages (Trade Not Found)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades/non-existent-trade-id/messages",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "non-existent-trade-id",
-                "messages"
-              ]
-            },
-            "description": "Test error handling: Getting messages from non-existent trade should return 404 error."
-          },
-          "response": []
-        },
-        {
-          "name": "Chat - Mark Messages as Read",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages/read",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "messages",
-                "read"
-              ]
-            },
-            "description": "Mark all unread messages from the other participant as read. Returns count of messages marked."
-          },
-          "response": []
-        },
-        {
-          "name": "Chat - Mark Messages as Read (Trade Not Found)",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades/non-existent-trade-id/messages/read",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "non-existent-trade-id",
-                "messages",
-                "read"
-              ]
-            },
-            "description": "Test error handling: Marking messages as read for non-existent trade should return 404 error."
-          },
-          "response": []
-        },
-        {
-          "name": "Chat - Get Unread Count (Single Trade)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages/unread-count",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "messages",
-                "unread-count"
-              ]
-            },
-            "description": "Get the count of unread messages from the other participant for this specific trade."
-          },
-          "response": []
-        },
-        {
-          "name": "Chat - Get Unread Count (Trade Not Found)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades/non-existent-trade-id/messages/unread-count",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "non-existent-trade-id",
-                "messages",
-                "unread-count"
-              ]
-            },
-            "description": "Test error handling: Getting unread count for non-existent trade should return 404 error."
-          },
-          "response": []
-        },
-        {
-          "name": "Chat - Get All Unread Counts",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades/messages/unread-counts",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "messages",
-                "unread-counts"
-              ]
-            },
-            "description": "Get unread message counts for all trades where the user is a participant. Returns array of {tradeId, unreadCount} objects."
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "7. Reviews",
-      "item": [
-        {
-          "name": "Create Review",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('reviewId', response.data.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Great trade! Item was exactly as described and delivery was prompt.\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/review",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "review"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get User Reviews",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/users/{{userId}}/reviews?page=1&limit=10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users",
-                "{{userId}}",
-                "reviews"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Review by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/reviews/{{reviewId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reviews",
-                "{{reviewId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Trade Reviews",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/trades/{{tradeId}}/reviews",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "trades",
-                "{{tradeId}}",
-                "reviews"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "8. Reports",
-      "item": [
-        {
-          "name": "Create Report",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('reportId', response.data.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"targetType\": \"USER\",\n  \"targetId\": \"user-id-here\",\n  \"reason\": \"FRAUD\",\n  \"description\": \"User attempted to scam me by not delivering the item after trade completion.\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/reports",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reports"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get My Reports",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/reports/me?page=1&limit=10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reports",
-                "me"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Report by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/reports/{{reportId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reports",
-                "{{reportId}}"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "9. Uploads",
-      "item": [
-        {
-          "name": "Upload Images",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    if (response.data && response.data.length > 0) {",
-                  "        pm.collectionVariables.set('uploadedImageUrl', response.data[0].url);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"images\": [\n    \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...\",\n    \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA...\"\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/uploads",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "uploads"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Images",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"imageUrls\": [\n    \"https://res.cloudinary.com/your-cloud/image/upload/v123456789/barterx/abc123.jpg\",\n    \"https://res.cloudinary.com/your-cloud/image/upload/v123456789/barterx/def456.jpg\"\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/uploads",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "uploads"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "10. Admin",
-      "item": [
-        {
-          "name": "Get All Users",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/users?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "users"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get User Details",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/users/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "users",
-                "{{userId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Verify User ID",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/users/{{userId}}/verify",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "users",
-                "{{userId}}",
-                "verify"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Ban User",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reason\": \"Violation of terms of service - fraudulent activity\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/users/{{userId}}/ban",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "users",
-                "{{userId}}",
-                "ban"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Unban User",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/users/{{userId}}/unban",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "users",
-                "{{userId}}",
-                "unban"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update User Role",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"role\": \"ADMIN\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/users/{{userId}}/role",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "users",
-                "{{userId}}",
-                "role"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Trades (Admin)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/trades?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "trades"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                },
-                {
-                  "key": "status",
-                  "value": "PENDING",
-                  "disabled": true
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Trade Details (Admin)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/trades/{{tradeId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "trades",
-                "{{tradeId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Resolve Trade Dispute",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"resolution\": \"approved\",\n  \"notes\": \"Trade approved after review\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/trades/{{tradeId}}/resolve",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "trades",
-                "{{tradeId}}",
-                "resolve"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Listings (Admin)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/listings?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "listings"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                },
-                {
-                  "key": "status",
-                  "value": "ACTIVE",
-                  "disabled": true
-                },
-                {
-                  "key": "type",
-                  "value": "ITEM_OFFERING",
-                  "description": "Filter by listing type: ITEM_OFFERING, ITEM_NEED, SERVICE_OFFERING, SERVICE_NEED",
-                  "disabled": true
-                },
-                {
-                  "key": "intent",
-                  "value": "OFFERING",
-                  "description": "Filter by intent: OFFERING (items/services offered) or NEED (items/services needed)",
-                  "disabled": true
-                },
-                {
-                  "key": "categoryId",
-                  "value": "{{categoryId}}",
-                  "description": "Filter by category UUID",
-                  "disabled": true
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Listing (Admin)",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/listings/{{listingId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "listings",
-                "{{listingId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Category (Admin)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"New Category\",\n  \"icon\": \"📦\",\n  \"sortOrder\": 10\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/categories",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "categories"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Category (Admin)",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Category\",\n  \"isActive\": false\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/categories/{{categoryId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "categories",
-                "{{categoryId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Category (Admin)",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/categories/{{categoryId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "categories",
-                "{{categoryId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Reports (Admin)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/reports?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "reports"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                },
-                {
-                  "key": "status",
-                  "value": "PENDING",
-                  "disabled": true
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Report Status (Admin)",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"RESOLVED\",\n  \"adminNotes\": \"User has been warned and issue resolved.\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/reports/{{reportId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "reports",
-                "{{reportId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Analytics - Overview",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/analytics/overview",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "analytics",
-                "overview"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Analytics - Trades",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/analytics/trades?startDate=2025-01-01&endDate=2025-12-31",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "analytics",
-                "trades"
-              ],
-              "query": [
-                {
-                  "key": "startDate",
-                  "value": "2025-01-01"
-                },
-                {
-                  "key": "endDate",
-                  "value": "2025-12-31"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Analytics - Users",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/analytics/users?startDate=2025-01-01&endDate=2025-12-31",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "analytics",
-                "users"
-              ],
-              "query": [
-                {
-                  "key": "startDate",
-                  "value": "2025-01-01"
-                },
-                {
-                  "key": "endDate",
-                  "value": "2025-12-31"
-                }
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    }
-  ],
   "variable": [
     {
       "key": "baseUrl",
@@ -2883,6 +48,3219 @@
     {
       "key": "lastMessageTimestamp",
       "value": ""
+    },
+    {
+      "key": "idDocumentUrl",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "userToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register User (JSON)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@test.com\",\n  \"password\": \"Test@123\",\n  \"name\": \"Test User\",\n  \"location\": \"New York\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "description": "Register a new user with JSON body (existing flow). No avatar upload."
+          }
+        },
+        {
+          "name": "Register User with Avatar (Form-Data)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "    if (response.user && response.user.avatarUrl) {",
+                  "        console.log('Avatar URL:', response.user.avatarUrl);",
+                  "    }",
+                  "    if (response.warning) {",
+                  "        console.warn('Warning:', response.warning);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "email",
+                  "value": "user-with-avatar@test.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "Test@123",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "Test User With Avatar",
+                  "type": "text"
+                },
+                {
+                  "key": "location",
+                  "value": "San Francisco",
+                  "type": "text"
+                },
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": "",
+                  "description": "Profile picture (optional). Max 5MB. Formats: JPG, PNG, GIF, WebP"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "description": "Register a new user with form-data including optional avatar upload. Avatar will be resized to 400x400 and uploaded to barterx/avatars folder. If avatar upload fails, user is still registered but a warning is returned."
+          }
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@test.com\",\n  \"password\": \"Test@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@barterx.com\",\n  \"password\": \"Admin@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/logout"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/auth/refresh-token"
+          }
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"verification-token-from-email\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/verify-email"
+          }
+        },
+        {
+          "name": "Resend Verification Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/resend-verification"
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@test.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/forgot-password"
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"reset-token-from-email\",\n  \"password\": \"NewPassword@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/reset-password"
+          }
+        },
+        {
+          "name": "OAuth - Google",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"google-id-token-from-client\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/oauth/google"
+          }
+        },
+        {
+          "name": "OAuth - Facebook",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accessToken\": \"facebook-access-token-from-client\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/oauth/facebook"
+          }
+        },
+        {
+          "name": "OAuth - Apple",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identityToken\": \"apple-identity-token-from-client\",\n  \"authorizationCode\": \"apple-auth-code-from-client\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/oauth/apple"
+          }
+        },
+        {
+          "name": "Send Phone OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/send-phone-otp"
+          }
+        },
+        {
+          "name": "Verify Phone OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\",\n  \"otp\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/verify-phone-otp"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Users",
+      "item": [
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me"
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"location\": \"New York, NY\",\n  \"phone\": \"+1234567890\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/users/me"
+          }
+        },
+        {
+          "name": "Get User Public Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/users/{{userId}}",
+            "description": "Retrieve a user's public profile by their ID. Returns name, avatar, location, rating, active listings count, and isIdVerified status."
+          }
+        },
+        {
+          "name": "Upload ID Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.idDocumentUrl) {",
+                  "        pm.collectionVariables.set('idDocumentUrl', response.idDocumentUrl);",
+                  "        console.log('ID Document URL saved:', response.idDocumentUrl);",
+                  "    }",
+                  "    pm.test('Upload successful', () => pm.expect(response.success).to.be.true);",
+                  "    pm.test('isIdVerified reset to false', () => pm.expect(response.isIdVerified).to.be.false);",
+                  "    pm.test('idDocumentUrl present', () => pm.expect(response.idDocumentUrl).to.be.a('string').and.not.empty);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "idDocument",
+                  "type": "file",
+                  "src": "",
+                  "description": "Government-issued ID document image. Accepted formats: JPEG, PNG, WebP. Max size: 5MB. Stored in barterx/id-documents/ folder."
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/users/me/id-document",
+            "description": "Upload a government-issued ID document (passport, driver's licence, national ID) to initiate the identity verification flow.\n\n**Prerequisites:** User must have a verified email address (isEmailVerified = true).\n\n**Behaviour:**\n- Accepts multipart/form-data with field name `idDocument`.\n- Stores the image in `barterx/id-documents/` on Cloudinary (or local fallback).\n- Sets `idDocumentUrl` on the user's profile.\n- Resets `isIdVerified` to `false`, `idVerifiedAt` and `idVerifiedBy` to `null` (re-upload always requires admin to re-verify).\n\n**Next step:** Admin reviews the document and calls `PATCH /api/admin/users/:id/verify` to approve."
+          }
+        },
+        {
+          "name": "Upload ID Document - No File (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 400 when no file provided', () => {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "});",
+                  "pm.test('Error message present', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.message).to.include('No ID document file provided');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": []
+            },
+            "url": "{{baseUrl}}/users/me/id-document",
+            "description": "Validation test: Submitting the form without attaching a file should return HTTP 400 with message 'No ID document file provided'."
+          }
+        },
+        {
+          "name": "Upload ID Document - Wrong Field Name (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 400 for wrong form field name', () => {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "document",
+                  "type": "file",
+                  "src": "",
+                  "description": "Wrong field name — must be 'idDocument'"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/users/me/id-document",
+            "description": "Validation test: File uploaded under field name `document` instead of `idDocument`. Multer will ignore it and the handler returns 400."
+          }
+        },
+        {
+          "name": "Upload ID Document - Invalid File Type (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 400 for unsupported file type', () => {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "});",
+                  "pm.test('Error mentions invalid file type', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.message).to.include('Invalid file type');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "idDocument",
+                  "type": "file",
+                  "src": "",
+                  "description": "Attach a PDF or non-image file here to trigger the file type rejection"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/users/me/id-document",
+            "description": "Validation test: Uploading a PDF, GIF, or any non-allowed MIME type should be rejected by the Multer file filter with HTTP 400 'Invalid file type'."
+          }
+        },
+        {
+          "name": "Upload ID Document - Unauthenticated (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 401 without token', () => {",
+                  "    pm.expect(pm.response.code).to.equal(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "idDocument",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/users/me/id-document",
+            "description": "Auth test: Calling the endpoint without a Bearer token should return HTTP 401."
+          }
+        },
+        {
+          "name": "Upload ID Document - Email Not Verified (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 403 when email not verified', () => {",
+                  "    pm.expect(pm.response.code).to.equal(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "description": "Use a token for a user whose email is NOT verified"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "idDocument",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/users/me/id-document",
+            "description": "Auth test: A user whose email has not been verified should receive HTTP 403 from the `requireVerified` middleware."
+          }
+        },
+        {
+          "name": "Upload ID Document - Re-upload (Resets Verification)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Re-upload succeeds with 200', () => {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('isIdVerified reset to false after re-upload', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.isIdVerified).to.be.false;",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('idDocumentUrl', response.idDocumentUrl);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "idDocument",
+                  "type": "file",
+                  "src": "",
+                  "description": "New/corrected ID document image"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/users/me/id-document",
+            "description": "Re-upload scenario: A user who previously uploaded a document (even one that was already admin-verified) uploads a new image. The endpoint returns 200, updates `idDocumentUrl`, and **resets** `isIdVerified` to `false` — the admin must re-verify."
+          }
+        },
+        {
+          "name": "Delete Account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Account deleted successfully with 200', () => {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.success).to.be.true;",
+                  "    pm.expect(body.message).to.equal('Account deleted successfully');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me",
+            "description": "Soft-deletes the authenticated user's account. Sets deletedAt timestamp, invalidates all sessions (refresh tokens), removes device tokens, and marks active listings as DELETED. Blocked if the user has active trades (PENDING/ACCEPTED) or points in escrow."
+          }
+        },
+        {
+          "name": "Delete Account - Active Trades (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Blocked when user has active trades', () => {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me",
+            "description": "Expects 400 when the user has PENDING or ACCEPTED trades."
+          }
+        },
+        {
+          "name": "Delete Account - Unauthenticated (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Unauthenticated returns 401', () => {",
+                  "    pm.expect(pm.response.code).to.equal(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/users/me",
+            "description": "Expects 401 when no Authorization header is provided."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Wallet",
+      "item": [
+        {
+          "name": "Get Wallet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me/wallet"
+          }
+        },
+        {
+          "name": "Get Wallet Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/wallet/transactions?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me", "wallet", "transactions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Categories",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/categories"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Listings",
+      "item": [
+        {
+          "name": "Create Listing (Item - Points)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('listingId', response.listing.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"ITEM_OFFERING\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"iPhone 12 Pro\",\n  \"description\": \"Excellent condition, 256GB, Space Gray\",\n  \"condition\": \"Excellent\",\n  \"location\": \"San Francisco, CA\",\n  \"priceMode\": \"POINTS\",\n  \"pricePoints\": 500,\n  \"photos\": [\"https://example.com/photo1.jpg\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/listings"
+          }
+        },
+        {
+          "name": "Create Listing (Service - Barter)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"SERVICE_OFFERING\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Guitar Lessons\",\n  \"description\": \"1 hour beginner guitar lessons\",\n  \"location\": \"Online or In-Person\",\n  \"priceMode\": \"BARTER\",\n  \"barterWanted\": \"Willing to trade for home-cooked meals or cleaning services\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/listings"
+          }
+        },
+        {
+          "name": "Create Listing (Item - Both)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"ITEM_OFFERING\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Mountain Bike\",\n  \"description\": \"Trek mountain bike, 21-speed, great condition\",\n  \"condition\": \"Good\",\n  \"location\": \"Portland, OR\",\n  \"priceMode\": \"BOTH\",\n  \"pricePoints\": 350,\n  \"barterWanted\": \"Or trade for camping gear\",\n  \"photos\": [\"https://example.com/bike1.jpg\", \"https://example.com/bike2.jpg\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/listings"
+          }
+        },
+        {
+          "name": "Get All Listings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/listings?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["listings"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of items per page"
+                },
+                {
+                  "key": "type",
+                  "value": "ITEM_OFFERING",
+                  "disabled": true,
+                  "description": "Filter by listing type: ITEM_OFFERING, ITEM_NEED, SERVICE_OFFERING, SERVICE_NEED"
+                },
+                {
+                  "key": "intent",
+                  "value": "OFFERING",
+                  "disabled": true,
+                  "description": "Filter by intent: OFFERING (items/services offered) or NEED (items/services needed)"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "{{categoryId}}",
+                  "disabled": true,
+                  "description": "Filter by category UUID"
+                },
+                {
+                  "key": "priceMode",
+                  "value": "POINTS",
+                  "disabled": true,
+                  "description": "Filter by price mode: POINTS, BARTER, BOTH"
+                },
+                {
+                  "key": "minPoints",
+                  "value": "10",
+                  "disabled": true,
+                  "description": "Minimum price points"
+                },
+                {
+                  "key": "maxPoints",
+                  "value": "100",
+                  "disabled": true,
+                  "description": "Maximum price points"
+                },
+                {
+                  "key": "location",
+                  "value": "New York",
+                  "disabled": true,
+                  "description": "Filter by location (partial match)"
+                },
+                {
+                  "key": "search",
+                  "value": "iphone",
+                  "disabled": true,
+                  "description": "Search in title and description"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Listing by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/listings/{{listingId}}"
+          }
+        },
+        {
+          "name": "Update Listing",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"iPhone 12 Pro - Updated\",\n  \"pricePoints\": 450,\n  \"description\": \"Updated description with more details\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/listings/{{listingId}}"
+          }
+        },
+        {
+          "name": "Get My Listings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/listings/me/listings?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["listings", "me", "listings"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Trades by Listing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response has success flag', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});",
+                  "pm.test('Response has trades array', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.trades).to.be.an('array');",
+                  "});",
+                  "pm.test('Response has pagination', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.pagination).to.have.all.keys('page', 'limit', 'total', 'totalPages');",
+                  "});",
+                  "if (pm.response.json().trades.length > 0) {",
+                  "    pm.collectionVariables.set('tradeId', pm.response.json().trades[0].id);",
+                  "    console.log('tradeId set from listing trades:', pm.response.json().trades[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/listings/{{listingId}}/trades?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["listings", "{{listingId}}", "trades"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "ACCEPTED",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "COMPLETED",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get all trades for a specific listing. Only returns trades where the authenticated user is a participant (buyer or seller). Non-participants receive an empty trades array with zero total — no 403 error.\n\n**Supported query params:**\n- `page` (int, default 1)\n- `limit` (int, default 20)\n- `status` (PENDING | ACCEPTED | REJECTED | COMPLETED | CANCELLED) — optional filter\n\n**Authorization rules:**\n- Trade party → sees their own trade(s) on this listing\n- Non-party → `{ success: true, trades: [], pagination: { total: 0, ... } }`\n- Unauthenticated → 401"
+          }
+        },
+        {
+          "name": "Get Trades by Listing - Filter by Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/listings/{{listingId}}/trades?status=PENDING",
+              "host": ["{{baseUrl}}"],
+              "path": ["listings", "{{listingId}}", "trades"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                }
+              ]
+            },
+            "description": "Same as 'Get Trades by Listing' but filtered to PENDING trades only. Useful for showing the listing owner which offers are still awaiting action. Change `status` to ACCEPTED, COMPLETED, REJECTED, or CANCELLED as needed."
+          }
+        },
+        {
+          "name": "Get Trades by Listing - Non-Party (Expects Empty)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 even for non-party', () => pm.response.to.have.status(200));",
+                  "pm.test('Trades array is empty for non-party', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.trades).to.be.an('array').that.is.empty;",
+                  "});",
+                  "pm.test('Total is 0', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.pagination.total).to.equal(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "description": "Use a different user's token — one who has NO trade on this listing"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/listings/{{listingId}}/trades",
+              "host": ["{{baseUrl}}"],
+              "path": ["listings", "{{listingId}}", "trades"]
+            },
+            "description": "Verifies that a user who is NOT a party in any trade on this listing silently receives an empty result (trades: []) rather than a 403 error. Use `{{userToken}}` set to a different user's access token."
+          }
+        },
+        {
+          "name": "Get Trades by Listing - Not Found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('404 for non-existent listing', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/listings/non-existent-listing-id/trades",
+            "description": "Verify error handling: passing a listing ID that does not exist returns an error response (listing not found)."
+          }
+        },
+        {
+          "name": "Delete Listing",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/listings/{{listingId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Trades",
+      "item": [
+        {
+          "name": "Create Trade Offer (Points)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('tradeId', response.trade.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"offerType\": \"points\",\n  \"offerPoints\": 100,\n  \"message\": \"I would like to request guitar lessons\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades"
+          }
+        },
+        {
+          "name": "Create Trade Offer (Item)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"offerType\": \"item\",\n  \"offerItem\": {\n    \"description\": \"In exchange for this job, I would like to request any used iron you may have.\",\n    \"images\": [\n      \"{{uploadedImageUrl}}\"\n    ]\n  },\n  \"message\": \"Optional additional message\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades"
+          }
+        },
+        {
+          "name": "Create Trade Offer (Skill)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"offerType\": \"skill\",\n  \"offerSkill\": {\n    \"description\": \"In exchange for this job, I would like to ask if you could teach me how to play the piano. I noticed that you teach piano.\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades"
+          }
+        },
+        {
+          "name": "Get All My Trades",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trades?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["trades"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                },
+                {
+                  "key": "role",
+                  "value": "buyer",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Trade by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/{{tradeId}}"
+          }
+        },
+        {
+          "name": "Submit Counter Offer (Points)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offerType\": \"points\",\n  \"offerPoints\": 120,\n  \"message\": \"Counter offer with points\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/counter"
+          }
+        },
+        {
+          "name": "Submit Counter Offer (Item)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offerType\": \"item\",\n  \"offerItem\": {\n    \"description\": \"I can offer a vintage camera instead\",\n    \"images\": [\n      \"{{uploadedImageUrl}}\"\n    ]\n  },\n  \"message\": \"Counter with item\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/counter"
+          }
+        },
+        {
+          "name": "Submit Counter Offer (Skill)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offerType\": \"skill\",\n  \"offerSkill\": {\n    \"description\": \"I can teach you piano basics instead\"\n  },\n  \"message\": \"Counter offer with skill\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/counter"
+          }
+        },
+        {
+          "name": "Accept Trade Offer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/{{tradeId}}/accept"
+          }
+        },
+        {
+          "name": "Reject Trade Offer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Price is too low for this item\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/reject"
+          }
+        },
+        {
+          "name": "Cancel Trade",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Changed my mind\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/cancel"
+          }
+        },
+        {
+          "name": "Buy Now (Direct Purchase)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('tradeId', response.trade.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"I want to buy this now!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/buy-now/{{listingId}}",
+            "description": "Instantly purchase a listing at its listed price without negotiation. Creates a trade with ACCEPTED status. Points are escrowed immediately. Both parties must still confirm delivery. Message is optional - can send empty body {}."
+          }
+        },
+        {
+          "name": "Confirm Trade Completion",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/{{tradeId}}/confirm"
+          }
+        },
+        {
+          "name": "Chat - Send Message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('messageId', response.data.id);",
+                  "    pm.collectionVariables.set('lastMessageTimestamp', response.data.createdAt);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Hi! I have a question about the trade.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/messages",
+            "description": "Send a message in the trade chat. Available for PENDING, ACCEPTED, and COMPLETED (read-only) trades. Blocked for CANCELLED trades. Maximum content length: 2000 characters."
+          }
+        },
+        {
+          "name": "Chat - Send Message (Empty Content - Validation Error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/messages",
+            "description": "Test validation: Empty message content should return 400 error."
+          }
+        },
+        {
+          "name": "Chat - Send Message (Content Too Long - Validation Error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"{{$randomLoremParagraphs}}{{$randomLoremParagraphs}}{{$randomLoremParagraphs}}{{$randomLoremParagraphs}}{{$randomLoremParagraphs}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/messages",
+            "description": "Test validation: Message content exceeding 2000 characters should return 400 error."
+          }
+        },
+        {
+          "name": "Chat - Send Message (Trade Not Found)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This should fail\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/non-existent-trade-id/messages",
+            "description": "Test error handling: Sending message to non-existent trade should return 404 error."
+          }
+        },
+        {
+          "name": "Chat - Get Messages (Default Pagination)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages?page=1&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["trades", "{{tradeId}}", "messages"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "description": "Messages per page (10-100, default: 50)"
+                }
+              ]
+            },
+            "description": "Retrieve chat messages for a trade with pagination. Returns messages in reverse chronological order (newest first)."
+          }
+        },
+        {
+          "name": "Chat - Get Messages (Custom Pagination)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages?page=2&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["trades", "{{tradeId}}", "messages"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Test pagination: Get second page with 20 messages per page."
+          }
+        },
+        {
+          "name": "Chat - Get Messages (Polling with 'since')",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trades/{{tradeId}}/messages?since={{lastMessageTimestamp}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["trades", "{{tradeId}}", "messages"],
+              "query": [
+                {
+                  "key": "since",
+                  "value": "{{lastMessageTimestamp}}",
+                  "description": "ISO timestamp - Get only messages after this time (for polling)"
+                }
+              ]
+            },
+            "description": "Polling mode: Fetch only new messages created after the specified timestamp. Useful for real-time chat updates."
+          }
+        },
+        {
+          "name": "Chat - Get Messages (Trade Not Found)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/non-existent-trade-id/messages",
+            "description": "Test error handling: Getting messages from non-existent trade should return 404 error."
+          }
+        },
+        {
+          "name": "Chat - Mark Messages as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/{{tradeId}}/messages/read",
+            "description": "Mark all unread messages from the other participant as read. Returns count of messages marked."
+          }
+        },
+        {
+          "name": "Chat - Mark Messages as Read (Trade Not Found)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/non-existent-trade-id/messages/read",
+            "description": "Test error handling: Marking messages as read for non-existent trade should return 404 error."
+          }
+        },
+        {
+          "name": "Chat - Get Unread Count (Single Trade)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/{{tradeId}}/messages/unread-count",
+            "description": "Get the count of unread messages from the other participant for this specific trade."
+          }
+        },
+        {
+          "name": "Chat - Get Unread Count (Trade Not Found)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/non-existent-trade-id/messages/unread-count",
+            "description": "Test error handling: Getting unread count for non-existent trade should return 404 error."
+          }
+        },
+        {
+          "name": "Chat - Get All Unread Counts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/messages/unread-counts",
+            "description": "Get unread message counts for all trades where the user is a participant. Returns array of {tradeId, unreadCount} objects."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Reviews",
+      "item": [
+        {
+          "name": "Create Review",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('reviewId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Great trade! Item was exactly as described and delivery was prompt.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades/{{tradeId}}/review"
+          }
+        },
+        {
+          "name": "Get User Reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/reviews?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "reviews"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Review by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reviews/{{reviewId}}"
+          }
+        },
+        {
+          "name": "Get Trade Reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/trades/{{tradeId}}/reviews"
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Reports",
+      "item": [
+        {
+          "name": "Create Report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('reportId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetType\": \"USER\",\n  \"targetId\": \"user-id-here\",\n  \"reason\": \"FRAUD\",\n  \"description\": \"User attempted to scam me by not delivering the item after trade completion.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/reports"
+          }
+        },
+        {
+          "name": "Get My Reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/me?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "me"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Report by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reports/{{reportId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Uploads",
+      "item": [
+        {
+          "name": "Upload Images",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.length > 0) {",
+                  "        pm.collectionVariables.set('uploadedImageUrl', response.data[0].url);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"images\": [\n    \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...\",\n    \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA...\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/uploads"
+          }
+        },
+        {
+          "name": "Delete Images",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imageUrls\": [\n    \"https://res.cloudinary.com/your-cloud/image/upload/v123456789/barterx/abc123.jpg\",\n    \"https://res.cloudinary.com/your-cloud/image/upload/v123456789/barterx/def456.jpg\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/uploads"
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Admin",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Verify User ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 200 on successful verification', () => {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('isIdVerified is true', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.user.isIdVerified).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "description": "Must be an ADMIN token"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}/verify",
+            "description": "Admin approves a user's identity by setting `isIdVerified = true`. **Requires** the user to have already uploaded an ID document via `POST /api/users/me/id-document` — will return 400 'User has not uploaded ID document yet' otherwise.\n\n**Prerequisites:** Admin JWT + target user has `idDocumentUrl` set."
+          }
+        },
+        {
+          "name": "Verify User ID - No Document Uploaded (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 400 when no document uploaded', () => {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "});",
+                  "pm.test('Error message about missing document', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.message).to.include('not uploaded ID document');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "description": "Must be an ADMIN token"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}/verify",
+            "description": "Error test: Attempting to verify a user who has never uploaded an ID document. The admin service checks `idDocumentUrl` and returns HTTP 400."
+          }
+        },
+        {
+          "name": "Verify User ID - Already Verified (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 400 when already verified', () => {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "});",
+                  "pm.test('Error message about already verified', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.message).to.include('already');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "description": "Must be an ADMIN token"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}/verify",
+            "description": "Error test: Attempting to verify a user who is already `isIdVerified = true`. The admin service throws HTTP 400 to prevent duplicate verification."
+          }
+        },
+        {
+          "name": "Get User Details (View ID Document)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 200', () => pm.expect(pm.response.code).to.equal(200));",
+                  "pm.test('idDocumentUrl is present', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.user.idDocumentUrl).to.be.a('string');",
+                  "    console.log('ID Document URL for review:', body.user.idDocumentUrl);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "description": "Must be an ADMIN token"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}",
+            "description": "Admin retrieves full user details including `idDocumentUrl`, `isIdVerified`, `idVerifiedAt`, and `idVerifiedBy` before deciding to approve or reject the identity claim."
+          }
+        },
+        {
+          "name": "Verify User Email (Admin Override)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 200 on email verification', () => {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "description": "Must be an ADMIN token"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}/verify-email",
+            "description": "Admin manually marks a user's email as verified (e.g. for accounts created via OAuth). This unblocks the user from calling `POST /api/users/me/id-document` which requires `requireVerified`."
+          }
+        },
+        {
+          "name": "Ban User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Violation of terms of service - fraudulent activity\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/users/{{userId}}/ban"
+          }
+        },
+        {
+          "name": "Unban User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}/unban"
+          }
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"ADMIN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/users/{{userId}}/role"
+          }
+        },
+        {
+          "name": "Get All Trades (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/trades?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "trades"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Trade Details (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/trades/{{tradeId}}"
+          }
+        },
+        {
+          "name": "Resolve Trade Dispute",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resolution\": \"approved\",\n  \"notes\": \"Trade approved after review\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/trades/{{tradeId}}/resolve"
+          }
+        },
+        {
+          "name": "Get All Listings (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/listings?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "listings"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "ITEM_OFFERING",
+                  "disabled": true,
+                  "description": "Filter by listing type: ITEM_OFFERING, ITEM_NEED, SERVICE_OFFERING, SERVICE_NEED"
+                },
+                {
+                  "key": "intent",
+                  "value": "OFFERING",
+                  "disabled": true,
+                  "description": "Filter by intent: OFFERING (items/services offered) or NEED (items/services needed)"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "{{categoryId}}",
+                  "disabled": true,
+                  "description": "Filter by category UUID"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Listing (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/listings/{{listingId}}"
+          }
+        },
+        {
+          "name": "Create Category (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Category\",\n  \"icon\": \"📦\",\n  \"sortOrder\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/categories"
+          }
+        },
+        {
+          "name": "Update Category (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Category\",\n  \"isActive\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Delete Category (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Get All Reports (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/reports?page=1&limit=20&status=PENDING",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "reports"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Report Status (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\",\n  \"adminNotes\": \"User has been warned and issue resolved.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/reports/{{reportId}}"
+          }
+        },
+        {
+          "name": "Analytics - Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/analytics/overview"
+          }
+        },
+        {
+          "name": "Analytics - Trades",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/analytics/trades?startDate=2025-01-01&endDate=2025-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "analytics", "trades"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-12-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Analytics - Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/analytics/users?startDate=2025-01-01&endDate=2025-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "analytics", "users"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-12-31"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. KYC Identity Verification Workflow",
+      "description": "Complete end-to-end workflow for user identity verification (KYC). Run the requests in order. Steps 1-3 are user actions; Steps 4-6 are admin actions.\n\n**Flow overview:**\n1. Register & log in\n2. Verify email (prerequisite for ID upload)\n3. Upload ID document → idDocumentUrl is set, isIdVerified = false\n4. Admin logs in\n5. Admin views user details to inspect the document URL\n6. Admin approves → isIdVerified = true",
+      "item": [
+        {
+          "name": "Step 1 - Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "    console.log('Registered user ID:', response.user.id);",
+                  "    pm.test('User registered', () => pm.expect(response.success).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"kyc-test@barterx.com\",\n  \"password\": \"Test@123\",\n  \"name\": \"KYC Test User\",\n  \"location\": \"Manila, PH\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "description": "KYC Step 1 — Register a new user. The `accessToken` and `userId` variables are auto-populated by the test script."
+          }
+        },
+        {
+          "name": "Step 2 - Verify Email (Admin Override)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Save current user token before switching to admin",
+                  "pm.collectionVariables.set('userToken', pm.collectionVariables.get('accessToken'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Email verified by admin', () => pm.expect(pm.response.code).to.equal(200));",
+                  "// Restore user token",
+                  "pm.collectionVariables.set('accessToken', pm.collectionVariables.get('userToken'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "description": "Set adminToken variable to an admin JWT before running this step"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}/verify-email",
+            "description": "KYC Step 2 — Admin manually marks the user's email as verified so the `requireVerified` middleware allows them to upload their ID document.\n\n**Alternative:** Use the real `GET /api/auth/verify-email?token=...` link sent to the user's email."
+          }
+        },
+        {
+          "name": "Step 3 - User Uploads ID Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Upload returns 200', () => pm.expect(pm.response.code).to.equal(200));",
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('idDocumentUrl', body.idDocumentUrl);",
+                  "    pm.test('idDocumentUrl is set', () => pm.expect(body.idDocumentUrl).to.be.a('string').and.not.empty);",
+                  "    pm.test('isIdVerified is false (pending admin)', () => pm.expect(body.isIdVerified).to.be.false);",
+                  "    console.log('Document uploaded. Pending admin review at:', body.idDocumentUrl);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "idDocument",
+                  "type": "file",
+                  "src": "",
+                  "description": "Attach your ID image here (JPEG/PNG/WebP, max 5MB)"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/users/me/id-document",
+            "description": "KYC Step 3 — Authenticated user uploads their government-issued ID. On success, `idDocumentUrl` is saved to the collection variable and the user is in **pending verification** state."
+          }
+        },
+        {
+          "name": "Step 4 - Admin: Check User Profile (idDocumentUrl)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 200', () => pm.expect(pm.response.code).to.equal(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('idDocumentUrl is present', () => {",
+                  "    pm.expect(body.user.idDocumentUrl).to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.test('isIdVerified is still false', () => {",
+                  "    pm.expect(body.user.isIdVerified).to.be.false;",
+                  "});",
+                  "console.log('Admin reviewing document at:', body.user.idDocumentUrl);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "description": "Admin JWT"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}",
+            "description": "KYC Step 4 — Admin fetches full user details. The response includes `idDocumentUrl` (the uploaded image link), `isIdVerified: false`, and `idVerifiedAt: null`. Admin opens the URL to visually inspect the document."
+          }
+        },
+        {
+          "name": "Step 5 - Admin: Approve ID Verification",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Verification approved with 200', () => pm.expect(pm.response.code).to.equal(200));",
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    pm.test('isIdVerified is now true', () => pm.expect(body.user.isIdVerified).to.be.true);",
+                  "    pm.test('idVerifiedAt is set', () => pm.expect(body.user.idVerifiedAt).to.not.be.null);",
+                  "    pm.test('idVerifiedBy references admin', () => pm.expect(body.user.idVerifiedBy).to.be.a('string'));",
+                  "    console.log('User identity verified at:', body.user.idVerifiedAt);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "description": "Admin JWT"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}/verify",
+            "description": "KYC Step 5 — Admin approves the user's identity. Sets `isIdVerified = true`, `idVerifiedAt = now`, `idVerifiedBy = adminId`.\n\n**Will fail (400) if:** user has no `idDocumentUrl` or is already verified."
+          }
+        },
+        {
+          "name": "Step 6 - User: Confirm isIdVerified in Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 200', () => pm.expect(pm.response.code).to.equal(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('isIdVerified is true in user profile', () => {",
+                  "    pm.expect(body.user.isIdVerified).to.be.true;",
+                  "});",
+                  "console.log('KYC flow complete. User is now identity-verified.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me",
+            "description": "KYC Step 6 — User fetches their own profile to confirm `isIdVerified: true`. This is the final step of the KYC flow."
+          }
+        },
+        {
+          "name": "Edge Case - Admin Login (Get Admin Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('adminToken', response.accessToken);",
+                  "    console.log('Admin token saved as adminToken variable');",
+                  "    pm.test('Admin login successful', () => pm.expect(response.success).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@barterx.com\",\n  \"password\": \"Admin@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Run this before Steps 2, 4, and 5 to get an admin token. The token is saved to the `adminToken` collection variable. Steps 2/4/5 use `{{adminToken}}` in their Authorization header."
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. Get Trades by Listing Workflow",
+      "description": "End-to-end workflow demonstrating the GET /api/listings/:id/trades endpoint.\n\n**Scenario:** Two users exist. User A creates a listing. User B makes a trade offer on it. The workflow shows:\n1. User B (trade party) hits the endpoint → sees their trade\n2. A different user (non-party) hits the same endpoint → gets an empty result\n3. Status filter narrows results\n\nRun requests in order. `listingId` and `tradeId` collection variables are auto-populated by earlier test scripts.",
+      "item": [
+        {
+          "name": "Step 1 - Login as User A (Listing Owner)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const r = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', r.accessToken);",
+                  "    pm.collectionVariables.set('userId', r.user.id);",
+                  "    console.log('User A logged in, accessToken set');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"usera@test.com\",\n  \"password\": \"Test@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Login as User A who owns the listing. accessToken and userId variables are auto-set."
+          }
+        },
+        {
+          "name": "Step 2 - User A Creates a Listing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const r = pm.response.json();",
+                  "    pm.collectionVariables.set('listingId', r.listing.id);",
+                  "    console.log('Listing created, listingId set:', r.listing.id);",
+                  "    pm.test('Listing created', () => pm.expect(r.success).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"ITEM_OFFERING\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Vintage Camera\",\n  \"description\": \"A working vintage film camera in great condition.\",\n  \"condition\": \"Good\",\n  \"location\": \"Manila, PH\",\n  \"priceMode\": \"POINTS\",\n  \"pricePoints\": 200\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/listings",
+            "description": "User A creates a listing. The `listingId` variable is auto-set from the response."
+          }
+        },
+        {
+          "name": "Step 3 - Login as User B (Trade Offerer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const r = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', r.accessToken);",
+                  "    pm.collectionVariables.set('userToken', r.accessToken);",
+                  "    console.log('User B logged in, accessToken and userToken set');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"userb@test.com\",\n  \"password\": \"Test@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Login as User B who will make a trade offer. Both `accessToken` and `userToken` are set to User B's token."
+          }
+        },
+        {
+          "name": "Step 4 - User B Creates Trade Offer on Listing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const r = pm.response.json();",
+                  "    pm.collectionVariables.set('tradeId', r.trade.id);",
+                  "    console.log('Trade created, tradeId set:', r.trade.id);",
+                  "    pm.test('Trade created', () => pm.expect(r.success).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"offerType\": \"points\",\n  \"offerPoints\": 200,\n  \"message\": \"I would like to purchase this camera.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/trades",
+            "description": "User B makes a points trade offer on User A's listing. The `tradeId` is auto-set."
+          }
+        },
+        {
+          "name": "Step 5 - User B Gets Trades by Listing (Party — Sees Trade)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('User B sees their trade', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.trades).to.be.an('array').with.lengthOf.at.least(1);",
+                  "    pm.expect(json.pagination.total).to.be.at.least(1);",
+                  "});",
+                  "pm.test('Trade belongs to correct listing', () => {",
+                  "    const trade = pm.response.json().trades[0];",
+                  "    pm.expect(trade.listingId).to.equal(pm.collectionVariables.get('listingId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "description": "User B's token"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/listings/{{listingId}}/trades?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["listings", "{{listingId}}", "trades"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "User B (buyer in the trade) calls GET /api/listings/:id/trades. Since they are a party, they see their own trade on this listing. Expects at least 1 trade in the response."
+          }
+        },
+        {
+          "name": "Step 6 - User B Gets Trades by Listing - Filter PENDING",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('All returned trades are PENDING', () => {",
+                  "    const trades = pm.response.json().trades;",
+                  "    trades.forEach(t => pm.expect(t.status).to.equal('PENDING'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/listings/{{listingId}}/trades?status=PENDING",
+              "host": ["{{baseUrl}}"],
+              "path": ["listings", "{{listingId}}", "trades"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                }
+              ]
+            },
+            "description": "Same endpoint with `?status=PENDING` filter. Verifies that only PENDING trades are returned."
+          }
+        },
+        {
+          "name": "Step 7 - Login as Unrelated User C",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const r = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', r.accessToken);",
+                  "    console.log('User C logged in');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"userc@test.com\",\n  \"password\": \"Test@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Login as User C who has NO trade on this listing. accessToken is updated to User C's token."
+          }
+        },
+        {
+          "name": "Step 8 - User C Gets Trades by Listing (Non-Party — Expects Empty)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 even for non-party', () => pm.response.to.have.status(200));",
+                  "pm.test('Non-party receives empty trades array', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.trades).to.be.an('array').that.is.empty;",
+                  "});",
+                  "pm.test('Total is 0 for non-party', () => {",
+                  "    pm.expect(pm.response.json().pagination.total).to.equal(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "description": "User C's token — not a party in any trade on this listing"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/listings/{{listingId}}/trades",
+              "host": ["{{baseUrl}}"],
+              "path": ["listings", "{{listingId}}", "trades"]
+            },
+            "description": "User C has no trade on this listing. They should receive HTTP 200 with an empty trades array and total = 0. No 403 is raised — access denial is silent."
+          }
+        },
+        {
+          "name": "Step 9 - Unauthenticated Request (Expects 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401 without token', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/listings/{{listingId}}/trades",
+              "host": ["{{baseUrl}}"],
+              "path": ["listings", "{{listingId}}", "trades"]
+            },
+            "description": "Verify that an unauthenticated request (no Authorization header) returns HTTP 401."
+          }
+        }
+      ]
     }
   ]
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/get_profile_usecase.dart';
+import '../../domain/usecases/delete_account_usecase.dart';
 import '../../domain/usecases/send_password_reset_email_usecase.dart';
 import '../../domain/usecases/upload_profile_image_usecase.dart';
 import '../../domain/usecases/verify_profile_usecase.dart';
@@ -13,12 +14,14 @@ class ProfileCubit extends Cubit<ProfileState> {
   final UploadProfileImageUseCase uploadProfileImageUseCase;
   final VerifyProfileUseCase verifyProfileUseCase;
   final SendPasswordResetEmailUseCase sendPasswordResetEmailUseCase;
+  final DeleteAccountUseCase deleteAccountUseCase;
 
   ProfileCubit({
     required this.getProfileUseCase,
     required this.uploadProfileImageUseCase,
     required this.verifyProfileUseCase,
     required this.sendPasswordResetEmailUseCase,
+    required this.deleteAccountUseCase,
   }) : super(const ProfileInitial());
 
   /// Load profile data from /users/me endpoint
@@ -205,6 +208,43 @@ class ProfileCubit extends Cubit<ProfileState> {
       (message) {
         emit(
           currentState.copyWith(statusMessage: message, isStatusError: false),
+        );
+      },
+    );
+  }
+
+  /// Delete current user account
+  Future<void> deleteAccount() async {
+    final currentState = state;
+    if (currentState is! ProfileLoaded) {
+      return;
+    }
+
+    emit(
+      currentState.copyWith(
+        isDeletingAccount: true,
+        clearStatusMessage: true,
+        isStatusError: false,
+      ),
+    );
+
+    final result = await deleteAccountUseCase();
+
+    result.fold(
+      (_) {
+        emit(
+          const AccountDeleted(
+            message:
+                'Account deletion initiated. It will be deleted in 14 days',
+          ),
+        );
+      },
+      (message) {
+        emit(
+          const AccountDeleted(
+            message:
+                'Account deletion initiated. It will be deleted in 14 days',
+          ),
         );
       },
     );

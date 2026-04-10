@@ -24,6 +24,7 @@ class ProfileLoaded extends ProfileState {
   final Profile profile;
   final bool isUploadingImage;
   final bool isUploadingVerificationDocument;
+  final bool isDeletingAccount;
   final String? statusMessage;
   final bool isStatusError;
 
@@ -31,6 +32,7 @@ class ProfileLoaded extends ProfileState {
     required this.profile,
     this.isUploadingImage = false,
     this.isUploadingVerificationDocument = false,
+    this.isDeletingAccount = false,
     this.statusMessage,
     this.isStatusError = false,
   });
@@ -39,6 +41,7 @@ class ProfileLoaded extends ProfileState {
     Profile? profile,
     bool? isUploadingImage,
     bool? isUploadingVerificationDocument,
+    bool? isDeletingAccount,
     String? statusMessage,
     bool? isStatusError,
     bool clearStatusMessage = false,
@@ -49,6 +52,7 @@ class ProfileLoaded extends ProfileState {
       isUploadingVerificationDocument:
           isUploadingVerificationDocument ??
           this.isUploadingVerificationDocument,
+      isDeletingAccount: isDeletingAccount ?? this.isDeletingAccount,
       statusMessage: clearStatusMessage
           ? null
           : (statusMessage ?? this.statusMessage),
@@ -61,6 +65,7 @@ class ProfileLoaded extends ProfileState {
     profile,
     isUploadingImage,
     isUploadingVerificationDocument,
+    isDeletingAccount,
     statusMessage,
     isStatusError,
   ];
@@ -75,4 +80,14 @@ class ProfileError extends ProfileState {
 
   @override
   List<Object?> get props => [message, code];
+}
+
+/// Account deletion initiated state
+class AccountDeleted extends ProfileState {
+  final String message;
+
+  const AccountDeleted({required this.message});
+
+  @override
+  List<Object?> get props => [message];
 }

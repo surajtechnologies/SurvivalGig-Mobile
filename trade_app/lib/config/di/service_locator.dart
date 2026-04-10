@@ -77,6 +77,7 @@ import '../../features/profile/domain/usecases/send_password_reset_email_usecase
 import '../../features/profile/domain/usecases/upload_profile_image_usecase.dart'
     as profile_feature;
 import '../../features/profile/domain/usecases/verify_profile_usecase.dart';
+import '../../features/profile/domain/usecases/delete_account_usecase.dart';
 import '../../features/profile/presentation/cubit/my_ratings_cubit.dart';
 import '../../features/profile/presentation/cubit/profile_cubit.dart';
 import '../../features/profile/presentation/cubit/reset_password_cubit.dart';
@@ -424,6 +425,10 @@ void setupServiceLocator() {
     () => ResetPasswordUseCase(repository: sl()),
   );
 
+  sl.registerLazySingleton<DeleteAccountUseCase>(
+    () => DeleteAccountUseCase(repository: sl()),
+  );
+
   // Profile - Presentation Layer (Factory - new instance each time)
   sl.registerFactory<ProfileCubit>(
     () => ProfileCubit(
@@ -431,6 +436,7 @@ void setupServiceLocator() {
       uploadProfileImageUseCase: sl(),
       verifyProfileUseCase: sl(),
       sendPasswordResetEmailUseCase: sl(),
+      deleteAccountUseCase: sl(),
     ),
   );
 

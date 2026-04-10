@@ -35,6 +35,9 @@ abstract class ProfileRemoteDataSource {
     required String token,
     required String password,
   });
+
+  /// Delete current user account (soft-delete)
+  Future<String> deleteAccount();
 }
 
 class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
@@ -272,6 +275,30 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
             _extractErrorMessage(response.data) ??
             'Failed to upload verification document',
         code: 'PROFILE_VERIFICATION_FAILED',
+        statusCode: response.statusCode,
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<String> deleteAccount() async {
+    try {
+      final response = await dioClient.dio.delete(
+        ApiEndpoints.deleteAccount,
+      );
+
+      if (response.statusCode == 200) {
+        return _extractSuccessMessage(response.data) ??
+            'Account deleted successfully';
+      }
+
+      throw ServerException(
+        message:
+            _extractErrorMessage(response.data) ??
+            'Failed to delete account',
+        code: 'DELETE_ACCOUNT_FAILED',
         statusCode: response.statusCode,
       );
     } on DioException catch (e) {

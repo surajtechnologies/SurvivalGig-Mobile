@@ -6,6 +6,7 @@ export 'domain/entities/profile_review.dart';
 export 'domain/repositories/profile_repository.dart';
 export 'domain/usecases/get_profile_usecase.dart';
 export 'domain/usecases/get_profile_reviews_usecase.dart';
+export 'domain/usecases/delete_account_usecase.dart';
 export 'domain/usecases/send_password_reset_email_usecase.dart';
 export 'domain/usecases/reset_password_usecase.dart';
 export 'domain/usecases/upload_profile_image_usecase.dart';

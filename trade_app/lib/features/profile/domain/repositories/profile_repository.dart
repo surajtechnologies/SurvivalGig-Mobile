@@ -33,4 +33,7 @@ abstract class ProfileRepository {
     required String token,
     required String password,
   });
+
+  /// Delete current user account (soft-delete)
+  Future<Either<Failure, String>> deleteAccount();
 }

@@ -215,4 +215,33 @@ class ProfileRepositoryImpl implements ProfileRepository {
       );
     }
   }
+
+  @override
+  Future<Either<Failure, String>> deleteAccount() async {
+    try {
+      final message = await remoteDataSource.deleteAccount();
+      return Right(message);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message, code: e.code));
+    } on ServerException catch (e) {
+      if (e.statusCode == 401) {
+        return Left(AuthFailure(message: e.message, code: e.code));
+      }
+
+      return Left(
+        ServerFailure(
+          message: e.message,
+          code: e.code,
+          statusCode: e.statusCode,
+        ),
+      );
+    } catch (_) {
+      return const Left(
+        ServerFailure(
+          message: 'An unexpected error occurred',
+          code: 'UNEXPECTED_ERROR',
+        ),
+      );
+    }
+  }
 }
