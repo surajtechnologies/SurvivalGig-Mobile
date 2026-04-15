@@ -1,7 +1,7 @@
-FACEBOOK_APP_ID=
-FACEBOOK_CLIENT_TOKEN=
+FACEBOOK_APP_ID=1467584441563295
+FACEBOOK_CLIENT_TOKEN=7076910d78ac1d17b90d883e974a64bc
 FACEBOOK_DISPLAY_NAME=Survival Gig
 
-// Single source of truth (project root): facebook_auth.local.env
+// Override with local env file if present (facebook_auth.local.env at project root)
 #include? "../../facebook_auth.local.env"
 FACEBOOK_URL_SCHEME=fb$(FACEBOOK_APP_ID)

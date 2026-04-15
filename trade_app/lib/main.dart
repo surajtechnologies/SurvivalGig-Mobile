@@ -20,6 +20,10 @@ import 'package:trade_app/features/app_update/presentation/cubit/app_update_cubi
 import 'package:trade_app/features/app_update/presentation/widgets/update_guard.dart';
 import 'package:trade_app/features/app_update/domain/usecases/perform_native_update_usecase.dart';
 import 'package:trade_app/shared/widgets/loading_overlay.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+// Apple Signin state manage
+bool showAppleSignIn = false;
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -64,6 +68,7 @@ Future<void> main() async {
   await runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      await dotenv.load(fileName: ".env");
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,

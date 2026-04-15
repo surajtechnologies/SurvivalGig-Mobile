@@ -4,12 +4,12 @@ import '../../../../core/errors/exceptions.dart';
 /// Apple Sign-In local datasource
 /// Responsible only for interacting with Apple Sign-In SDK
 abstract class AppleSignInLocalDataSource {
-  Future<({String identityToken, String authorizationCode})> getCredentials();
+  Future<({String identityToken, String authorizationCode, String? email, String? firstName, String? lastName})> getCredentials();
 }
 
 class AppleSignInLocalDataSourceImpl implements AppleSignInLocalDataSource {
   @override
-  Future<({String identityToken, String authorizationCode})>
+  Future<({String identityToken, String authorizationCode, String? email, String? firstName, String? lastName})>
       getCredentials() async {
     try {
       final credential = await SignInWithApple.getAppleIDCredential(
@@ -21,8 +21,6 @@ class AppleSignInLocalDataSourceImpl implements AppleSignInLocalDataSource {
 
       final identityToken = credential.identityToken;
       final authorizationCode = credential.authorizationCode;
-      print("identityToken: $identityToken");
-      print("authorizationCode: $authorizationCode");
 
       if (identityToken == null || identityToken.isEmpty) {
         throw const ServerException(
@@ -41,6 +39,9 @@ class AppleSignInLocalDataSourceImpl implements AppleSignInLocalDataSource {
       return (
         identityToken: identityToken,
         authorizationCode: authorizationCode,
+        email: credential.email,
+        firstName: credential.givenName,
+        lastName: credential.familyName,
       );
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) {
@@ -57,3 +58,4 @@ class AppleSignInLocalDataSourceImpl implements AppleSignInLocalDataSource {
     }
   }
 }
+

@@ -29,7 +29,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.587030542974-tvk3h0h7fibn2e5s3tfscgbfgo46h5o5</string>
+				<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
 				<string>$(FACEBOOK_URL_SCHEME)</string>
 				<string>com.app.survivalgig</string>
 			</array>
@@ -48,9 +48,9 @@
 	<key>FacebookAutoLogAppEventsEnabled</key>
 	<true/>
 	<key>GIDClientID</key>
-	<string>587030542974-tvk3h0h7fibn2e5s3tfscgbfgo46h5o5.apps.googleusercontent.com</string>
+	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
 	<key>GIDServerClientID</key>
-	<string>587030542974-7k96p53utr96f10be038mf15mcdleqjg.apps.googleusercontent.com</string>
+	<string>$(GOOGLE_SERVER_CLIENT_ID)</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>fbapi</string>

@@ -46,8 +46,17 @@ app.*.map.json
 
 # Local OAuth configuration
 ios/Flutter/GoogleSignIn.local.xcconfig
+ios/Flutter/FacebookAuth.local.xcconfig
+ios/Flutter/FacebookAuth.xcconfig
+android/facebook_auth.local.properties
 google_sign_in.local.env
 facebook_auth.local.env
 
+# Environment secrets
+.env
+
+# Firebase service files (contain API keys)
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
 
 lib/Social Login/

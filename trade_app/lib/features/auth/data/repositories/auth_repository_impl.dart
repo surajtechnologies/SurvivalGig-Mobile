@@ -208,6 +208,9 @@ class AuthRepositoryImpl implements AuthRepository {
       final request = AppleMobileAuthRequestModel(
         identityToken: credentials.identityToken,
         authorizationCode: credentials.authorizationCode,
+        email: credentials.email,
+        firstName: credentials.firstName,
+        lastName: credentials.lastName,
       );
       final response = await remoteDataSource.loginWithApple(request);
 

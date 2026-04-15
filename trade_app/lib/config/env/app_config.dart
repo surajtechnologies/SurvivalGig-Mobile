@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 /// Application configuration
 class AppConfig {
   // API Configuration
@@ -19,17 +21,12 @@ class AppConfig {
   static const String appName = 'Survival Gig';
   static const String appVersion = '1.0.0';
 
-  // Google Sign-In (set via --dart-define for local/private credentials)
-  static const String googleIosClientId = String.fromEnvironment(
-    'GOOGLE_IOS_CLIENT_ID',
-    defaultValue: '',
-  );
-  static const String googleAndroidClientId = String.fromEnvironment(
-    'GOOGLE_ANDROID_CLIENT_ID',
-    defaultValue: '',
-  );
-  static const String googleServerClientId = String.fromEnvironment(
-    'GOOGLE_SERVER_CLIENT_ID',
-    defaultValue: '',
-  );
+  // Google Sign-In
+  static String get googleIosClientId => dotenv.env['GOOGLE_IOS_CLIENT_ID'] ?? '';
+  static String get googleAndroidClientId => dotenv.env['GOOGLE_ANDROID_CLIENT_ID'] ?? '';
+  static String get googleServerClientId => dotenv.env['GOOGLE_SERVER_CLIENT_ID'] ?? '';
+
+  // Facebook Sign-In
+  static String get facebookAppId => dotenv.env['FACEBOOK_APP_ID'] ?? '';
+  static String get facebookClientToken => dotenv.env['FACEBOOK_CLIENT_TOKEN'] ?? '';
 }

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:trade_app/config/di/service_locator.dart';
@@ -7,6 +8,7 @@ import 'package:trade_app/core/constants/app_assets.dart';
 import 'package:trade_app/shared/widgets/primary_button.dart';
 import 'package:trade_app/shared/widgets/secondary_button.dart';
 import 'package:trade_app/features/home/presentation/screens/home_screen.dart';
+import 'package:trade_app/main.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import 'signup_screen.dart';
@@ -181,8 +183,22 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                             context.read<AuthCubit>().signInWithFacebook(),
                       ),
                     ),
-                ],
+                  ],
                 ),
+
+                if (Platform.isIOS) ...[
+                  const SizedBox(height: 12),
+                  _SocialLoginButton(
+                    label: 'Apple',
+                    icon: const Icon(
+                      Icons.apple,
+                      color: Colors.black,
+                      size: 24,
+                    ),
+                    onTap: () =>
+                        context.read<AuthCubit>().signInWithApple(),
+                  ),
+                ],
 
                 const SizedBox(height: 16),
 

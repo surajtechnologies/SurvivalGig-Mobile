@@ -14,7 +14,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+9
+version: 1.0.0+10
 
 environment:
   sdk: ^3.10.1
@@ -80,6 +80,7 @@ dependencies:
   firebase_messaging: ^15.0.0
   firebase_remote_config: ^5.0.0
   sign_in_with_apple: ^7.0.1
+  flutter_dotenv: ^5.1.0
 
   # In-App Update
   in_app_update: ^4.2.3
@@ -113,6 +114,7 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
