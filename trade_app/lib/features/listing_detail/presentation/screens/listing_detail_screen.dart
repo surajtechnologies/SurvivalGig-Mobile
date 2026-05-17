@@ -285,7 +285,7 @@ class _ListingDetailView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.black.withOpacity(0.1),
+                    color: AppColors.black.withValues(alpha: 0.1),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -320,7 +320,7 @@ class _ListingDetailView extends StatelessWidget {
       child: Icon(
         Icons.image_outlined,
         size: 64,
-        color: AppColors.textSecondary.withOpacity(0.5),
+        color: AppColors.textSecondary.withValues(alpha: 0.5),
       ),
     );
   }
@@ -446,7 +446,7 @@ class _ListingDetailView extends StatelessWidget {
           color: AppColors.white,
           boxShadow: [
             BoxShadow(
-              color: AppColors.black.withOpacity(0.05),
+              color: AppColors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -4),
             ),
@@ -507,7 +507,7 @@ class _ListingDetailView extends StatelessWidget {
         color: AppColors.white,
         boxShadow: [
           BoxShadow(
-            color: AppColors.black.withOpacity(0.05),
+            color: AppColors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
@@ -667,7 +667,7 @@ class _ListingDetailView extends StatelessWidget {
                   width: AppDimensions.dialogIconContainerSize,
                   height: AppDimensions.dialogIconContainerSize,
                   decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.1),
+                    color: accentColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -997,8 +997,7 @@ class _OfferedTradeSummaryCard extends StatelessWidget {
               ),
             );
             yield SizedBox(height: AppDimensions.spacingXs);
-          }).toList()
-            ..removeLast(),
+          }).toList()..removeLast(),
         ],
       ),
     );
@@ -1114,7 +1113,7 @@ class _ListingImageCarouselState extends State<_ListingImageCarousel> {
         vertical: AppDimensions.listingImageIndicatorPaddingVertical,
       ),
       decoration: BoxDecoration(
-        color: AppColors.black.withOpacity(0.6),
+        color: AppColors.black.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(
           AppDimensions.listingImageIndicatorRadius,
         ),

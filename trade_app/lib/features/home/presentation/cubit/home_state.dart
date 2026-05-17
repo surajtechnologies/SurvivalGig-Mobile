@@ -1,8 +1,27 @@
 import 'package:equatable/equatable.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../shared/models/category.dart';
-import '../../domain/entities/current_location.dart';
-import '../../domain/entities/listing.dart';
-import '../../domain/entities/pagination.dart';
+import '../../domain/entities/map_listing.dart';
+
+/// Filter options for the map listing view
+enum MapFilter { all, requests, offers, items, hybrid }
+
+extension MapFilterLabel on MapFilter {
+  String get label {
+    switch (this) {
+      case MapFilter.all:
+        return 'All';
+      case MapFilter.requests:
+        return 'Requests';
+      case MapFilter.offers:
+        return 'Offers';
+      case MapFilter.items:
+        return 'Items';
+      case MapFilter.hybrid:
+        return 'Hybrid';
+    }
+  }
+}
 
 /// Base home state
 abstract class HomeState extends Equatable {
@@ -12,87 +31,92 @@ abstract class HomeState extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Initial state
+/// Initial state before anything is loaded
 class HomeInitial extends HomeState {
   const HomeInitial();
 }
 
-/// Loading state for initial load
+/// Loading initial map data
 class HomeLoading extends HomeState {
   const HomeLoading();
 }
 
-/// Success state - data loaded successfully
+/// Map data loaded successfully
 class HomeLoaded extends HomeState {
+  final List<MapListing> mapListings;
+  final MapFilter selectedFilter;
+  final LatLng? userLocation;
+  final bool isLoadingMap;
   final List<Category> categories;
-  final List<Listing> listings;
-  final Pagination pagination;
-  final String? selectedCategoryId;
-  final String selectedIntent;
-  final String? searchQuery;
-  final bool isLoadingMore;
-  final bool isListingsRefreshing;
-  final bool showConnectionRestored;
-  final CurrentLocation? currentLocation;
+  final MapListing? selectedListing;
+
+  /// When non-null the screen should animate the camera to this position,
+  /// then call cubit.clearCameraTarget() to consume it.
+  final LatLng? cameraTarget;
 
   const HomeLoaded({
-    required this.categories,
-    required this.listings,
-    required this.pagination,
-    this.selectedCategoryId,
-    this.selectedIntent = 'NEED',
-    this.searchQuery,
-    this.isLoadingMore = false,
-    this.isListingsRefreshing = false,
-    this.showConnectionRestored = false,
-    this.currentLocation,
+    required this.mapListings,
+    this.selectedFilter = MapFilter.all,
+    this.userLocation,
+    this.isLoadingMap = false,
+    this.categories = const [],
+    this.selectedListing,
+    this.cameraTarget,
   });
+
+  /// Listings filtered by the selected filter chip
+  List<MapListing> get filteredListings {
+    switch (selectedFilter) {
+      case MapFilter.all:
+        return mapListings;
+      case MapFilter.requests:
+        return mapListings.where((l) => l.isRequest).toList();
+      case MapFilter.offers:
+        return mapListings.where((l) => l.isOffer && !l.isHybrid).toList();
+      case MapFilter.items:
+        return mapListings.where((l) => l.isItem && !l.isHybrid).toList();
+      case MapFilter.hybrid:
+        return mapListings.where((l) => l.isHybrid).toList();
+    }
+  }
 
   @override
   List<Object?> get props => [
+    mapListings,
+    selectedFilter,
+    userLocation,
+    isLoadingMap,
     categories,
-    listings,
-    pagination,
-    selectedCategoryId,
-    selectedIntent,
-    searchQuery,
-    isLoadingMore,
-    isListingsRefreshing,
-    showConnectionRestored,
-    currentLocation,
+    selectedListing,
+    cameraTarget,
   ];
 
-  /// Create a copy with updated values
   HomeLoaded copyWith({
+    List<MapListing>? mapListings,
+    MapFilter? selectedFilter,
+    LatLng? userLocation,
+    bool? isLoadingMap,
     List<Category>? categories,
-    List<Listing>? listings,
-    Pagination? pagination,
-    String? selectedCategoryId,
-    String? selectedIntent,
-    String? searchQuery,
-    bool? isLoadingMore,
-    bool? isListingsRefreshing,
-    bool? showConnectionRestored,
-    CurrentLocation? currentLocation,
-    bool clearSelectedCategory = false,
-    bool clearCurrentLocation = false,
+    MapListing? selectedListing,
+    LatLng? cameraTarget,
+    bool clearSelectedListing = false,
+    bool clearUserLocation = false,
+    bool clearCameraTarget = false,
   }) {
     return HomeLoaded(
+      mapListings: mapListings ?? this.mapListings,
+      selectedFilter: selectedFilter ?? this.selectedFilter,
+      userLocation: clearUserLocation
+          ? null
+          : (userLocation ?? this.userLocation),
+      isLoadingMap: isLoadingMap ?? this.isLoadingMap,
       categories: categories ?? this.categories,
-      listings: listings ?? this.listings,
-      pagination: pagination ?? this.pagination,
-      selectedCategoryId: clearSelectedCategory
+      selectedListing: clearSelectedListing
           ? null
-          : (selectedCategoryId ?? this.selectedCategoryId),
-      selectedIntent: selectedIntent ?? this.selectedIntent,
-      searchQuery: searchQuery ?? this.searchQuery,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      isListingsRefreshing: isListingsRefreshing ?? this.isListingsRefreshing,
-      showConnectionRestored:
-          showConnectionRestored ?? this.showConnectionRestored,
-      currentLocation: clearCurrentLocation
+          : (selectedListing ?? this.selectedListing),
+      cameraTarget: clearCameraTarget
           ? null
-          : (currentLocation ?? this.currentLocation),
+          : (cameraTarget ?? this.cameraTarget),
     );
   }
 }

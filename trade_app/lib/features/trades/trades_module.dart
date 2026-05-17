@@ -1,6 +1,5 @@
-/// Trades feature module
-/// Exports all public APIs from the trades feature
-library trades_module;
+// Trades feature module.
+// Exports all public APIs from the trades feature.
 
 // Domain
 export 'domain/entities/trade_detail.dart';

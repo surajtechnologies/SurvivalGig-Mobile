@@ -72,11 +72,13 @@ class _PostListingViewState extends State<_PostListingView> {
         imageQuality: 85,
       );
 
+      if (!mounted) return;
       if (pickedFile != null) {
         cubit.addImage(pickedFile.path);
       }
     } catch (_) {
       // Error handled silently - no logging outside Dio interceptors
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to pick image'),
@@ -94,6 +96,14 @@ class _PostListingViewState extends State<_PostListingView> {
   Widget build(BuildContext context) {
     return BlocConsumer<PostListingCubit, PostListingState>(
       listener: (context, state) {
+        if (state is PostListingFormState &&
+            _locationController.text != state.location) {
+          _locationController.value = TextEditingValue(
+            text: state.location,
+            selection: TextSelection.collapsed(offset: state.location.length),
+          );
+        }
+
         if (state is PostListingSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -147,22 +157,26 @@ class _PostListingViewState extends State<_PostListingView> {
         }
 
         return Scaffold(
-          backgroundColor: AppColors.white,
+          backgroundColor: AppColors.dashboardBackground,
           appBar: AppBar(
-            backgroundColor: AppColors.white,
+            backgroundColor: AppColors.dashboardBackground,
+            surfaceTintColor: AppColors.transparent,
             elevation: 0,
             centerTitle: true,
             title: Text(
               'New Post',
               style: AppTextStyles.headlineSmall.copyWith(
-                color: AppColors.textPrimary,
+                color: AppColors.textOnDarkPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
             leading: const SizedBox(),
             actions: [
               IconButton(
-                icon: const Icon(Icons.close, color: AppColors.textPrimary),
+                icon: const Icon(
+                  Icons.close,
+                  color: AppColors.textOnDarkPrimary,
+                ),
                 onPressed: () => Navigator.of(context).pop(false),
               ),
             ],
@@ -230,10 +244,22 @@ class _PostListingViewState extends State<_PostListingView> {
                         child: Text(
                           '(${formState.description.length}/250)',
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
+                            color: AppColors.textOnDarkSecondary,
                           ),
                         ),
                       ),
+                      const SizedBox(height: 32),
+
+                      // Urgency Level
+                      _buildUrgencyDropdown(formState),
+                      const SizedBox(height: 20),
+
+                      // Expiry Date
+                      _buildExpiryDatePicker(formState),
+                      const SizedBox(height: 20),
+
+                      // Current Location
+                      _buildCurrentLocationButton(formState),
                       const SizedBox(height: 32),
 
                       // Post Button
@@ -246,10 +272,10 @@ class _PostListingViewState extends State<_PostListingView> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: formState.isFormValid
                                 ? AppColors.primary
-                                : AppColors.lightGrey,
+                                : AppColors.dashboardSurfaceElevated,
                             foregroundColor: formState.isFormValid
-                                ? AppColors.white
-                                : AppColors.textSecondary,
+                                ? AppColors.black
+                                : AppColors.textOnDarkSecondary,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -285,24 +311,24 @@ class _PostListingViewState extends State<_PostListingView> {
           'I am',
           style: AppTextStyles.bodyMedium.copyWith(
             fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+            color: AppColors.textOnDarkPrimary,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.lightGrey,
+            color: AppColors.dashboardSurfaceElevated,
             borderRadius: BorderRadius.circular(12),
           ),
           child: DropdownButtonFormField<ListingType>(
-            value: formState.listingType,
+            initialValue: formState.listingType,
             decoration: InputDecoration(
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               filled: true,
-              fillColor: AppColors.lightGrey,
+              fillColor: AppColors.dashboardSurfaceElevated,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 14,
@@ -310,7 +336,7 @@ class _PostListingViewState extends State<_PostListingView> {
             ),
             icon: const Icon(
               Icons.keyboard_arrow_down,
-              color: AppColors.textSecondary,
+              color: AppColors.textOnDarkSecondary,
             ),
             items: ListingType.values.map((type) {
               return DropdownMenuItem(
@@ -318,7 +344,7 @@ class _PostListingViewState extends State<_PostListingView> {
                 child: Text(
                   type.displayName,
                   style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textOnDarkPrimary,
                   ),
                 ),
               );
@@ -374,7 +400,7 @@ class _PostListingViewState extends State<_PostListingView> {
                           width: 100,
                           height: 100,
                           decoration: BoxDecoration(
-                            color: AppColors.black.withOpacity(0.5),
+                            color: AppColors.black.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Center(
@@ -403,13 +429,13 @@ class _PostListingViewState extends State<_PostListingView> {
                             child: Container(
                               padding: const EdgeInsets.all(4),
                               decoration: const BoxDecoration(
-                                color: AppColors.textPrimary,
+                                color: AppColors.dashboardSurfaceElevated,
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
                                 Icons.close,
                                 size: 16,
-                                color: AppColors.white,
+                                color: AppColors.primary,
                               ),
                             ),
                           ),
@@ -428,11 +454,11 @@ class _PostListingViewState extends State<_PostListingView> {
                     height: 100,
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: AppColors.primary.withOpacity(0.5),
+                        color: AppColors.primary.withValues(alpha: 0.5),
                         style: BorderStyle.solid,
                       ),
                       borderRadius: BorderRadius.circular(12),
-                      color: AppColors.primary.withOpacity(0.05),
+                      color: AppColors.primary.withValues(alpha: 0.05),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -440,13 +466,13 @@ class _PostListingViewState extends State<_PostListingView> {
                         Icon(
                           Icons.add,
                           size: 28,
-                          color: AppColors.primary.withOpacity(0.7),
+                          color: AppColors.primary.withValues(alpha: 0.7),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Add Photo',
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.primary.withOpacity(0.7),
+                            color: AppColors.primary.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -460,7 +486,7 @@ class _PostListingViewState extends State<_PostListingView> {
         Text(
           'These photos will appear in the post. You can add a maximum of 3 photos per post.',
           style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
+            color: AppColors.textOnDarkSecondary,
           ),
         ),
       ],
@@ -476,13 +502,13 @@ class _PostListingViewState extends State<_PostListingView> {
           'Category',
           style: AppTextStyles.bodyMedium.copyWith(
             fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+            color: AppColors.textOnDarkPrimary,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.lightGrey,
+            color: AppColors.dashboardSurfaceElevated,
             borderRadius: BorderRadius.circular(12),
           ),
           child: formState.isLoadingCategories
@@ -497,26 +523,26 @@ class _PostListingViewState extends State<_PostListingView> {
                   ),
                 )
               : DropdownButtonFormField<String>(
-                  value: formState.categoryId,
+                  initialValue: formState.categoryId,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: AppColors.lightGrey,
+                    fillColor: AppColors.dashboardSurfaceElevated,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 14,
                     ),
                     hintText: 'Select a category',
                     hintStyle: AppTextStyles.bodyLarge.copyWith(
-                      color: AppColors.textSecondary,
+                      color: AppColors.textOnDarkSecondary,
                     ),
                   ),
                   icon: const Icon(
                     Icons.keyboard_arrow_down,
-                    color: AppColors.textSecondary,
+                    color: AppColors.textOnDarkSecondary,
                   ),
                   items: formState.categories.map((Category category) {
                     return DropdownMenuItem(
@@ -524,7 +550,7 @@ class _PostListingViewState extends State<_PostListingView> {
                       child: Text(
                         category.name,
                         style: AppTextStyles.bodyLarge.copyWith(
-                          color: AppColors.textPrimary,
+                          color: AppColors.textOnDarkPrimary,
                         ),
                       ),
                     );
@@ -574,24 +600,24 @@ class _PostListingViewState extends State<_PostListingView> {
               : 'What can I offer in Exchange',
           style: AppTextStyles.bodyMedium.copyWith(
             fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+            color: AppColors.textOnDarkPrimary,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.lightGrey,
+            color: AppColors.dashboardSurfaceElevated,
             borderRadius: BorderRadius.circular(12),
           ),
           child: DropdownButtonFormField<PriceMode>(
-            value: formState.priceMode,
+            initialValue: formState.priceMode,
             decoration: InputDecoration(
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               filled: true,
-              fillColor: AppColors.lightGrey,
+              fillColor: AppColors.dashboardSurfaceElevated,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 14,
@@ -599,7 +625,7 @@ class _PostListingViewState extends State<_PostListingView> {
             ),
             icon: const Icon(
               Icons.keyboard_arrow_down,
-              color: AppColors.textSecondary,
+              color: AppColors.textOnDarkSecondary,
             ),
             items: PriceMode.values.map((type) {
               return DropdownMenuItem(
@@ -607,7 +633,7 @@ class _PostListingViewState extends State<_PostListingView> {
                 child: Text(
                   type.displayName,
                   style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textOnDarkPrimary,
                   ),
                 ),
               );
@@ -621,11 +647,12 @@ class _PostListingViewState extends State<_PostListingView> {
         ),
 
         // Show points input when Points is selected
-        if (formState.priceMode == PriceMode.points) ...[
+        if (formState.priceMode == PriceMode.points ||
+            formState.priceMode == PriceMode.both) ...[
           const SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
-              color: AppColors.lightGrey,
+              color: AppColors.dashboardSurfaceElevated,
               borderRadius: BorderRadius.circular(12),
             ),
             child: TextFormField(
@@ -638,18 +665,18 @@ class _PostListingViewState extends State<_PostListingView> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: AppColors.lightGrey,
+                fillColor: AppColors.dashboardSurfaceElevated,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 14,
                 ),
                 hintText: '100 pts',
                 hintStyle: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.textSecondary,
+                  color: AppColors.textOnDarkSecondary,
                 ),
                 suffixText: 'pts',
                 suffixStyle: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+                  color: AppColors.textOnDarkSecondary,
                 ),
               ),
               onChanged: (value) {
@@ -660,11 +687,12 @@ class _PostListingViewState extends State<_PostListingView> {
         ],
 
         // Show exchange description input when Skill is selected
-        if (formState.priceMode == PriceMode.skill) ...[
+        if (formState.priceMode == PriceMode.skill ||
+            formState.priceMode == PriceMode.both) ...[
           const SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
-              color: AppColors.lightGrey,
+              color: AppColors.dashboardSurfaceElevated,
               borderRadius: BorderRadius.circular(12),
             ),
             child: TextFormField(
@@ -677,14 +705,14 @@ class _PostListingViewState extends State<_PostListingView> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: AppColors.lightGrey,
+                fillColor: AppColors.dashboardSurfaceElevated,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 14,
                 ),
                 hintText: 'What do you want in exchange?',
                 hintStyle: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.textSecondary,
+                  color: AppColors.textOnDarkSecondary,
                 ),
               ),
               onChanged: (value) {
@@ -719,7 +747,7 @@ class _PostListingViewState extends State<_PostListingView> {
             child: Text(
               'Fetching city...',
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: AppColors.textOnDarkSecondary,
               ),
             ),
           )
@@ -766,13 +794,13 @@ class _PostListingViewState extends State<_PostListingView> {
           label,
           style: AppTextStyles.bodyMedium.copyWith(
             fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+            color: AppColors.textOnDarkPrimary,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.lightGrey,
+            color: AppColors.dashboardSurfaceElevated,
             borderRadius: BorderRadius.circular(12),
           ),
           child: TextFormField(
@@ -790,18 +818,183 @@ class _PostListingViewState extends State<_PostListingView> {
                 borderSide: BorderSide.none,
               ),
               filled: true,
-              fillColor: AppColors.lightGrey,
+              fillColor: AppColors.dashboardSurfaceElevated,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 14,
               ),
               hintText: hint,
               hintStyle: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.textSecondary,
+                color: AppColors.textOnDarkSecondary,
               ),
               counterText: '',
             ),
             onChanged: onChanged,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Urgency level dropdown (LOW / MEDIUM / HIGH / CRITICAL)
+  Widget _buildUrgencyDropdown(PostListingFormState formState) {
+    const levels = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Urgency Level (optional)',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textOnDarkPrimary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          initialValue: formState.urgencyLevel,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppColors.dashboardSurfaceElevated,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
+          ),
+          hint: const Text('Select urgency'),
+          items: [
+            const DropdownMenuItem<String>(value: null, child: Text('None')),
+            ...levels.map(
+              (l) => DropdownMenuItem<String>(value: l, child: Text(l)),
+            ),
+          ],
+          onChanged: (v) =>
+              context.read<PostListingCubit>().updateUrgencyLevel(v),
+        ),
+      ],
+    );
+  }
+
+  /// Expiry date picker
+  Widget _buildExpiryDatePicker(PostListingFormState formState) {
+    final label = formState.expiresAt == null
+        ? 'Select expiry date (optional)'
+        : 'Expires: ${formState.expiresAt!.toLocal().toString().split(' ').first}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Expiry Date (optional)',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textOnDarkPrimary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate:
+                  formState.expiresAt ??
+                  DateTime.now().add(const Duration(days: 7)),
+              firstDate: DateTime.now(),
+              lastDate: DateTime.now().add(const Duration(days: 365)),
+            );
+            if (picked != null) {
+              if (!mounted) return;
+              context.read<PostListingCubit>().updateExpiresAt(picked);
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.dashboardSurfaceElevated),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_today_outlined, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: formState.expiresAt == null
+                          ? AppColors.textOnDarkSecondary
+                          : AppColors.textOnDarkPrimary,
+                    ),
+                  ),
+                ),
+                if (formState.expiresAt != null)
+                  GestureDetector(
+                    onTap: () =>
+                        context.read<PostListingCubit>().updateExpiresAt(null),
+                    child: const Icon(Icons.close, size: 18),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Use current GPS location button
+  Widget _buildCurrentLocationButton(PostListingFormState formState) {
+    final hasLocation =
+        formState.latitude != null && formState.longitude != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Listing Location',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textOnDarkPrimary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: formState.isDetectingLocation
+                ? null
+                : () =>
+                      context.read<PostListingCubit>().detectCurrentLocation(),
+            icon: formState.isDetectingLocation
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(
+                    hasLocation ? Icons.location_on : Icons.my_location,
+                    size: 18,
+                    color: hasLocation ? AppColors.primary : null,
+                  ),
+            label: Text(
+              formState.isDetectingLocation
+                  ? 'Detecting...'
+                  : hasLocation
+                  ? 'Current location detected'
+                  : 'Use Current Location',
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(
+                color: hasLocation
+                    ? AppColors.primary
+                    : AppColors.dashboardSurfaceElevated,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
           ),
         ),
       ],

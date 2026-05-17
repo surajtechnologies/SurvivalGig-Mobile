@@ -87,6 +87,12 @@ dependencies:
   url_launcher: ^6.2.5
   shared_preferences: ^2.2.3
 
+  # Maps & Location
+  google_maps_flutter: ^2.9.0
+  geolocator: ^13.0.1
+  geocoding: ^3.0.0
+  apple_maps_flutter: ^1.4.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -67,7 +67,9 @@ class CategoryFilterChip extends StatelessWidget {
       case 'Plumbing':
         return AppColors.categoryAccents[0];
       case 'Cleaning':
-        return AppColors.error.withOpacity(0.7); // Using error color (red) variant
+        return AppColors.error.withValues(
+          alpha: 0.7,
+        ); // Using error color (red) variant
       case 'Assembly':
         return AppColors.categoryAccents[3];
       default:

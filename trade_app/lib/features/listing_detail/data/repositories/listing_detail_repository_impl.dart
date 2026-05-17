@@ -7,7 +7,6 @@ import '../../domain/entities/listing_pending_trade_offer.dart';
 import '../../domain/entities/user_review_summary.dart';
 import '../../domain/repositories/listing_detail_repository.dart';
 import '../datasources/listing_detail_remote_datasource.dart';
-import '../models/listing_trade_offer_model.dart';
 import '../models/report_dto.dart';
 
 /// Listing detail repository implementation
@@ -199,12 +198,7 @@ class ListingDetailRepositoryImpl implements ListingDetailRepository {
         return const Right(null);
       }
 
-      final first = trades.first;
-      if (first is ListingTradeOfferModel) {
-        return Right(first.toEntity());
-      }
-
-      return const Right(null);
+      return Right(trades.first.toEntity());
     } on ServerException catch (e) {
       return Left(
         ServerFailure(

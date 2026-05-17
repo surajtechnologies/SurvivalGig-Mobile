@@ -14,18 +14,27 @@ class LoadingOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<LoadingCubit, LoadingState>(
       builder: (context, state) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Stack(
+          fit: StackFit.expand,
           children: [
             child,
             if (state.isLoading)
               Container(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 child: Center(
                   child: Container(
                     padding: const EdgeInsets.all(24.0),
                     decoration: BoxDecoration(
-                      color: AppColors.white,
+                      color: isDark
+                          ? AppColors.dashboardSurface
+                          : AppColors.white,
                       borderRadius: BorderRadius.circular(12.0),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.dashboardBorder
+                            : AppColors.dividerColor,
+                      ),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -37,8 +46,10 @@ class LoadingOverlay extends StatelessWidget {
                           const SizedBox(height: 16.0),
                           Text(
                             state.message!,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
+                            style: TextStyle(
+                              color: isDark
+                                  ? AppColors.textOnDarkPrimary
+                                  : AppColors.textPrimary,
                               fontSize: 14.0,
                             ),
                           ),

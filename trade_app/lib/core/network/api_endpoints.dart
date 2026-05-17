@@ -44,7 +44,11 @@ class ApiEndpoints {
   static String updateListing(String id) => '/listings/$id';
   static String deleteListing(String id) => '/listings/$id';
   static const String myListings = '/listings/me/listings';
-  static String listingTrades(String listingId) => '/listings/$listingId/trades';
+  static String listingTrades(String listingId) =>
+      '/listings/$listingId/trades';
+  static const String listingsMap = '/listings/map';
+  static const String listingsNearby = '/listings/nearby';
+  static const String listingsPolygon = '/listings/polygon';
 
   // Trades endpoints
   static const String trades = '/trades';

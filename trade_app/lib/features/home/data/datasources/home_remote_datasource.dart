@@ -4,6 +4,7 @@ import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
 import '../models/categories_response_model.dart';
 import '../models/listings_response_model.dart';
+import '../models/map_listing_model.dart';
 import '../models/pincode_lookup_response_model.dart';
 
 /// Home remote datasource
@@ -21,6 +22,29 @@ abstract class HomeRemoteDataSource {
     String? search,
     String? location,
     String? intent,
+  });
+
+  /// Fetch lightweight map pins within a bounding box
+  Future<List<MapListingModel>> getMapListings({
+    required double swLat,
+    required double swLng,
+    required double neLat,
+    required double neLng,
+  });
+
+  /// Fetch lightweight map pins around a GPS coordinate
+  Future<List<MapListingModel>> getNearbyListings({
+    required double latitude,
+    required double longitude,
+    double radiusKm = 10,
+    int limit = 20,
+    String? urgencyLevel,
+  });
+
+  /// Fetch lightweight map pins inside a polygon boundary
+  Future<List<MapListingModel>> getListingsInPolygon({
+    required List<({double latitude, double longitude})> polygon,
+    int limit = 100,
   });
 
   /// Fetch city details from US pincode.
@@ -150,6 +174,103 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   }
 
   @override
+  Future<List<MapListingModel>> getMapListings({
+    required double swLat,
+    required double swLng,
+    required double neLat,
+    required double neLng,
+  }) async {
+    try {
+      final response = await dioClient.dio.get(
+        ApiEndpoints.listingsMap,
+        queryParameters: {
+          'swLat': swLat,
+          'swLng': swLng,
+          'neLat': neLat,
+          'neLng': neLng,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return _parseMapListingsPayload(response.data);
+      }
+
+      throw ServerException(
+        message: 'Failed to fetch map listings',
+        code: 'MAP_LISTINGS_FAILED',
+        statusCode: response.statusCode,
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<List<MapListingModel>> getNearbyListings({
+    required double latitude,
+    required double longitude,
+    double radiusKm = 10,
+    int limit = 20,
+    String? urgencyLevel,
+  }) async {
+    try {
+      final response = await dioClient.dio.get(
+        ApiEndpoints.listingsNearby,
+        queryParameters: {
+          'lat': latitude,
+          'lng': longitude,
+          'radiusKm': radiusKm,
+          'limit': limit,
+          if (urgencyLevel != null && urgencyLevel.isNotEmpty)
+            'urgencyLevel': urgencyLevel,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return _parseMapListingsPayload(response.data);
+      }
+
+      throw ServerException(
+        message: 'Failed to fetch nearby listings',
+        code: 'NEARBY_LISTINGS_FAILED',
+        statusCode: response.statusCode,
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<List<MapListingModel>> getListingsInPolygon({
+    required List<({double latitude, double longitude})> polygon,
+    int limit = 100,
+  }) async {
+    try {
+      final response = await dioClient.dio.post(
+        ApiEndpoints.listingsPolygon,
+        data: {
+          'polygon': polygon
+              .map((point) => [point.longitude, point.latitude])
+              .toList(),
+          'limit': limit,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return _parseMapListingsPayload(response.data);
+      }
+
+      throw ServerException(
+        message: 'Failed to fetch polygon listings',
+        code: 'POLYGON_LISTINGS_FAILED',
+        statusCode: response.statusCode,
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
   Future<PincodeLookupResponseModel> getLocationByPincode({
     required String pincode,
   }) async {
@@ -199,6 +320,47 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         if (firstError is Map && firstError['message'] != null) {
           return firstError['message'] as String;
         }
+      }
+    }
+
+    return null;
+  }
+
+  List<MapListingModel> _parseMapListingsPayload(dynamic data) {
+    final rawList = _extractListPayload(data);
+    if (rawList == null) {
+      throw const ServerException(
+        message: 'Invalid map listings response',
+        code: 'INVALID_MAP_LISTINGS_RESPONSE',
+      );
+    }
+
+    return rawList
+        .whereType<Map<String, dynamic>>()
+        .map(MapListingModel.fromJsonOrNull)
+        .whereType<MapListingModel>()
+        .toList();
+  }
+
+  List<dynamic>? _extractListPayload(dynamic data) {
+    if (data is List) {
+      return data;
+    }
+
+    if (data is Map<String, dynamic>) {
+      for (final key in const ['listings', 'pins', 'results', 'items']) {
+        final value = data[key];
+        if (value is List) {
+          return value;
+        }
+      }
+
+      final wrappedData = data['data'];
+      if (wrappedData is List) {
+        return wrappedData;
+      }
+      if (wrappedData is Map<String, dynamic>) {
+        return _extractListPayload(wrappedData);
       }
     }
 

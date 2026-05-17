@@ -56,8 +56,6 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -82,7 +80,6 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is LoginSuccess) {
-
             // Navigate to home on success (pushReplacement per navigation rules)
             Navigator.pushReplacement(
               context,
@@ -114,6 +111,10 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       enabled: !isLoading,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w500,
+                      ),
                       onChanged: (_) => setState(() {}),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -198,6 +199,10 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                       controller: _passwordController,
                       obscureText: !_showPassword,
                       enabled: !isLoading,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w500,
+                      ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Password is required';

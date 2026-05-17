@@ -29,7 +29,8 @@ class _ResetPasswordScreenContent extends StatefulWidget {
 }
 
 class _ResetPasswordScreenContentState
-    extends State<_ResetPasswordScreenContent> with TickerProviderStateMixin {
+    extends State<_ResetPasswordScreenContent>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   bool _isSuccess = false;
@@ -82,8 +83,8 @@ class _ResetPasswordScreenContentState
   void _handleResetPassword() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthCubit>().forgotPassword(
-            email: _emailController.text.trim(),
-          );
+        email: _emailController.text.trim(),
+      );
     }
   }
 
@@ -141,10 +142,7 @@ class _ResetPasswordScreenContentState
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24.0,
-            vertical: 32.0,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -246,6 +244,10 @@ class _ResetPasswordScreenContentState
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   enabled: !isLoading,
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w500,
+                  ),
                   validator: _validateEmail,
                   decoration: InputDecoration(
                     hintText: 'Enter Email Address',

@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../shared/models/category.dart';
 import '../entities/create_listing.dart';
+import '../entities/detected_location.dart';
 
 /// Post listing repository interface
 abstract class PostListingRepository {
@@ -20,4 +21,7 @@ abstract class PostListingRepository {
 
   /// Resolve city for zipcode
   Future<Either<Failure, String>> getCityByZipcode({required String zipcode});
+
+  /// Detect current GPS location for listing creation
+  Future<Either<Failure, DetectedLocation>> detectCurrentLocation();
 }

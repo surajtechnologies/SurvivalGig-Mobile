@@ -1,6 +1,5 @@
-/// Listing detail feature module
-/// Exports all public APIs from the listing detail feature
-library listing_detail_module;
+// Listing detail feature module.
+// Exports all public APIs from the listing detail feature.
 
 // Domain
 export 'domain/entities/listing_pending_trade_offer.dart';

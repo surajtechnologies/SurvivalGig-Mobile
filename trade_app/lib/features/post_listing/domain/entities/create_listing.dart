@@ -1,5 +1,5 @@
 /// Listing type enum - Combined post type and listing type for API
-/// Maps to API "type" field: ITEM_OFFERING, ITEM_NEEDING, SERVICE_OFFERING, SERVICE_NEEDING
+/// Maps to API "type" field: ITEM_OFFERING, ITEM_NEED, SERVICE_OFFERING, SERVICE_NEED
 enum ListingType {
   itemOffering('ITEM_OFFERING'),
   itemNeeding('ITEM_NEED'),
@@ -41,7 +41,8 @@ enum ListingType {
 /// Price mode enum - "What you need in exchange" field
 enum PriceMode {
   points('POINTS'),
-  skill('BARTER');
+  skill('BARTER'),
+  both('BOTH');
 
   final String value;
   const PriceMode(this.value);
@@ -52,6 +53,8 @@ enum PriceMode {
         return 'Points';
       case PriceMode.skill:
         return 'Skill';
+      case PriceMode.both:
+        return 'Points + Skill';
     }
   }
 
@@ -62,6 +65,9 @@ enum PriceMode {
     }
     if (normalized == 'POINTS') {
       return PriceMode.points;
+    }
+    if (normalized == 'BOTH') {
+      return PriceMode.both;
     }
     return PriceMode.points;
   }
@@ -78,9 +84,11 @@ class CreateListingRequest {
   final PriceMode priceMode;
   final int? pricePoints;
   final String? barterWanted;
-
-  /// Array of image URLs (already uploaded)
   final List<String> photos;
+  final String? urgencyLevel;
+  final DateTime? expiresAt;
+  final double? latitude;
+  final double? longitude;
 
   const CreateListingRequest({
     required this.type,
@@ -93,6 +101,10 @@ class CreateListingRequest {
     this.pricePoints,
     this.barterWanted,
     required this.photos,
+    this.urgencyLevel,
+    this.expiresAt,
+    this.latitude,
+    this.longitude,
   });
 
   CreateListingRequest copyWith({
@@ -106,6 +118,10 @@ class CreateListingRequest {
     int? pricePoints,
     String? barterWanted,
     List<String>? photos,
+    String? urgencyLevel,
+    DateTime? expiresAt,
+    double? latitude,
+    double? longitude,
   }) {
     return CreateListingRequest(
       type: type ?? this.type,
@@ -118,6 +134,10 @@ class CreateListingRequest {
       pricePoints: pricePoints ?? this.pricePoints,
       barterWanted: barterWanted ?? this.barterWanted,
       photos: photos ?? this.photos,
+      urgencyLevel: urgencyLevel ?? this.urgencyLevel,
+      expiresAt: expiresAt ?? this.expiresAt,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 }

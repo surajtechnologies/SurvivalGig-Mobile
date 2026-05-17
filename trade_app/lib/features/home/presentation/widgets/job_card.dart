@@ -41,7 +41,9 @@ class JobCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.dividerColor.withOpacity(0.5)),
+          border: Border.all(
+            color: AppColors.dividerColor.withValues(alpha: 0.5),
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,9 +175,7 @@ class JobCard extends StatelessWidget {
                       width: 100,
                       height: 100,
                       placeholder: (context, url) => const Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                       errorWidget: (context, url, error) {
                         return _buildPlaceholderIcon();
@@ -198,10 +198,7 @@ class JobCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.white,
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: AppColors.dividerColor,
-                    width: 0.5,
-                  ),
+                  border: Border.all(color: AppColors.dividerColor, width: 0.5),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

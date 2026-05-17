@@ -120,7 +120,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
           style: AppTextStyles.headlineMedium.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: AppColors.black,
           ),
         ),
       ),
@@ -180,7 +180,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                       keyboardType: TextInputType.name,
                       enabled: !isLoading,
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.textPrimary,
+                        color: AppColors.black,
                         fontWeight: FontWeight.w500,
                       ),
                       validator: (value) {
@@ -203,7 +203,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                       keyboardType: TextInputType.emailAddress,
                       enabled: !isLoading,
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.textPrimary,
+                        color: AppColors.black,
                         fontWeight: FontWeight.w500,
                       ),
                       validator: (value) {
@@ -231,7 +231,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                       obscureText: !_showPassword,
                       enabled: !isLoading,
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.textPrimary,
+                        color: AppColors.black,
                         fontWeight: FontWeight.w500,
                       ),
                       validator: (value) {

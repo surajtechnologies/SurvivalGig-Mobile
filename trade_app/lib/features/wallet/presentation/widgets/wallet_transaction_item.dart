@@ -15,8 +15,8 @@ class WalletTransactionItem extends StatelessWidget {
     final pointsText =
         '${transaction.isReceived ? '+' : '-'}${transaction.points} pts';
     final pointsColor = transaction.isReceived
-        ? AppColors.success
-        : AppColors.error;
+        ? AppColors.primary
+        : AppColors.spent;
     final description = transaction.description?.trim();
     final descriptionText = description != null && description.isNotEmpty
         ? description
@@ -27,14 +27,32 @@ class WalletTransactionItem extends StatelessWidget {
             context,
           ).formatShortDate(transaction.createdAt!.toLocal());
 
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingMd,
-        vertical: AppDimensions.spacingMd,
+    return Container(
+      padding: EdgeInsets.all(AppDimensions.spacingMd),
+      decoration: BoxDecoration(
+        color: AppColors.dashboardSurface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        border: Border.all(color: AppColors.dashboardBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: pointsColor.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              transaction.isReceived
+                  ? Icons.arrow_downward_rounded
+                  : Icons.arrow_upward_rounded,
+              color: pointsColor,
+              size: AppDimensions.iconSizeLg,
+            ),
+          ),
+          SizedBox(width: AppDimensions.spacingMd),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,18 +60,18 @@ class WalletTransactionItem extends StatelessWidget {
                 Text(
                   descriptionText,
                   style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
+                    color: AppColors.textOnDarkPrimary,
+                    fontWeight: FontWeight.w800,
                   ),
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 SizedBox(height: AppDimensions.spacingXs),
                 Text(
                   dateText,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w400,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textOnDarkSecondary,
+                    fontWeight: FontWeight.w600,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -66,7 +84,7 @@ class WalletTransactionItem extends StatelessWidget {
             pointsText,
             style: AppTextStyles.headlineSmall.copyWith(
               color: pointsColor,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],

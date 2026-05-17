@@ -12,6 +12,10 @@ class ListingModel {
   final String? condition;
   final String? categoryId;
   final String? location;
+  final double? latitude;
+  final double? longitude;
+  final String? urgencyLevel;
+  final DateTime? expiresAt;
   final String priceMode;
   final int? pricePoints;
   final String? barterWanted;
@@ -31,6 +35,10 @@ class ListingModel {
     this.condition,
     this.categoryId,
     this.location,
+    this.latitude,
+    this.longitude,
+    this.urgencyLevel,
+    this.expiresAt,
     required this.priceMode,
     this.pricePoints,
     this.barterWanted,
@@ -66,6 +74,11 @@ class ListingModel {
       description: _readString(json['description']),
       condition: _readString(json['condition']),
       categoryId: _readString(json['categoryId']),
+      location: _readString(json['location']),
+      latitude: _readDouble(json['latitude']),
+      longitude: _readDouble(json['longitude']),
+      urgencyLevel: _readString(json['urgencyLevel']),
+      expiresAt: _parseDateTime(json['expiresAt']),
       priceMode:
           _readString(json['priceMode']) ??
           _readString(json['price_mode']) ??
@@ -233,6 +246,10 @@ class ListingModel {
       if (condition != null) 'condition': condition,
       if (categoryId != null) 'categoryId': categoryId,
       if (location != null) 'location': location,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (urgencyLevel != null) 'urgencyLevel': urgencyLevel,
+      if (expiresAt != null) 'expiresAt': expiresAt!.toIso8601String(),
       'priceMode': priceMode,
       if (pricePoints != null) 'pricePoints': pricePoints,
       if (barterWanted != null) 'barterWanted': barterWanted,
@@ -256,6 +273,10 @@ class ListingModel {
       condition: condition,
       categoryId: categoryId,
       location: location,
+      latitude: latitude,
+      longitude: longitude,
+      urgencyLevel: urgencyLevel,
+      expiresAt: expiresAt,
       priceMode: priceMode,
       pricePoints: pricePoints,
       barterWanted: barterWanted,

@@ -104,7 +104,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
       },
       builder: (context, state) {
         return Scaffold(
-          backgroundColor: AppColors.white,
+          backgroundColor: AppColors.dashboardBackground,
           appBar: _buildAppBar(context, state),
           body: _buildBody(context, state),
         );
@@ -133,16 +133,17 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
         : 'Details';
 
     return AppBar(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.dashboardBackground,
+      surfaceTintColor: AppColors.transparent,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+        icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
         title,
         style: AppTextStyles.headlineSmall.copyWith(
-          color: AppColors.textPrimary,
+          color: AppColors.textOnDarkPrimary,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -151,14 +152,13 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
         IconButton(
           icon: const Icon(
             Icons.report_gmailerrorred_outlined,
-            color: AppColors.textPrimary,
+            color: AppColors.textOnDarkPrimary,
           ),
           onPressed: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) =>
-                    SubmitReportScreen(listingId: widget.tradeId),
+                builder: (_) => SubmitReportScreen(listingId: widget.tradeId),
               ),
             );
           },
@@ -212,7 +212,11 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
             ],
           ),
         ),
-        const Divider(height: 1, thickness: 1, color: AppColors.dividerColor),
+        const Divider(
+          height: 1,
+          thickness: 1,
+          color: AppColors.dashboardBorder,
+        ),
         Expanded(child: _buildMessagesSection(context, state)),
         _buildMessageComposer(context, state),
       ],
@@ -225,11 +229,12 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
     return Container(
       padding: EdgeInsets.all(AppDimensions.spacingMd),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.dashboardSurface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        border: Border.all(color: AppColors.dashboardBorder),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow,
+            color: AppColors.black.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -245,7 +250,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
                 Text(
                   detail.title,
                   style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textOnDarkPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                   maxLines: 1,
@@ -255,7 +260,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
                 Text(
                   detail.description,
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
+                    color: AppColors.textOnDarkSecondary,
                   ),
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
@@ -264,7 +269,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
                 Text(
                   'Points: $points pts',
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                    color: AppColors.textOnDarkSecondary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -326,7 +331,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
                     widget.tradeId,
                   ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error.withOpacity(0.12),
+              backgroundColor: AppColors.error.withValues(alpha: 0.12),
               foregroundColor: AppColors.error,
               padding: EdgeInsets.symmetric(vertical: AppDimensions.spacingSm),
               shape: RoundedRectangleBorder(
@@ -438,9 +443,9 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
     return Container(
       padding: EdgeInsets.all(AppDimensions.spacingMd),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.dashboardSurface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        border: Border.all(color: AppColors.dividerColor),
+        border: Border.all(color: AppColors.dashboardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -448,7 +453,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
           Text(
             'Rate This User',
             style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textPrimary,
+              color: AppColors.textOnDarkPrimary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -483,15 +488,15 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
             decoration: InputDecoration(
               hintText: 'Write your review',
               hintStyle: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: AppColors.textOnDarkSecondary,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                borderSide: const BorderSide(color: AppColors.dividerColor),
+                borderSide: const BorderSide(color: AppColors.dashboardBorder),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                borderSide: const BorderSide(color: AppColors.dividerColor),
+                borderSide: const BorderSide(color: AppColors.dashboardBorder),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
@@ -499,7 +504,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
               ),
             ),
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: AppColors.textOnDarkPrimary,
             ),
           ),
           SizedBox(height: AppDimensions.spacingMd),
@@ -517,8 +522,8 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
                           _reviewController.clear();
                         },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textPrimary,
-                    side: const BorderSide(color: AppColors.dividerColor),
+                    foregroundColor: AppColors.textOnDarkPrimary,
+                    side: const BorderSide(color: AppColors.dashboardBorder),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(
                         AppDimensions.radiusSm,
@@ -528,7 +533,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
                   child: Text(
                     'Cancel',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textPrimary,
+                      color: AppColors.textOnDarkPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -586,7 +591,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
         child: Text(
           state.isMessagesLoading ? 'Loading messages...' : 'No messages yet',
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
+            color: AppColors.textOnDarkSecondary,
           ),
         ),
       );
@@ -619,8 +624,10 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
     TradeMessage message,
     bool isMine,
   ) {
-    final bubbleColor = isMine ? AppColors.primary : AppColors.lightGrey;
-    final textColor = isMine ? AppColors.white : AppColors.textPrimary;
+    final bubbleColor = isMine
+        ? AppColors.primary
+        : AppColors.dashboardSurfaceElevated;
+    final textColor = isMine ? AppColors.white : AppColors.textOnDarkPrimary;
     final timeLabel = _formatMessageTime(context, message.createdAt);
 
     return Align(
@@ -657,7 +664,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
                 Text(
                   timeLabel,
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: textColor.withOpacity(0.75),
+                    color: textColor.withValues(alpha: 0.75),
                   ),
                 ),
               ],
@@ -690,7 +697,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
                   vertical: AppDimensions.spacingXs,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.lightGrey,
+                  color: AppColors.dashboardSurfaceElevated,
                   borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
                 ),
                 child: TextField(
@@ -703,11 +710,11 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
                     focusedBorder: InputBorder.none,
                     hintText: 'Type a message',
                     hintStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                      color: AppColors.textOnDarkSecondary,
                     ),
                   ),
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textOnDarkPrimary,
                   ),
                   onChanged: (_) => setState(() {}),
                 ),
@@ -819,7 +826,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
             Text(
               message,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: AppColors.textOnDarkSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -859,12 +866,12 @@ class _TradeDetailImage extends StatelessWidget {
       child: Container(
         width: AppDimensions.chatListImageSize,
         height: AppDimensions.chatListImageSize,
-        color: AppColors.lightGrey,
+        color: AppColors.dashboardSurfaceElevated,
         child: imageUrl == null
             ? Icon(
                 Icons.image_outlined,
                 size: AppDimensions.iconSizeLg,
-                color: AppColors.textSecondary,
+                color: AppColors.textOnDarkSecondary,
               )
             : CachedNetworkImage(
                 imageUrl: imageUrl!,
@@ -878,7 +885,7 @@ class _TradeDetailImage extends StatelessWidget {
                   return Icon(
                     Icons.image_outlined,
                     size: AppDimensions.iconSizeLg,
-                    color: AppColors.textSecondary,
+                    color: AppColors.textOnDarkSecondary,
                   );
                 },
               ),

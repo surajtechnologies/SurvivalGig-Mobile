@@ -43,6 +43,22 @@ class AppColors {
   static const Color reviewRatingBackground = Color(0xFFF2F8FF);
   static const Color reviewRatingBorder = Color(0xFFD4E5F8);
 
+  // Dark dashboard colors
+  static const Color dashboardBackground = Color(0xFF07100D);
+  static const Color dashboardSurface = Color(0xFF101A15);
+  static const Color dashboardSurfaceElevated = Color(0xFF16221C);
+  static const Color dashboardSearch = Color(0xFF151F1A);
+  static const Color dashboardBorder = Color(0xFF25342C);
+  static const Color dashboardOverlay = Color(0x9907100D);
+  static const Color textOnDarkPrimary = Color(0xFFFFFFFF);
+  static const Color textOnDarkSecondary = Color(0xFF9CAAA3);
+  static const Color textOnDarkTertiary = Color(0xFF65736C);
+  static const Color requestPin = Color(0xFFFF4D57);
+  static const Color offerPin = Color(0xFF00E676);
+  static const Color itemPin = Color(0xFFB96DFF);
+  static const Color hybridPin = Color(0xFFFFD230);
+  static const Color spent = Color(0xFFFF6370);
+
   // Category Colors
   static const List<Color> categories = [
     Color(0xFFE8F5E9),

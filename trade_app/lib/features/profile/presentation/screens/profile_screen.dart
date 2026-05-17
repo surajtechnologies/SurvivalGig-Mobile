@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../config/di/service_locator.dart';
-import '../../../../config/env/app_config.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/theme_mode_cubit.dart';
+import '../../../auth/presentation/screens/login_landing_screen.dart';
 import '../../../listing_detail/presentation/screens/my_listings_screen.dart';
-import 'my_ratings_screen.dart';
 import '../cubit/profile_cubit.dart';
 import '../cubit/profile_state.dart';
-import '../widgets/profile_avatar.dart';
-import '../widgets/profile_info_tile.dart';
-import '../widgets/profile_section_header.dart';
-import '../../../auth/presentation/screens/login_landing_screen.dart';
+import 'my_ratings_screen.dart';
 
-/// Profile settings screen
+/// Profile tab screen
 class ProfileScreen extends StatelessWidget {
   final VoidCallback? onBackTap;
   final VoidCallback? onLogoutTap;
@@ -32,6 +28,38 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
+bool _profileIsDark(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark;
+}
+
+Color _profileBackground(BuildContext context) {
+  return _profileIsDark(context)
+      ? AppColors.dashboardBackground
+      : AppColors.background;
+}
+
+Color _profileSurface(BuildContext context) {
+  return _profileIsDark(context) ? AppColors.dashboardSurface : AppColors.white;
+}
+
+Color _profileBorder(BuildContext context) {
+  return _profileIsDark(context)
+      ? AppColors.dashboardBorder
+      : AppColors.dividerColor;
+}
+
+Color _profilePrimaryText(BuildContext context) {
+  return _profileIsDark(context)
+      ? AppColors.textOnDarkPrimary
+      : AppColors.textPrimary;
+}
+
+Color _profileSecondaryText(BuildContext context) {
+  return _profileIsDark(context)
+      ? AppColors.textOnDarkSecondary
+      : AppColors.textSecondary;
+}
+
 class _ProfileView extends StatefulWidget {
   final VoidCallback? onBackTap;
   final VoidCallback? onLogoutTap;
@@ -44,19 +72,10 @@ class _ProfileView extends StatefulWidget {
 
 class _ProfileViewState extends State<_ProfileView> {
   final ImagePicker _imagePicker = ImagePicker();
-  late final Future<PackageInfo> _packageInfoFuture;
 
-  @override
-  void initState() {
-    super.initState();
-    _packageInfoFuture = PackageInfo.fromPlatform();
-  }
-
-  Future<void> _onCameraTap() async {
+  Future<void> _onAvatarTap() async {
     final source = await _showImageSourcePicker();
-    if (!mounted || source == null) {
-      return;
-    }
+    if (!mounted || source == null) return;
 
     try {
       final pickedFile = await _imagePicker.pickImage(
@@ -65,15 +84,11 @@ class _ProfileViewState extends State<_ProfileView> {
         maxHeight: 1024,
         imageQuality: 85,
       );
-
       if (pickedFile != null && mounted) {
         context.read<ProfileCubit>().uploadProfileImage(pickedFile.path);
       }
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to pick image'),
@@ -85,9 +100,7 @@ class _ProfileViewState extends State<_ProfileView> {
 
   Future<void> _onVerifyProfileTap() async {
     final source = await _showImageSourcePicker();
-    if (!mounted || source == null) {
-      return;
-    }
+    if (!mounted || source == null) return;
 
     final pickedFile = await _imagePicker.pickImage(
       source: source,
@@ -95,52 +108,35 @@ class _ProfileViewState extends State<_ProfileView> {
       maxHeight: 1600,
       imageQuality: 90,
     );
-
-    if (pickedFile == null || !mounted) {
-      return;
-    }
+    if (pickedFile == null || !mounted) return;
 
     context.read<ProfileCubit>().verifyProfile(pickedFile.path);
   }
 
-  Future<ImageSource?> _showImageSourcePicker() async {
+  Future<ImageSource?> _showImageSourcePicker() {
     return showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AppColors.white,
+      backgroundColor: _profileSurface(context),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppDimensions.radiusLg),
+        ),
+      ),
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppDimensions.spacingMd,
-              vertical: AppDimensions.spacingMd,
-            ),
+            padding: EdgeInsets.all(AppDimensions.spacingMd),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ListTile(
-                  leading: const Icon(
-                    Icons.camera_alt_outlined,
-                    color: AppColors.textPrimary,
-                  ),
-                  title: Text(
-                    'Camera',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
+                _SourceTile(
+                  icon: Icons.camera_alt_rounded,
+                  label: 'Camera',
                   onTap: () => Navigator.pop(context, ImageSource.camera),
                 ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.photo_library_outlined,
-                    color: AppColors.textPrimary,
-                  ),
-                  title: Text(
-                    'Gallery',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
+                _SourceTile(
+                  icon: Icons.photo_library_rounded,
+                  label: 'Gallery',
                   onTap: () => Navigator.pop(context, ImageSource.gallery),
                 ),
               ],
@@ -164,9 +160,7 @@ class _ProfileViewState extends State<_ProfileView> {
           );
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (_) => const LoginLandingScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const LoginLandingScreen()),
           );
           return;
         }
@@ -185,7 +179,9 @@ class _ProfileViewState extends State<_ProfileView> {
       },
       builder: (context, state) {
         if (state is ProfileLoading || state is ProfileInitial) {
-          return const SizedBox.shrink();
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          );
         }
 
         if (state is ProfileError) {
@@ -202,68 +198,180 @@ class _ProfileViewState extends State<_ProfileView> {
   }
 
   Widget _buildLoadedState(ProfileLoaded state) {
-    return RefreshIndicator(
-      color: AppColors.primary,
-      onRefresh: () => context.read<ProfileCubit>().refresh(),
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.symmetric(
-          horizontal: AppDimensions.spacingMd,
-          vertical: AppDimensions.spacingMd,
+    final initial = state.profile.fullName.trim().isEmpty
+        ? '?'
+        : state.profile.fullName.trim()[0].toUpperCase();
+
+    return ColoredBox(
+      color: _profileBackground(context),
+      child: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () => context.read<ProfileCubit>().refresh(),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(
+            AppDimensions.spacingMd,
+            AppDimensions.spacingLg,
+            AppDimensions.spacingMd,
+            AppDimensions.spacingXl,
+          ),
+          children: [
+            _buildHeader(),
+            SizedBox(height: AppDimensions.spacingXl),
+            Center(
+              child: _ProfileAvatarButton(
+                initial: initial,
+                imageUrl: state.profile.profileImageUrl,
+                isUploading: state.isUploadingImage,
+                onTap: _onAvatarTap,
+              ),
+            ),
+            SizedBox(height: AppDimensions.spacingMd),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    state.profile.fullName,
+                    style: AppTextStyles.displayMedium.copyWith(
+                      color: _profilePrimaryText(context),
+                      fontWeight: FontWeight.w800,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (state.profile.isVerified) ...[
+                  SizedBox(width: AppDimensions.spacingSm),
+                  Icon(
+                    Icons.verified_rounded,
+                    color: AppColors.primary,
+                    size: AppDimensions.iconSizeLg,
+                  ),
+                ],
+              ],
+            ),
+            SizedBox(height: AppDimensions.spacingSm),
+            Text(
+              state.profile.email,
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: _profileSecondaryText(context),
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: AppDimensions.spacingMd),
+            _buildRatingRow(state.profile.isVerified),
+            SizedBox(height: AppDimensions.spacingXl),
+            Row(
+              children: [
+                Expanded(
+                  child: _ProfileStatCard(
+                    icon: Icons.check_circle_rounded,
+                    value: state.profile.isVerified ? 'Verified' : 'Pending',
+                    label: 'Profile',
+                    color: AppColors.primary,
+                  ),
+                ),
+                SizedBox(width: AppDimensions.spacingSm),
+                Expanded(
+                  child: _ProfileStatCard(
+                    icon: Icons.shield_rounded,
+                    value: state.profile.isVerified ? '85%' : '--',
+                    label: 'Trust Score',
+                    color: AppColors.itemPin,
+                  ),
+                ),
+                SizedBox(width: AppDimensions.spacingSm),
+                Expanded(
+                  child: _ProfileStatCard(
+                    icon: Icons.diamond_rounded,
+                    value: '--',
+                    label: 'Balance',
+                    color: AppColors.hybridPin,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppDimensions.spacingXl),
+            _buildAppearanceSection(),
+            SizedBox(height: AppDimensions.spacingXl),
+            Text(
+              'My Active Listings',
+              style: AppTextStyles.headlineLarge.copyWith(
+                color: _profilePrimaryText(context),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            SizedBox(height: AppDimensions.spacingMd),
+            _ActionTile(
+              icon: Icons.list_alt_rounded,
+              title: 'My Listings',
+              subtitle: 'Manage your active listings',
+              color: AppColors.primary,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MyListingsScreen()),
+              ),
+            ),
+            SizedBox(height: AppDimensions.spacingMd),
+            _ActionTile(
+              icon: Icons.star_rounded,
+              title: 'My Ratings',
+              subtitle: 'See your ratings and reviews',
+              color: AppColors.hybridPin,
+              onTap: () {
+                if (state.profile.id.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Unable to open ratings now.'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                  return;
+                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MyRatingsScreen(userId: state.profile.id),
+                  ),
+                );
+              },
+            ),
+            SizedBox(height: AppDimensions.spacingMd),
+            _ActionTile(
+              icon: Icons.verified_user_rounded,
+              title: state.profile.isVerified
+                  ? 'Verified Profile'
+                  : 'Verify Profile',
+              subtitle: state.profile.isVerified
+                  ? 'Your ID has been verified'
+                  : 'Upload an ID document',
+              color: AppColors.primary,
+              isLoading: state.isUploadingVerificationDocument,
+              onTap: state.profile.isVerified ? null : _onVerifyProfileTap,
+            ),
+            SizedBox(height: AppDimensions.spacingMd),
+            _ActionTile(
+              icon: Icons.logout_rounded,
+              title: 'Logout',
+              subtitle: 'Sign out of this device',
+              color: AppColors.spent,
+              onTap: _showLogoutConfirmation,
+            ),
+            SizedBox(height: AppDimensions.spacingMd),
+            _ActionTile(
+              icon: Icons.delete_forever_rounded,
+              title: state.isDeletingAccount ? 'Deleting...' : 'Delete Account',
+              subtitle: 'Permanently remove your account',
+              color: AppColors.spent,
+              isLoading: state.isDeletingAccount,
+              onTap: state.isDeletingAccount
+                  ? null
+                  : () => _showDeleteAccountConfirmation(),
+            ),
+          ],
         ),
-        children: [
-          _buildHeader(),
-          SizedBox(height: AppDimensions.spacingXl),
-          Center(
-            child: ProfileAvatar(
-              imageUrl: state.profile.profileImageUrl,
-              isUploading: state.isUploadingImage,
-              onCameraTap: _onCameraTap,
-            ),
-          ),
-          SizedBox(height: AppDimensions.spacingMd),
-          Text(
-            state.profile.fullName,
-            style: AppTextStyles.headlineLarge.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: AppDimensions.spacingSm),
-          _buildVerificationSection(state),
-          SizedBox(height: AppDimensions.spacingXl),
-          _buildMyListingsSection(),
-          SizedBox(height: AppDimensions.spacingMd),
-          _buildMyRatingsSection(state.profile.id),
-          SizedBox(height: AppDimensions.spacingXl),
-          const ProfileSectionHeader(title: 'ACCOUNT INFORMATION'),
-          SizedBox(height: AppDimensions.spacingMd),
-          _buildFieldLabel('Full Name'),
-          SizedBox(height: AppDimensions.spacingSm),
-          ProfileInfoTile(
-            icon: Icons.person_outline_rounded,
-            value: state.profile.fullName,
-          ),
-          SizedBox(height: AppDimensions.spacingMd),
-          _buildFieldLabel('Email Address'),
-          SizedBox(height: AppDimensions.spacingSm),
-          ProfileInfoTile(
-            icon: Icons.email_outlined,
-            value: state.profile.email,
-          ),
-          SizedBox(height: AppDimensions.spacingXl),
-          const ProfileSectionHeader(title: 'SECURITY & PRIVACY'),
-          SizedBox(height: AppDimensions.spacingMd),
-          _buildSecurityTile(),
-          SizedBox(height: AppDimensions.spacingXl),
-          _buildLogoutButton(),
-          SizedBox(height: AppDimensions.spacingMd),
-          _buildDeleteAccountButton(state),
-          SizedBox(height: AppDimensions.spacingMd),
-          _buildVersionText(),
-          SizedBox(height: AppDimensions.spacingMd),
-        ],
       ),
     );
   }
@@ -272,432 +380,130 @@ class _ProfileViewState extends State<_ProfileView> {
     return Row(
       children: [
         if (widget.onBackTap != null)
-          _buildHeaderIconButton(
-            icon: Icons.arrow_back_ios_new_rounded,
-            onTap: widget.onBackTap!,
+          IconButton(
+            onPressed: widget.onBackTap,
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: AppColors.primary,
+            ),
           )
         else
-          SizedBox(width: AppDimensions.dialogIconContainerSize),
+          SizedBox(width: AppDimensions.iconSizeXl),
         Expanded(
           child: Text(
-            'Profile Settings',
-            style: AppTextStyles.headlineMedium.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
+            'Profile',
+            style: AppTextStyles.displayLarge.copyWith(
+              color: _profilePrimaryText(context),
+              fontWeight: FontWeight.w800,
             ),
-            textAlign: TextAlign.center,
           ),
         ),
-        SizedBox(width: AppDimensions.dialogIconContainerSize),
       ],
     );
   }
 
-  Widget _buildHeaderIconButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: AppDimensions.dialogIconContainerSize,
-        height: AppDimensions.dialogIconContainerSize,
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: AppDimensions.spacingSm,
-              offset: Offset(0, AppDimensions.spacingXs / 2),
-            ),
-          ],
-        ),
-        child: Icon(
-          icon,
-          color: AppColors.textPrimary,
-          size: AppDimensions.iconSizeMd,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFieldLabel(String label) {
-    return Text(
-      label,
-      style: AppTextStyles.bodyMedium.copyWith(
-        color: AppColors.textPrimary,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-
-  Widget _buildSecurityTile() {
-    return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Change password flow will be added next'),
-          ),
-        );
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppDimensions.spacingMd,
-          vertical: AppDimensions.spacingSm,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-          border: Border.all(color: AppColors.dividerColor),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: AppDimensions.spacingSm,
-              offset: Offset(0, AppDimensions.spacingXs / 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: AppDimensions.dialogIconContainerSize - 10,
-              height: AppDimensions.dialogIconContainerSize - 10,
-              decoration: BoxDecoration(
-                color: AppColors.lightGrey,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.shield_outlined,
-                color: AppColors.primary,
-                size: AppDimensions.iconSizeMd,
-              ),
-            ),
-            SizedBox(width: AppDimensions.spacingMd),
-            Expanded(
-              child: Text(
-                'Reset Password',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.textSecondary,
-              size: AppDimensions.iconSizeLg,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMyListingsSection() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const MyListingsScreen()),
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(
-          horizontal: AppDimensions.spacingMd,
-          vertical: AppDimensions.spacingMd,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.myListingsSectionBackground,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: AppDimensions.dialogIconContainerSize - 14,
-              height: AppDimensions.dialogIconContainerSize - 14,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-              ),
-              child: Icon(
-                Icons.list_alt_rounded,
-                color: AppColors.white,
-                size: AppDimensions.iconSizeMd,
-              ),
-            ),
-            SizedBox(width: AppDimensions.spacingMd),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'My Listings',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: AppDimensions.spacingXs),
-                  Text(
-                    'Manage your active listings',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_rounded,
-              color: AppColors.textPrimary,
-              size: AppDimensions.iconSizeMd,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMyRatingsSection(String userId) {
-    return GestureDetector(
-      onTap: () {
-        if (userId.trim().isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Unable to open ratings now. Please try again.'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-          return;
-        }
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => MyRatingsScreen(userId: userId)),
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(
-          horizontal: AppDimensions.spacingMd,
-          vertical: AppDimensions.spacingMd,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.myRatingsSectionBackground,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: AppDimensions.dialogIconContainerSize - 14,
-              height: AppDimensions.dialogIconContainerSize - 14,
-              decoration: BoxDecoration(
-                color: AppColors.info,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-              ),
-              child: Icon(
-                Icons.star_rate_rounded,
-                color: AppColors.white,
-                size: AppDimensions.iconSizeMd,
-              ),
-            ),
-            SizedBox(width: AppDimensions.spacingMd),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'My Ratings',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: AppDimensions.spacingXs),
-                  Text(
-                    'See your Ratings & Reviews',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_rounded,
-              color: AppColors.textPrimary,
-              size: AppDimensions.iconSizeMd,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVerificationSection(ProfileLoaded state) {
-    if (state.profile.isVerified) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+  Widget _buildRatingRow(bool isVerified) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (var index = 0; index < 5; index++)
           Icon(
-            Icons.verified,
-            color: AppColors.primary,
-            size: AppDimensions.iconSizeMd,
+            Icons.star_rounded,
+            color: isVerified ? AppColors.hybridPin : _profileBorder(context),
+            size: AppDimensions.iconSizeLg,
           ),
-          SizedBox(width: AppDimensions.spacingXs),
-          Text(
-            'Verified Profile',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.primaryDark,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Center(
-      child: ElevatedButton.icon(
-        onPressed: state.isUploadingVerificationDocument
-            ? null
-            : _onVerifyProfileTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.white,
-          disabledBackgroundColor: AppColors.textDisabled,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          ),
-          padding: EdgeInsets.symmetric(
-            horizontal: AppDimensions.spacingMd,
-            vertical: AppDimensions.spacingSm,
+        SizedBox(width: AppDimensions.spacingSm),
+        Text(
+          isVerified ? '4.7' : 'New',
+          style: AppTextStyles.headlineSmall.copyWith(
+            color: _profileSecondaryText(context),
+            fontWeight: FontWeight.w800,
           ),
         ),
-        icon: Icon(
-          Icons.verified_user_outlined,
-          size: AppDimensions.iconSizeSm,
-          color: AppColors.white,
-        ),
-        label: Text(
-          state.isUploadingVerificationDocument
-              ? 'Uploading...'
-              : 'Verify Profile',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.white,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
+      ],
     );
   }
 
-  Widget _buildLogoutButton() {
-    return GestureDetector(
-      onTap: widget.onLogoutTap,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: AppDimensions.spacingMd),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: AppDimensions.spacingSm,
-              offset: Offset(0, AppDimensions.spacingXs / 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.logout_rounded,
-              color: AppColors.error,
-              size: AppDimensions.iconSizeMd,
-            ),
-            SizedBox(width: AppDimensions.spacingSm),
-            Text(
-              'LOGOUT',
-              style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.error,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildAppearanceSection() {
+    final currentMode = context.watch<ThemeModeCubit>().state;
 
-  Widget _buildDeleteAccountButton(ProfileLoaded state) {
-    return GestureDetector(
-      onTap: state.isDeletingAccount
-          ? null
-          : () => _showDeleteAccountConfirmation(),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: AppDimensions.spacingMd),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Appearance',
+          style: AppTextStyles.headlineLarge.copyWith(
+            color: _profilePrimaryText(context),
+            fontWeight: FontWeight.w800,
+          ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (state.isDeletingAccount)
-              SizedBox(
-                width: AppDimensions.iconSizeMd,
-                height: AppDimensions.iconSizeMd,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.error,
+        SizedBox(height: AppDimensions.spacingMd),
+        Container(
+          padding: EdgeInsets.all(AppDimensions.spacingXs),
+          decoration: BoxDecoration(
+            color: _profileSurface(context),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+            border: Border.all(color: _profileBorder(context)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _AppearanceOption(
+                  icon: Icons.brightness_auto_rounded,
+                  label: 'System',
+                  selected: currentMode == ThemeMode.system,
+                  onTap: () => context.read<ThemeModeCubit>().setThemeMode(
+                    ThemeMode.system,
+                  ),
                 ),
-              )
-            else
-              Icon(
-                Icons.delete_forever_rounded,
-                color: AppColors.error,
-                size: AppDimensions.iconSizeMd,
               ),
-            SizedBox(width: AppDimensions.spacingSm),
-            Text(
-              state.isDeletingAccount ? 'DELETING...' : 'DELETE ACCOUNT',
-              style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.error,
-                fontWeight: FontWeight.w700,
+              Expanded(
+                child: _AppearanceOption(
+                  icon: Icons.light_mode_rounded,
+                  label: 'Light',
+                  selected: currentMode == ThemeMode.light,
+                  onTap: () => context.read<ThemeModeCubit>().setThemeMode(
+                    ThemeMode.light,
+                  ),
+                ),
               ),
-            ),
-          ],
+              Expanded(
+                child: _AppearanceOption(
+                  icon: Icons.dark_mode_rounded,
+                  label: 'Dark',
+                  selected: currentMode == ThemeMode.dark,
+                  onTap: () => context.read<ThemeModeCubit>().setThemeMode(
+                    ThemeMode.dark,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
-  void _showDeleteAccountConfirmation() {
+  void _showLogoutConfirmation() {
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: AppColors.white,
+          backgroundColor: _profileSurface(context),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
           ),
           title: Text(
-            'Delete Account',
+            'Logout',
             style: AppTextStyles.headlineMedium.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
+              color: _profilePrimaryText(context),
+              fontWeight: FontWeight.w800,
             ),
           ),
           content: Text(
-            'Are you sure you want to delete your account? This action will initiate account deletion and your account will be permanently deleted in 14 days.',
+            'Do you want to confirm logout?',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: _profileSecondaryText(context),
             ),
           ),
           actions: [
@@ -706,8 +512,69 @@ class _ProfileViewState extends State<_ProfileView> {
               child: Text(
                 'Cancel',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
+                  color: _profileSecondaryText(context),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                if (widget.onLogoutTap != null) {
+                  widget.onLogoutTap!.call();
+                } else {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const LoginLandingScreen(),
+                    ),
+                  );
+                }
+              },
+              child: Text(
+                'Logout',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.spent,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteAccountConfirmation() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: _profileSurface(context),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+          ),
+          title: Text(
+            'Delete Account',
+            style: AppTextStyles.headlineMedium.copyWith(
+              color: _profilePrimaryText(context),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          content: Text(
+            'Do you want to confirm delete account? This permanently deletes the account in 14 days.',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: _profileSecondaryText(context),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'Cancel',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: _profileSecondaryText(context),
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
@@ -719,38 +586,12 @@ class _ProfileViewState extends State<_ProfileView> {
               child: Text(
                 'Delete',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.error,
-                  fontWeight: FontWeight.w700,
+                  color: AppColors.spent,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
           ],
-        );
-      },
-    );
-  }
-
-  Widget _buildVersionText() {
-    return FutureBuilder<PackageInfo>(
-      future: _packageInfoFuture,
-      builder: (context, snapshot) {
-        String versionText = 'Version ${AppConfig.appVersion}';
-
-        final packageInfo = snapshot.data;
-        if (packageInfo != null) {
-          final buildNumber = packageInfo.buildNumber.trim();
-          versionText = buildNumber.isEmpty
-              ? 'Version ${packageInfo.version}'
-              : 'Version ${packageInfo.version}+$buildNumber';
-        }
-
-        return Text(
-          versionText,
-          style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
-          ),
-          textAlign: TextAlign.center,
         );
       },
     );
@@ -764,7 +605,7 @@ class _ProfileViewState extends State<_ProfileView> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.error_outline,
+              Icons.error_outline_rounded,
               size: AppDimensions.iconSizeXl,
               color: AppColors.error,
             ),
@@ -772,7 +613,7 @@ class _ProfileViewState extends State<_ProfileView> {
             Text(
               message,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: _profileSecondaryText(context),
               ),
               textAlign: TextAlign.center,
             ),
@@ -781,20 +622,326 @@ class _ProfileViewState extends State<_ProfileView> {
               onPressed: () => context.read<ProfileCubit>().loadProfile(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
+                foregroundColor: AppColors.black,
                 elevation: 0,
               ),
               child: Text(
                 'Retry',
                 style: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w600,
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ProfileAvatarButton extends StatelessWidget {
+  final String initial;
+  final String? imageUrl;
+  final bool isUploading;
+  final VoidCallback onTap;
+
+  const _ProfileAvatarButton({
+    required this.initial,
+    required this.imageUrl,
+    required this.isUploading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      customBorder: const CircleBorder(),
+      onTap: isUploading ? null : onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 124,
+            height: 124,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primary,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.28),
+                  blurRadius: 34,
+                  spreadRadius: 8,
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: isUploading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: AppColors.black),
+                    )
+                  : _buildAvatarContent(),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: _profileSurface(context),
+                shape: BoxShape.circle,
+                border: Border.all(color: _profileBorder(context)),
+              ),
+              child: Icon(
+                Icons.camera_alt_rounded,
+                color: AppColors.primary,
+                size: AppDimensions.iconSizeMd,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatarContent() {
+    if (imageUrl != null && imageUrl!.trim().isNotEmpty) {
+      return Image.network(
+        imageUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildInitial(),
+      );
+    }
+    return _buildInitial();
+  }
+
+  Widget _buildInitial() {
+    return Center(
+      child: Text(
+        initial,
+        style: AppTextStyles.displayLarge.copyWith(
+          color: AppColors.black,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileStatCard extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _ProfileStatCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppDimensions.spacingSm,
+        vertical: AppDimensions.spacingMd,
+      ),
+      decoration: BoxDecoration(
+        color: _profileSurface(context),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        border: Border.all(color: _profileBorder(context)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: AppDimensions.iconSizeLg),
+          SizedBox(height: AppDimensions.spacingSm),
+          Text(
+            value,
+            style: AppTextStyles.headlineSmall.copyWith(
+              color: _profilePrimaryText(context),
+              fontWeight: FontWeight.w800,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: AppDimensions.spacingXs),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: _profileSecondaryText(context),
+              fontWeight: FontWeight.w700,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AppearanceOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _AppearanceOption({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: AppDimensions.spacingMd),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary.withValues(alpha: 0.18) : null,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: selected
+                  ? AppColors.primary
+                  : _profileSecondaryText(context),
+              size: AppDimensions.iconSizeLg,
+            ),
+            SizedBox(height: AppDimensions.spacingXs),
+            Text(
+              label,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: selected
+                    ? AppColors.primary
+                    : _profileSecondaryText(context),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final bool isLoading;
+  final VoidCallback? onTap;
+
+  const _ActionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    this.isLoading = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+      onTap: isLoading ? null : onTap,
+      child: Container(
+        padding: EdgeInsets.all(AppDimensions.spacingMd),
+        decoration: BoxDecoration(
+          color: _profileSurface(context),
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+          border: Border.all(color: _profileBorder(context)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+              ),
+              child: isLoading
+                  ? Padding(
+                      padding: EdgeInsets.all(AppDimensions.spacingSm),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: color,
+                      ),
+                    )
+                  : Icon(icon, color: color, size: AppDimensions.iconSizeMd),
+            ),
+            SizedBox(width: AppDimensions.spacingMd),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: _profilePrimaryText(context),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  SizedBox(height: AppDimensions.spacingXs),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: _profileSecondaryText(context),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: _profileSecondaryText(context),
+              size: AppDimensions.iconSizeLg,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SourceTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _SourceTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: AppColors.primary),
+      title: Text(
+        label,
+        style: AppTextStyles.bodyLarge.copyWith(
+          color: _profilePrimaryText(context),
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      onTap: onTap,
     );
   }
 }

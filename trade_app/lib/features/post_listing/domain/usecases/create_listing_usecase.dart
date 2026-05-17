@@ -89,7 +89,8 @@ class CreateListingUseCase {
     }
 
     // Price mode validation
-    if (request.priceMode == PriceMode.points ) {
+    if (request.priceMode == PriceMode.points ||
+        request.priceMode == PriceMode.both) {
       if (request.pricePoints == null || request.pricePoints! <= 0) {
         return const ValidationFailure(
           message: 'Price points must be greater than 0',
@@ -98,8 +99,10 @@ class CreateListingUseCase {
       }
     }
 
-    if (request.priceMode == PriceMode.skill ) {
-      if (request.barterWanted == null || request.barterWanted!.trim().isEmpty) {
+    if (request.priceMode == PriceMode.skill ||
+        request.priceMode == PriceMode.both) {
+      if (request.barterWanted == null ||
+          request.barterWanted!.trim().isEmpty) {
         return const ValidationFailure(
           message: 'Please describe what you want in exchange',
           code: 'EMPTY_BARTER_WANTED',

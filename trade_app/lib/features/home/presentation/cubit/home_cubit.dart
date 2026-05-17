@@ -1,34 +1,41 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/network/connectivity_service.dart';
 import '../../../../shared/models/category.dart';
 import '../../../auth/domain/usecases/logout_usecase.dart';
-import '../../domain/entities/current_location.dart';
-import '../../domain/usecases/get_saved_location_usecase.dart';
-import '../../domain/entities/pagination.dart';
+import '../../domain/entities/map_coordinate.dart';
+import '../../domain/usecases/detect_home_location_usecase.dart';
 import '../../domain/usecases/get_categories_usecase.dart';
-import '../../domain/usecases/get_listings_usecase.dart';
-import '../../domain/usecases/update_location_from_pincode_usecase.dart';
+import '../../domain/usecases/get_map_listings_usecase.dart';
+import '../../domain/usecases/get_nearby_listings_usecase.dart';
+import '../../domain/usecases/get_polygon_listings_usecase.dart';
+import '../../domain/usecases/search_address_location_usecase.dart';
 import 'home_state.dart';
 
-/// Home cubit for managing home screen state
-class HomeCubit extends Cubit<HomeState> {
-  static const String intentNeed = 'OFFERING';
-  static const String intentOffering = 'NEED';
+/// Approximate half-span in degrees for a ~13-zoom bounding box
+const _kBBoxDelta = 0.05;
 
+/// Home cubit — drives the full-screen Google Maps listing discovery view
+class HomeCubit extends Cubit<HomeState> {
   final GetCategoriesUseCase getCategoriesUseCase;
-  final GetListingsUseCase getListingsUseCase;
-  final GetSavedLocationUseCase getSavedLocationUseCase;
-  final UpdateLocationFromPincodeUseCase updateLocationFromPincodeUseCase;
+  final GetMapListingsUseCase getMapListingsUseCase;
+  final GetNearbyListingsUseCase getNearbyListingsUseCase;
+  final GetPolygonListingsUseCase getPolygonListingsUseCase;
+  final DetectHomeLocationUseCase detectHomeLocationUseCase;
+  final SearchAddressLocationUseCase searchAddressLocationUseCase;
   final LogoutUseCase logoutUseCase;
   final ConnectivityService connectivityService;
+
   StreamSubscription<bool>? _connectivitySubscription;
 
   HomeCubit({
     required this.getCategoriesUseCase,
-    required this.getListingsUseCase,
-    required this.getSavedLocationUseCase,
-    required this.updateLocationFromPincodeUseCase,
+    required this.getMapListingsUseCase,
+    required this.getNearbyListingsUseCase,
+    required this.getPolygonListingsUseCase,
+    required this.detectHomeLocationUseCase,
+    required this.searchAddressLocationUseCase,
     required this.logoutUseCase,
     required this.connectivityService,
   }) : super(const HomeInitial()) {
@@ -41,361 +48,235 @@ class HomeCubit extends Cubit<HomeState> {
     ) {
       if (isConnected && connectivityService.wasDisconnected) {
         connectivityService.resetDisconnectedFlag();
-        final currentState = state;
-        if (currentState is HomeLoaded) {
-          emit(currentState.copyWith(showConnectionRestored: true));
-          emit(currentState.copyWith(showConnectionRestored: false));
-        } else if (currentState is HomeError) {
-          refresh();
+        if (state is HomeError) {
+          loadInitialData();
         }
       }
     });
   }
 
-  /// Load initial data (categories and first page of listings)
+  // ── Initialisation ──────────────────────────────────────────────────────────
+
+  /// Initial load: fetch categories, request location permission, then
+  /// load map pins centred around the user's position (or default US bbox).
   Future<void> loadInitialData() async {
     emit(const HomeLoading());
 
-    // Fetch categories and saved location first to apply location filter.
     final categoriesResult = await getCategoriesUseCase();
-    final locationResult = await getSavedLocationUseCase();
-
-    // Handle categories result
-    List<Category> categories = [];
-    categoriesResult.fold((failure) {
-      // If categories fail, emit error
-      emit(HomeError(message: failure.message, code: failure.code));
-      return;
-    }, (data) => categories = data);
-
-    // If categories failed, we already emitted error
-    if (state is HomeError) return;
-
-    // Resolve current location before fetching listings so city can be sent.
-    CurrentLocation? currentLocation;
-    locationResult.fold((_) {}, (data) => currentLocation = data);
-    final listingsResult = await getListingsUseCase(
-      page: 1,
-      location: _resolveLocationFilter(currentLocation),
-      intent: intentNeed,
+    final categories = categoriesResult.fold<List<Category>>(
+      (_) => [],
+      (c) => c,
     );
 
-    // Handle listings result
-    listingsResult.fold(
+    // Try to get the user's current position for the first camera position.
+    final userPos = await _tryGetUserPosition();
+
+    double swLat, swLng, neLat, neLng;
+    LatLng? userLocation;
+    LatLng? cameraTarget;
+
+    if (userPos != null) {
+      userLocation = LatLng(userPos.latitude, userPos.longitude);
+      cameraTarget = userLocation;
+      swLat = userPos.latitude - _kBBoxDelta;
+      swLng = userPos.longitude - _kBBoxDelta;
+      neLat = userPos.latitude + _kBBoxDelta;
+      neLng = userPos.longitude + _kBBoxDelta;
+    } else {
+      // Default: San Francisco
+      swLat = 37.70;
+      swLng = -122.52;
+      neLat = 37.85;
+      neLng = -122.35;
+    }
+
+    final mapResult = await getMapListingsUseCase(
+      swLat: swLat,
+      swLng: swLng,
+      neLat: neLat,
+      neLng: neLng,
+    );
+
+    mapResult.fold(
       (failure) =>
           emit(HomeError(message: failure.message, code: failure.code)),
-      (data) => emit(
+      (listings) => emit(
         HomeLoaded(
+          mapListings: listings,
           categories: categories,
-          listings: data.listings,
-          pagination: data.pagination,
-          currentLocation: currentLocation,
-          selectedIntent: intentNeed,
+          userLocation: userLocation,
+          cameraTarget: cameraTarget,
         ),
       ),
     );
   }
 
-  /// Load more listings (pagination)
-  Future<void> loadMoreListings() async {
+  // ── Map data ─────────────────────────────────────────────────────────────────
+
+  /// Called on map camera idle — refresh pins for the visible bounding box.
+  Future<void> loadMapListings({
+    required double swLat,
+    required double swLng,
+    required double neLat,
+    required double neLng,
+  }) async {
     final currentState = state;
     if (currentState is! HomeLoaded) return;
 
-    // Check if there are more pages to load
-    if (!currentState.pagination.hasNext) return;
+    emit(currentState.copyWith(isLoadingMap: true));
 
-    // Prevent duplicate loading
-    if (currentState.isLoadingMore) return;
-
-    // Set loading more state
-    emit(currentState.copyWith(isLoadingMore: true));
-
-    final nextPage = currentState.pagination.page + 1;
-    final result = await getListingsUseCase(
-      page: nextPage,
-      categoryId: currentState.selectedCategoryId,
-      search: currentState.searchQuery,
-      location: _resolveLocationFilter(currentState.currentLocation),
-      intent: currentState.selectedIntent,
+    final result = await getMapListingsUseCase(
+      swLat: swLat,
+      swLng: swLng,
+      neLat: neLat,
+      neLng: neLng,
     );
 
     result.fold(
-      (failure) {
-        // On error, reset loading state but keep existing data
-        emit(currentState.copyWith(isLoadingMore: false));
-      },
-      (data) {
-        // Append new listings to existing ones
-        final updatedListings = [...currentState.listings, ...data.listings];
-        emit(
-          currentState.copyWith(
-            listings: updatedListings,
-            pagination: data.pagination,
-            isLoadingMore: false,
-          ),
-        );
-      },
+      (_) => emit(currentState.copyWith(isLoadingMap: false)),
+      (listings) => emit(
+        currentState.copyWith(mapListings: listings, isLoadingMap: false),
+      ),
     );
   }
 
-  /// Filter listings by category
-  Future<void> filterByCategory(String? categoryId) async {
+  // ── Filters ──────────────────────────────────────────────────────────────────
+
+  void applyFilter(MapFilter filter) {
+    final currentState = state;
+    if (currentState is! HomeLoaded) return;
+    emit(currentState.copyWith(selectedFilter: filter));
+  }
+
+  // ── Location ─────────────────────────────────────────────────────────────────
+
+  /// Detect GPS position, animate camera to it, and reload pins.
+  Future<void> moveToUserLocation() async {
     final currentState = state;
     if (currentState is! HomeLoaded) return;
 
+    final pos = await _tryGetUserPosition();
+    if (pos == null) return;
+
+    final target = LatLng(pos.latitude, pos.longitude);
     emit(
       currentState.copyWith(
-        selectedCategoryId: categoryId,
-        pagination: Pagination.initial,
-        isLoadingMore: false,
-        isListingsRefreshing: true,
+        userLocation: target,
+        cameraTarget: target,
+        isLoadingMap: true,
       ),
     );
 
-    final result = await getListingsUseCase(
-      page: 1,
-      categoryId: categoryId,
-      location: _resolveLocationFilter(currentState.currentLocation),
-      intent: currentState.selectedIntent,
+    final result = await getNearbyListingsUseCase(
+      latitude: pos.latitude,
+      longitude: pos.longitude,
+      radiusKm: 10,
+      limit: 100,
     );
 
     result.fold(
-      (failure) =>
-          emit(HomeError(message: failure.message, code: failure.code)),
-      (data) => emit(
-        HomeLoaded(
-          categories: currentState.categories,
-          listings: data.listings,
-          pagination: data.pagination,
-          selectedCategoryId: categoryId,
-          currentLocation: currentState.currentLocation,
-          selectedIntent: currentState.selectedIntent,
-          isListingsRefreshing: false,
-        ),
-      ),
-    );
-  }
-
-  /// Search listings by query
-  Future<void> search(String query) async {
-    final currentState = state;
-    if (currentState is! HomeLoaded) return;
-
-    // If query is empty, reload all listings
-    if (query.isEmpty) {
-      emit(const HomeLoading());
-      final result = await getListingsUseCase(
-        page: 1,
-        categoryId: currentState.selectedCategoryId,
-        location: _resolveLocationFilter(currentState.currentLocation),
-        intent: currentState.selectedIntent,
-      );
-
-      result.fold(
-        (failure) =>
-            emit(HomeError(message: failure.message, code: failure.code)),
-        (data) => emit(
-          HomeLoaded(
-            categories: currentState.categories,
-            listings: data.listings,
-            pagination: data.pagination,
-            selectedCategoryId: currentState.selectedCategoryId,
-            searchQuery: '',
-            currentLocation: currentState.currentLocation,
-            selectedIntent: currentState.selectedIntent,
-          ),
-        ),
-      );
-      return;
-    }
-
-    // Emit loading state with search query
-    emit(currentState.copyWith(searchQuery: query));
-    emit(const HomeLoading());
-
-    final result = await getListingsUseCase(
-      page: 1,
-      categoryId: currentState.selectedCategoryId,
-      search: query,
-      location: _resolveLocationFilter(currentState.currentLocation),
-      intent: currentState.selectedIntent,
-    );
-
-    result.fold(
-      (failure) =>
-          emit(HomeError(message: failure.message, code: failure.code)),
-      (data) => emit(
-        HomeLoaded(
-          categories: currentState.categories,
-          listings: data.listings,
-          pagination: data.pagination,
-          selectedCategoryId: currentState.selectedCategoryId,
-          searchQuery: query,
-          currentLocation: currentState.currentLocation,
-          selectedIntent: currentState.selectedIntent,
-        ),
-      ),
-    );
-  }
-
-  /// Refresh all data
-  Future<void> refresh() async {
-    final currentState = state;
-    String? selectedCategoryId;
-    String selectedIntent = intentNeed;
-    CurrentLocation? currentLocation;
-    String? searchQuery;
-
-    if (currentState is HomeLoaded) {
-      selectedCategoryId = currentState.selectedCategoryId;
-      currentLocation = currentState.currentLocation;
-      selectedIntent = currentState.selectedIntent;
-      searchQuery = currentState.searchQuery;
-    }
-
-    emit(const HomeLoading());
-
-    // Fetch categories and listings in parallel
-    final categoriesResult = await getCategoriesUseCase();
-    final listingsResult = await getListingsUseCase(
-      page: 1,
-      categoryId: selectedCategoryId,
-      search: searchQuery,
-      location: _resolveLocationFilter(currentLocation),
-      intent: selectedIntent,
-    );
-
-    // Handle categories result
-    List<Category> categories = [];
-    categoriesResult.fold((failure) {
-      emit(HomeError(message: failure.message, code: failure.code));
-      return;
-    }, (data) => categories = data);
-
-    // If categories failed, we already emitted error
-    if (state is HomeError) return;
-
-    // Handle listings result
-    listingsResult.fold(
-      (failure) =>
-          emit(HomeError(message: failure.message, code: failure.code)),
-      (data) => emit(
-        HomeLoaded(
-          categories: categories,
-          listings: data.listings,
-          pagination: data.pagination,
-          selectedCategoryId: selectedCategoryId,
-          currentLocation: currentLocation,
-          selectedIntent: selectedIntent,
-          searchQuery: searchQuery,
-        ),
-      ),
-    );
-  }
-
-  /// Update listings intent based on selected tab.
-  Future<void> updateIntent({required String intent}) async {
-    final currentState = state;
-    if (currentState is! HomeLoaded) return;
-
-    final normalizedIntent = intent.trim().toUpperCase();
-    if (normalizedIntent == currentState.selectedIntent) {
-      return;
-    }
-
-    emit(const HomeLoading());
-
-    final result = await getListingsUseCase(
-      page: 1,
-      categoryId: currentState.selectedCategoryId,
-      search: currentState.searchQuery,
-      location: _resolveLocationFilter(currentState.currentLocation),
-      intent: normalizedIntent,
-    );
-
-    result.fold(
-      (failure) =>
-          emit(HomeError(message: failure.message, code: failure.code)),
-      (data) => emit(
-        HomeLoaded(
-          categories: currentState.categories,
-          listings: data.listings,
-          pagination: data.pagination,
-          selectedCategoryId: currentState.selectedCategoryId,
-          searchQuery: currentState.searchQuery,
-          currentLocation: currentState.currentLocation,
-          selectedIntent: normalizedIntent,
-        ),
-      ),
-    );
-  }
-
-  /// Update current location from provided pincode.
-  /// Returns null when successful, otherwise user-safe error message.
-  Future<String?> updateLocation({required String pincode}) async {
-    final currentState = state;
-    if (currentState is! HomeLoaded) {
-      return 'Unable to update location right now';
-    }
-
-    final result = await updateLocationFromPincodeUseCase(pincode: pincode);
-
-    String? errorMessage;
-    CurrentLocation? updatedLocation;
-
-    result.fold(
-      (failure) => errorMessage = failure.message,
-      (location) => updatedLocation = location,
-    );
-
-    if (errorMessage != null || updatedLocation == null) {
-      return errorMessage ?? 'Unable to update location';
-    }
-
-    final listingsResult = await getListingsUseCase(
-      page: 1,
-      categoryId: currentState.selectedCategoryId,
-      search: currentState.searchQuery,
-      location: _resolveLocationFilter(updatedLocation),
-      intent: currentState.selectedIntent,
-    );
-
-    return listingsResult.fold(
-      (failure) {
-        emit(currentState.copyWith(currentLocation: updatedLocation));
-        return failure.message;
+      (_) {
+        final latest = state;
+        if (latest is HomeLoaded) {
+          emit(latest.copyWith(isLoadingMap: false));
+        }
       },
-      (data) {
-        emit(
-          currentState.copyWith(
-            listings: data.listings,
-            pagination: data.pagination,
-            currentLocation: updatedLocation,
-            isLoadingMore: false,
-          ),
-        );
-        return null;
+      (listings) {
+        final latest = state;
+        if (latest is HomeLoaded) {
+          emit(latest.copyWith(mapListings: listings, isLoadingMap: false));
+        }
       },
     );
   }
 
-  /// Logout user
+  /// Geocode [query] and animate the camera to the first result.
+  /// Shows nothing if the address cannot be resolved.
+  Future<void> searchAddress(String query) async {
+    if (query.trim().isEmpty) return;
+    final currentState = state;
+    if (currentState is! HomeLoaded) return;
+
+    final result = await searchAddressLocationUseCase(query: query.trim());
+    final coordinate = result.fold((_) => null, (value) => value);
+    if (coordinate == null) return;
+
+    final target = LatLng(coordinate.latitude, coordinate.longitude);
+    emit(currentState.copyWith(cameraTarget: target));
+
+    await loadMapListings(
+      swLat: coordinate.latitude - _kBBoxDelta,
+      swLng: coordinate.longitude - _kBBoxDelta,
+      neLat: coordinate.latitude + _kBBoxDelta,
+      neLng: coordinate.longitude + _kBBoxDelta,
+    );
+  }
+
+  /// Consume the one-shot camera target after the UI has animated the camera.
+  void clearCameraTarget() {
+    final currentState = state;
+    if (currentState is! HomeLoaded) return;
+    emit(currentState.copyWith(clearCameraTarget: true));
+  }
+
+  // ── Listing selection ─────────────────────────────────────────────────────────
+
+  void selectListing(String listingId) {
+    final currentState = state;
+    if (currentState is! HomeLoaded) return;
+    final listing = currentState.mapListings
+        .where((l) => l.id == listingId)
+        .firstOrNull;
+    if (listing != null) {
+      emit(currentState.copyWith(selectedListing: listing));
+    }
+  }
+
+  void dismissListing() {
+    final currentState = state;
+    if (currentState is! HomeLoaded) return;
+    emit(currentState.copyWith(clearSelectedListing: true));
+  }
+
+  Future<void> loadListingsInPolygon({
+    required List<({double latitude, double longitude})> polygon,
+    int limit = 100,
+  }) async {
+    final currentState = state;
+    if (currentState is! HomeLoaded) return;
+
+    emit(currentState.copyWith(isLoadingMap: true));
+
+    final result = await getPolygonListingsUseCase(
+      polygon: polygon,
+      limit: limit,
+    );
+
+    result.fold(
+      (_) => emit(currentState.copyWith(isLoadingMap: false)),
+      (listings) => emit(
+        currentState.copyWith(mapListings: listings, isLoadingMap: false),
+      ),
+    );
+  }
+
+  // ── Auth ──────────────────────────────────────────────────────────────────────
+
   Future<void> logout() async {
     await logoutUseCase();
     emit(const HomeLoggedOut());
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────────
+
+  Future<MapCoordinate?> _tryGetUserPosition() async {
+    final result = await detectHomeLocationUseCase();
+    return result.fold((_) => null, (coordinate) => coordinate);
   }
 
   @override
   Future<void> close() {
     _connectivitySubscription?.cancel();
     return super.close();
-  }
-
-  String? _resolveLocationFilter(CurrentLocation? location) {
-    final city = location?.city.trim();
-    if (city == null || city.isEmpty) {
-      return null;
-    }
-    return city;
   }
 }

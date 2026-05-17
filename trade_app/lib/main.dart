@@ -10,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:trade_app/config/di/service_locator.dart';
 import 'package:trade_app/core/theme/app_theme.dart';
+import 'package:trade_app/core/theme/theme_mode_cubit.dart';
 import 'package:trade_app/core/utils/fcm_notifications.dart';
 import 'package:trade_app/core/utils/user_session.dart';
 import 'package:trade_app/features/auth/presentation/screens/login_landing_screen.dart';
@@ -43,7 +44,7 @@ Future<void> _initializeIosFcmTokenFlow() async {
 
   final isAuthorized =
       settings.authorizationStatus == AuthorizationStatus.authorized ||
-          settings.authorizationStatus == AuthorizationStatus.provisional;
+      settings.authorizationStatus == AuthorizationStatus.provisional;
   if (!isAuthorized) {
     return;
   }
@@ -56,11 +57,14 @@ Future<void> _initializeIosFcmTokenFlow() async {
 
   final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
   final token = await FirebaseMessaging.instance.getToken();
-  print('iOS FCM Token: $token');
-  print("APNs Token: $apnsToken");
+  if (token == null || apnsToken == null) {
+    return;
+  }
 
   FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-    print('Refreshed Token: $newToken');
+    if (newToken.isEmpty) {
+      return;
+    }
   });
 }
 
@@ -79,7 +83,9 @@ Future<void> main() async {
       if (shouldEnableFirebase) {
         await Firebase.initializeApp();
         await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
-        await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+        await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+          true,
+        );
 
         FlutterError.onError =
             FirebaseCrashlytics.instance.recordFlutterFatalError;
@@ -149,24 +155,29 @@ class MyApp extends StatelessWidget {
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider<LoadingCubit>(
-          create: (context) => sl<LoadingCubit>(),
+        BlocProvider<ThemeModeCubit>(
+          create: (context) => sl<ThemeModeCubit>()..loadThemeMode(),
         ),
-        BlocProvider<AppUpdateCubit>(
-          create: (context) => sl<AppUpdateCubit>(),
-        ),
+        BlocProvider<LoadingCubit>(create: (context) => sl<LoadingCubit>()),
+        BlocProvider<AppUpdateCubit>(create: (context) => sl<AppUpdateCubit>()),
       ],
-      child: MaterialApp(
-        title: 'SurvivalGig',
-        theme: AppTheme.lightTheme,
-        debugShowCheckedModeBanner: false,
-        builder: (context, child) {
-          return LoadingOverlay(child: child ?? const SizedBox.shrink());
+      child: BlocBuilder<ThemeModeCubit, ThemeMode>(
+        builder: (context, themeMode) {
+          return MaterialApp(
+            title: 'SurvivalGig',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeMode,
+            debugShowCheckedModeBanner: false,
+            builder: (context, child) {
+              return LoadingOverlay(child: child ?? const SizedBox.shrink());
+            },
+            // Determine root screen based on first launch and login status:
+            // - First launch: StartupScreen
+            // - Subsequent launches: HomeScreen if logged in, LoginLandingScreen if not
+            home: _getHomeScreen(userSession),
+          );
         },
-        // Determine root screen based on first launch and login status:
-        // - First launch: StartupScreen
-        // - Subsequent launches: HomeScreen if logged in, LoginLandingScreen if not
-        home: _getHomeScreen(userSession),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/network/connectivity_service.dart';
+import '../../core/theme/theme_mode_cubit.dart';
 import '../../core/utils/user_session.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/datasources/apple_sign_in_local_datasource.dart';
@@ -23,12 +24,18 @@ import '../../features/auth/domain/usecases/upload_profile_image_usecase.dart';
 import '../../features/auth/domain/usecases/logout_usecase.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/home/data/datasources/home_local_datasource.dart';
+import '../../features/home/data/datasources/home_location_datasource.dart';
 import '../../features/home/data/datasources/home_remote_datasource.dart';
 import '../../features/home/data/repositories/home_repository_impl.dart';
 import '../../features/home/domain/repositories/home_repository.dart';
+import '../../features/home/domain/usecases/detect_home_location_usecase.dart';
 import '../../features/home/domain/usecases/get_categories_usecase.dart';
 import '../../features/home/domain/usecases/get_listings_usecase.dart';
+import '../../features/home/domain/usecases/get_map_listings_usecase.dart';
+import '../../features/home/domain/usecases/get_nearby_listings_usecase.dart';
+import '../../features/home/domain/usecases/get_polygon_listings_usecase.dart';
 import '../../features/home/domain/usecases/get_saved_location_usecase.dart';
+import '../../features/home/domain/usecases/search_address_location_usecase.dart';
 import '../../features/home/domain/usecases/update_location_from_pincode_usecase.dart';
 import '../../features/home/presentation/cubit/home_cubit.dart';
 import '../../features/listing_detail/data/datasources/listing_detail_remote_datasource.dart';
@@ -47,9 +54,11 @@ import '../../features/listing_detail/presentation/cubit/listing_detail_cubit.da
 import '../../features/listing_detail/presentation/cubit/my_listings_cubit.dart';
 import '../../features/listing_detail/presentation/cubit/submit_report_cubit.dart';
 import '../../features/post_listing/data/datasources/post_listing_remote_datasource.dart';
+import '../../features/post_listing/data/datasources/post_listing_location_datasource.dart';
 import '../../features/post_listing/data/repositories/post_listing_repository_impl.dart';
 import '../../features/post_listing/domain/repositories/post_listing_repository.dart';
 import '../../features/post_listing/domain/usecases/create_listing_usecase.dart';
+import '../../features/post_listing/domain/usecases/detect_current_location_usecase.dart';
 import '../../features/post_listing/domain/usecases/get_categories_usecase.dart'
     as post_listing;
 import '../../features/post_listing/domain/usecases/get_city_by_zipcode_usecase.dart';
@@ -123,6 +132,8 @@ void setupServiceLocator() {
     () => const FlutterSecureStorage(),
   );
 
+  sl.registerLazySingleton<ThemeModeCubit>(() => ThemeModeCubit(storage: sl()));
+
   // Global Loading Cubit - Singleton for app-wide loading state
   sl.registerLazySingleton<LoadingCubit>(() => LoadingCubit());
 
@@ -178,9 +189,7 @@ void setupServiceLocator() {
     () => FacebookSignInUseCase(sl()),
   );
 
-  sl.registerLazySingleton<AppleSignInUseCase>(
-    () => AppleSignInUseCase(sl()),
-  );
+  sl.registerLazySingleton<AppleSignInUseCase>(() => AppleSignInUseCase(sl()));
 
   sl.registerLazySingleton<RegisterUseCase>(() => RegisterUseCase(sl()));
 
@@ -221,8 +230,16 @@ void setupServiceLocator() {
     () => HomeRemoteDataSourceImpl(dioClient: sl()),
   );
 
+  sl.registerLazySingleton<HomeLocationDataSource>(
+    () => HomeLocationDataSourceImpl(),
+  );
+
   sl.registerLazySingleton<HomeRepository>(
-    () => HomeRepositoryImpl(remoteDataSource: sl(), localDataSource: sl()),
+    () => HomeRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+      locationDataSource: sl(),
+    ),
   );
 
   // Home - Domain Layer
@@ -240,13 +257,35 @@ void setupServiceLocator() {
     () => UpdateLocationFromPincodeUseCase(sl()),
   );
 
+  sl.registerLazySingleton<GetMapListingsUseCase>(
+    () => GetMapListingsUseCase(repository: sl()),
+  );
+
+  sl.registerLazySingleton<GetNearbyListingsUseCase>(
+    () => GetNearbyListingsUseCase(repository: sl()),
+  );
+
+  sl.registerLazySingleton<GetPolygonListingsUseCase>(
+    () => GetPolygonListingsUseCase(repository: sl()),
+  );
+
+  sl.registerLazySingleton<DetectHomeLocationUseCase>(
+    () => DetectHomeLocationUseCase(repository: sl()),
+  );
+
+  sl.registerLazySingleton<SearchAddressLocationUseCase>(
+    () => SearchAddressLocationUseCase(repository: sl()),
+  );
+
   // Home - Presentation Layer (Factory - new instance each time)
   sl.registerFactory<HomeCubit>(
     () => HomeCubit(
       getCategoriesUseCase: sl(),
-      getListingsUseCase: sl(),
-      getSavedLocationUseCase: sl(),
-      updateLocationFromPincodeUseCase: sl(),
+      getMapListingsUseCase: sl(),
+      getNearbyListingsUseCase: sl(),
+      getPolygonListingsUseCase: sl(),
+      detectHomeLocationUseCase: sl(),
+      searchAddressLocationUseCase: sl(),
       logoutUseCase: sl(),
       connectivityService: sl(),
     ),
@@ -257,8 +296,15 @@ void setupServiceLocator() {
     () => PostListingRemoteDataSourceImpl(dioClient: sl()),
   );
 
+  sl.registerLazySingleton<PostListingLocationDataSource>(
+    () => PostListingLocationDataSourceImpl(),
+  );
+
   sl.registerLazySingleton<PostListingRepository>(
-    () => PostListingRepositoryImpl(remoteDataSource: sl()),
+    () => PostListingRepositoryImpl(
+      remoteDataSource: sl(),
+      locationDataSource: sl(),
+    ),
   );
 
   // Post Listing - Domain Layer
@@ -268,6 +314,10 @@ void setupServiceLocator() {
 
   sl.registerLazySingleton<CreateListingUseCase>(
     () => CreateListingUseCase(repository: sl()),
+  );
+
+  sl.registerLazySingleton<DetectCurrentLocationUseCase>(
+    () => DetectCurrentLocationUseCase(repository: sl()),
   );
 
   sl.registerLazySingleton<post_listing.GetCategoriesUseCase>(
@@ -285,6 +335,7 @@ void setupServiceLocator() {
       uploadImagesUseCase: sl(),
       getCategoriesUseCase: sl(),
       getCityByZipcodeUseCase: sl(),
+      detectCurrentLocationUseCase: sl(),
     ),
   );
 

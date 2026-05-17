@@ -3,7 +3,9 @@ import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../shared/models/category.dart';
 import '../../domain/entities/create_listing.dart';
+import '../../domain/entities/detected_location.dart';
 import '../../domain/repositories/post_listing_repository.dart';
+import '../datasources/post_listing_location_datasource.dart';
 import '../datasources/post_listing_remote_datasource.dart';
 import '../models/create_listing_model.dart';
 
@@ -11,8 +13,12 @@ import '../models/create_listing_model.dart';
 /// Converts DTOs to entities and maps exceptions to failures
 class PostListingRepositoryImpl implements PostListingRepository {
   final PostListingRemoteDataSource remoteDataSource;
+  final PostListingLocationDataSource locationDataSource;
 
-  PostListingRepositoryImpl({required this.remoteDataSource});
+  PostListingRepositoryImpl({
+    required this.remoteDataSource,
+    required this.locationDataSource,
+  });
 
   @override
   Future<Either<Failure, List<String>>> uploadImages({
@@ -112,6 +118,29 @@ class PostListingRepositoryImpl implements PostListingRepository {
         ServerFailure(
           message: 'An unexpected error occurred while fetching city',
           code: 'UNEXPECTED_ERROR',
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, DetectedLocation>> detectCurrentLocation() async {
+    try {
+      final location = await locationDataSource.detectCurrentLocation();
+      return Right(location.toEntity());
+    } on ServerException catch (e) {
+      return Left(
+        ServerFailure(
+          message: e.message,
+          code: e.code,
+          statusCode: e.statusCode,
+        ),
+      );
+    } catch (_) {
+      return const Left(
+        ServerFailure(
+          message: 'Unable to detect location. Please try again.',
+          code: 'LOCATION_DETECTION_FAILED',
         ),
       );
     }

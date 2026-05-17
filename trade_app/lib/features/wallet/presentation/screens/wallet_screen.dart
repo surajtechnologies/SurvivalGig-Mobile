@@ -23,36 +23,17 @@ class WalletScreen extends StatelessWidget {
   }
 }
 
-class _WalletView extends StatefulWidget {
+class _WalletView extends StatelessWidget {
   const _WalletView();
-
-  @override
-  State<_WalletView> createState() => _WalletViewState();
-}
-
-class _WalletViewState extends State<_WalletView>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<WalletCubit, WalletState>(
       builder: (context, state) {
         if (state is WalletLoading || state is WalletInitial) {
-          // Global loading overlay handles loader display.
-          return const SizedBox.shrink();
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          );
         }
 
         if (state is WalletError) {
@@ -69,192 +50,200 @@ class _WalletViewState extends State<_WalletView>
   }
 
   Widget _buildLoadedContent(BuildContext context, WalletLoaded state) {
-    final receivedTransactions = state.transactions
-        .where((transaction) => transaction.isReceived)
-        .toList();
-    final spentTransactions = state.transactions
-        .where((transaction) => !transaction.isReceived)
-        .toList();
-
-    return Column(
-      children: [
-        SizedBox(height: AppDimensions.spacingMd),
-        Text(
-          'Wallet',
-          style: AppTextStyles.headlineMedium.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () => context.read<WalletCubit>().refresh(),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(
+          AppDimensions.spacingMd,
+          AppDimensions.spacingLg,
+          AppDimensions.spacingMd,
+          AppDimensions.spacingXl,
         ),
-        SizedBox(height: AppDimensions.spacingMd),
-        _buildWalletSummary(state.walletSummary),
-        TabBar(
-          controller: _tabController,
-          labelColor: AppColors.textPrimary,
-          unselectedLabelColor: AppColors.textSecondary,
-          labelStyle: AppTextStyles.headlineSmall.copyWith(
-            fontWeight: FontWeight.w600,
+        children: [
+          _buildWalletSummary(state.walletSummary),
+          SizedBox(height: AppDimensions.spacingLg),
+          _buildStatsRow(state.transactions),
+          SizedBox(height: AppDimensions.spacingXl),
+          Text(
+            'Transaction History',
+            style: AppTextStyles.headlineLarge.copyWith(
+              color: AppColors.textOnDarkPrimary,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-          unselectedLabelStyle: AppTextStyles.headlineSmall.copyWith(
-            fontWeight: FontWeight.w400,
-          ),
-          indicatorColor: AppColors.primary,
-          indicatorWeight:
-              AppDimensions.chatListDividerThickness +
-              AppDimensions.chatListDividerThickness,
-          dividerColor: AppColors.dividerColor,
-          tabs: const [
-            Tab(text: 'Received'),
-            Tab(text: 'Spent'),
-          ],
-        ),
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildTransactionsTab(
-                context,
-                transactions: receivedTransactions,
-                emptyTitle: 'No received transactions',
-                emptySubtitle: 'Received points will appear here',
+          SizedBox(height: AppDimensions.spacingMd),
+          if (state.transactions.isEmpty)
+            _buildEmptyState()
+          else
+            ...state.transactions.map(
+              (transaction) => Padding(
+                padding: EdgeInsets.only(bottom: AppDimensions.spacingMd),
+                child: WalletTransactionItem(transaction: transaction),
               ),
-              _buildTransactionsTab(
-                context,
-                transactions: spentTransactions,
-                emptyTitle: 'No spent transactions',
-                emptySubtitle: 'Spent points will appear here',
-              ),
-            ],
-          ),
-        ),
-      ],
+            ),
+        ],
+      ),
     );
   }
 
   Widget _buildWalletSummary(WalletSummary walletSummary) {
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          color: AppColors.primary,
-          padding: EdgeInsets.symmetric(
-            horizontal: AppDimensions.spacingMd,
-            vertical: AppDimensions.spacingLg,
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(AppDimensions.spacingXl),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.24),
+            blurRadius: 30,
+            spreadRadius: 4,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Total Balance',
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: AppColors.black.withValues(alpha: 0.72),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          SizedBox(height: AppDimensions.spacingMd),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Current Points Balance',
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: AppDimensions.spacingSm),
               Text(
-                '${walletSummary.currentPoints} pts',
+                '${walletSummary.currentPoints}',
                 style: AppTextStyles.displayLarge.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w700,
+                  color: AppColors.black,
+                  fontSize: 72,
+                  fontWeight: FontWeight.w800,
+                  height: 1,
+                ),
+              ),
+              SizedBox(width: AppDimensions.spacingSm),
+              Padding(
+                padding: EdgeInsets.only(bottom: AppDimensions.spacingSm),
+                child: Text(
+                  'pts',
+                  style: AppTextStyles.headlineLarge.copyWith(
+                    color: AppColors.black.withValues(alpha: 0.72),
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
+          ),
+          SizedBox(height: AppDimensions.spacingMd),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppDimensions.spacingSm,
+              vertical: AppDimensions.spacingXs,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.black.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.lock_rounded,
+                  color: AppColors.black.withValues(alpha: 0.56),
+                  size: AppDimensions.iconSizeSm,
+                ),
+                SizedBox(width: AppDimensions.spacingXs),
+                Text(
+                  '${walletSummary.pointsInEscrow} pts in escrow',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.black.withValues(alpha: 0.66),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsRow(List<WalletTransaction> transactions) {
+    final earned = transactions
+        .where((transaction) => transaction.isReceived)
+        .fold<int>(0, (sum, transaction) => sum + transaction.points);
+    final spent = transactions
+        .where((transaction) => !transaction.isReceived)
+        .fold<int>(0, (sum, transaction) => sum + transaction.points);
+
+    return Row(
+      children: [
+        Expanded(
+          child: _StatCard(
+            icon: Icons.arrow_downward_rounded,
+            value: '$earned pts',
+            label: 'Earned',
+            color: AppColors.primary,
           ),
         ),
-        Container(
-          width: double.infinity,
-          color: AppColors.walletEscrowBackground,
-          padding: EdgeInsets.symmetric(
-            horizontal: AppDimensions.spacingMd,
-            vertical: AppDimensions.spacingXl,
+        SizedBox(width: AppDimensions.spacingSm),
+        Expanded(
+          child: _StatCard(
+            icon: Icons.arrow_upward_rounded,
+            value: '$spent pts',
+            label: 'Spent',
+            color: AppColors.spent,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Points In Escrow',
-                style: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              SizedBox(height: AppDimensions.spacingSm),
-              Text(
-                '${walletSummary.pointsInEscrow} pts',
-                style: AppTextStyles.displayLarge.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+        ),
+        SizedBox(width: AppDimensions.spacingSm),
+        Expanded(
+          child: _StatCard(
+            icon: Icons.check_rounded,
+            value: '${transactions.length}',
+            label: 'Jobs Done',
+            color: AppColors.itemPin,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildTransactionsTab(
-    BuildContext context, {
-    required List<WalletTransaction> transactions,
-    required String emptyTitle,
-    required String emptySubtitle,
-  }) {
-    if (transactions.isEmpty) {
-      return RefreshIndicator(
-        color: AppColors.primary,
-        onRefresh: () => context.read<WalletCubit>().refresh(),
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            SizedBox(height: AppDimensions.spacingXl * 3),
-            Icon(
-              Icons.account_balance_wallet_outlined,
-              size: AppDimensions.iconSizeXl,
-              color: AppColors.textSecondary,
+  Widget _buildEmptyState() {
+    return Container(
+      padding: EdgeInsets.all(AppDimensions.spacingLg),
+      decoration: BoxDecoration(
+        color: AppColors.dashboardSurface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        border: Border.all(color: AppColors.dashboardBorder),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.account_balance_wallet_outlined,
+            size: AppDimensions.iconSizeXl,
+            color: AppColors.textOnDarkSecondary,
+          ),
+          SizedBox(height: AppDimensions.spacingSm),
+          Text(
+            'No transactions yet',
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: AppColors.textOnDarkPrimary,
+              fontWeight: FontWeight.w800,
             ),
-            SizedBox(height: AppDimensions.spacingSm),
-            Text(
-              emptyTitle,
-              style: AppTextStyles.bodyLarge.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
+          ),
+          SizedBox(height: AppDimensions.spacingXs),
+          Text(
+            'Point activity will appear here',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textOnDarkSecondary,
             ),
-            SizedBox(height: AppDimensions.spacingXs),
-            Text(
-              emptySubtitle,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      color: AppColors.primary,
-      onRefresh: () => context.read<WalletCubit>().refresh(),
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: transactions.length,
-        separatorBuilder: (context, index) => const Divider(
-          height: AppDimensions.chatListDividerThickness,
-          thickness: AppDimensions.chatListDividerThickness,
-          color: AppColors.dividerColor,
-        ),
-        itemBuilder: (_, index) {
-          return WalletTransactionItem(transaction: transactions[index]);
-        },
+          ),
+        ],
       ),
     );
   }
@@ -275,7 +264,7 @@ class _WalletViewState extends State<_WalletView>
             Text(
               message,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: AppColors.textOnDarkSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -284,19 +273,79 @@ class _WalletViewState extends State<_WalletView>
               onPressed: () => context.read<WalletCubit>().loadWallet(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
+                foregroundColor: AppColors.black,
                 elevation: 0,
               ),
               child: Text(
                 'Retry',
                 style: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w600,
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _StatCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppDimensions.spacingSm,
+        vertical: AppDimensions.spacingMd,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.dashboardSurface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        border: Border.all(color: AppColors.dashboardBorder),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.18),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: AppDimensions.iconSizeMd),
+          ),
+          SizedBox(height: AppDimensions.spacingSm),
+          Text(
+            value,
+            style: AppTextStyles.headlineSmall.copyWith(
+              color: AppColors.textOnDarkPrimary,
+              fontWeight: FontWeight.w800,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: AppDimensions.spacingXs),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textOnDarkSecondary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -8,7 +8,6 @@ import 'package:trade_app/core/constants/app_assets.dart';
 import 'package:trade_app/shared/widgets/primary_button.dart';
 import 'package:trade_app/shared/widgets/secondary_button.dart';
 import 'package:trade_app/features/home/presentation/screens/home_screen.dart';
-import 'package:trade_app/main.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import 'signup_screen.dart';
@@ -41,8 +40,6 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,7 +47,6 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) async {
           if (state is LoginSuccess) {
-
             if (!context.mounted) return;
             Navigator.pushReplacement(
               context,
@@ -195,8 +191,7 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                       color: Colors.black,
                       size: 24,
                     ),
-                    onTap: () =>
-                        context.read<AuthCubit>().signInWithApple(),
+                    onTap: () => context.read<AuthCubit>().signInWithApple(),
                   ),
                 ],
 

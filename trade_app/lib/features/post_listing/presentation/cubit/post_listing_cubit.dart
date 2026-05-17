@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/create_listing.dart';
 import '../../domain/usecases/create_listing_usecase.dart';
+import '../../domain/usecases/detect_current_location_usecase.dart';
 import '../../domain/usecases/get_city_by_zipcode_usecase.dart';
 import '../../domain/usecases/get_categories_usecase.dart';
 import '../../domain/usecases/upload_images_usecase.dart';
@@ -16,6 +17,7 @@ class PostListingCubit extends Cubit<PostListingState> {
   final UploadImagesUseCase uploadImagesUseCase;
   final GetCategoriesUseCase getCategoriesUseCase;
   final GetCityByZipcodeUseCase getCityByZipcodeUseCase;
+  final DetectCurrentLocationUseCase detectCurrentLocationUseCase;
   Timer? _zipcodeDebounce;
   int _locationLookupRequestId = 0;
 
@@ -24,9 +26,10 @@ class PostListingCubit extends Cubit<PostListingState> {
     required this.uploadImagesUseCase,
     required this.getCategoriesUseCase,
     required this.getCityByZipcodeUseCase,
+    required this.detectCurrentLocationUseCase,
   }) : super(const PostListingFormState()) {
-    // Load categories on initialization
     loadCategories();
+    detectCurrentLocation();
   }
 
   /// Get current form state
@@ -153,6 +156,55 @@ class PostListingCubit extends Cubit<PostListingState> {
   void updateBarterWanted(String barterWanted) {
     emit(
       _formState.copyWith(barterWanted: barterWanted, validationError: null),
+    );
+  }
+
+  void updateUrgencyLevel(String? level) {
+    emit(
+      _formState.copyWith(
+        urgencyLevel: level,
+        clearUrgencyLevel: level == null,
+        validationError: null,
+      ),
+    );
+  }
+
+  void updateExpiresAt(DateTime? date) {
+    emit(
+      _formState.copyWith(
+        expiresAt: date,
+        clearExpiresAt: date == null,
+        validationError: null,
+      ),
+    );
+  }
+
+  Future<void> detectCurrentLocation() async {
+    emit(_formState.copyWith(isDetectingLocation: true));
+    final result = await detectCurrentLocationUseCase();
+
+    result.fold(
+      (failure) {
+        emit(
+          _formState.copyWith(
+            isDetectingLocation: false,
+            validationError: failure.message,
+          ),
+        );
+      },
+      (location) {
+        emit(
+          _formState.copyWith(
+            latitude: location.latitude,
+            longitude: location.longitude,
+            location:
+                location.postalCode ?? location.city ?? _formState.location,
+            locationCity: location.city,
+            isDetectingLocation: false,
+            clearLocationCityError: true,
+          ),
+        );
+      },
     );
   }
 
@@ -292,19 +344,25 @@ class PostListingCubit extends Cubit<PostListingState> {
       } else if (currentForm.categoryId == null ||
           currentForm.categoryId!.isEmpty) {
         validationError = 'Please select a category';
-      } else if (currentForm.priceMode == PriceMode.points &&
+      } else if ((currentForm.priceMode == PriceMode.points ||
+              currentForm.priceMode == PriceMode.both) &&
           (int.tryParse(currentForm.pricePoints) == null ||
               int.parse(currentForm.pricePoints) <= 0)) {
         validationError = 'Please enter valid points';
-      } else if (currentForm.priceMode == PriceMode.skill &&
+      } else if ((currentForm.priceMode == PriceMode.skill ||
+              currentForm.priceMode == PriceMode.both) &&
           currentForm.barterWanted.trim().isEmpty) {
         validationError = 'Please enter what you want in exchange';
       } else if (currentForm.location.trim().isEmpty) {
         validationError = 'Zipcode is required';
-      } else if (!RegExp(r'^\d{5,9}$').hasMatch(currentForm.location.trim())) {
+      } else if ((currentForm.latitude == null ||
+              currentForm.longitude == null) &&
+          !RegExp(r'^\d{5,9}$').hasMatch(currentForm.location.trim())) {
         validationError = 'Please enter a valid 5 to 9-digit zipcode';
-      } else if (currentForm.locationCity == null ||
-          currentForm.locationCity!.trim().isEmpty) {
+      } else if ((currentForm.latitude == null ||
+              currentForm.longitude == null) &&
+          (currentForm.locationCity == null ||
+              currentForm.locationCity!.trim().isEmpty)) {
         validationError =
             currentForm.locationCityError ??
             'City not found for the entered zipcode';
@@ -328,13 +386,21 @@ class PostListingCubit extends Cubit<PostListingState> {
       condition: currentForm.condition,
       location: currentForm.locationCity?.trim() ?? currentForm.location.trim(),
       priceMode: currentForm.priceMode,
-      pricePoints: currentForm.priceMode == PriceMode.points
+      pricePoints:
+          currentForm.priceMode == PriceMode.points ||
+              currentForm.priceMode == PriceMode.both
           ? int.parse(currentForm.pricePoints)
           : null,
-      barterWanted: currentForm.priceMode == PriceMode.skill
+      barterWanted:
+          currentForm.priceMode == PriceMode.skill ||
+              currentForm.priceMode == PriceMode.both
           ? currentForm.barterWanted.trim()
           : null,
       photos: currentForm.uploadedImageUrls,
+      urgencyLevel: currentForm.urgencyLevel,
+      expiresAt: currentForm.expiresAt,
+      latitude: currentForm.latitude,
+      longitude: currentForm.longitude,
     );
 
     // Submit

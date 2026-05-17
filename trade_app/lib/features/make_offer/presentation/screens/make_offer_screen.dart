@@ -16,10 +16,7 @@ import '../cubit/make_offer_state.dart';
 class MakeOfferScreen extends StatelessWidget {
   final Listing listing;
 
-  const MakeOfferScreen({
-    super.key,
-    required this.listing,
-  });
+  const MakeOfferScreen({super.key, required this.listing});
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +63,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
         imageQuality: 80,
       );
 
+      if (!mounted) return;
       if (pickedFile != null) {
         context.read<MakeOfferCubit>().addImage(pickedFile.path);
       }
@@ -117,9 +115,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
             bottomNavigationBar: _buildSubmitButton(state),
           );
         }
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },
     );
   }
@@ -187,18 +183,14 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
             const SizedBox(height: 8),
             Text(
               state.validationError!,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.error,
-              ),
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
             ),
           ],
           if (state.submitError != null) ...[
             const SizedBox(height: 8),
             Text(
               state.submitError!,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.error,
-              ),
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
             ),
           ],
         ],
@@ -269,9 +261,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
             color: AppColors.textSecondary,
           ),
         ),
-        style: AppTextStyles.bodyLarge.copyWith(
-          color: AppColors.textPrimary,
-        ),
+        style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary),
         onChanged: (value) {
           final points = int.tryParse(value);
           context.read<MakeOfferCubit>().updatePoints(points);
@@ -343,9 +333,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
         if (state.imageError != null) ...[
           Text(
             state.imageError!,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.error,
-            ),
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
           ),
           const SizedBox(height: 8),
         ],
@@ -355,8 +343,8 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
           children: [
             // Existing images
             ...List.generate(state.localImagePaths.length, (index) {
-              final isUploading = state.isUploadingImage && 
-                  state.uploadingImageIndex == index;
+              final isUploading =
+                  state.isUploadingImage && state.uploadingImageIndex == index;
 
               return Padding(
                 padding: const EdgeInsets.only(right: 12),
@@ -375,7 +363,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
                       child: isUploading
                           ? Container(
                               decoration: BoxDecoration(
-                                color: AppColors.black.withOpacity(0.5),
+                                color: AppColors.black.withValues(alpha: 0.5),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Center(
@@ -396,7 +384,8 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
                         top: -8,
                         right: -8,
                         child: GestureDetector(
-                          onTap: () => context.read<MakeOfferCubit>().removeImage(index),
+                          onTap: () =>
+                              context.read<MakeOfferCubit>().removeImage(index),
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: const BoxDecoration(
@@ -507,7 +496,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
         color: AppColors.white,
         boxShadow: [
           BoxShadow(
-            color: AppColors.black.withOpacity(0.05),
+            color: AppColors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
@@ -517,10 +506,16 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: isEnabled ? () => context.read<MakeOfferCubit>().submitOffer() : null,
+            onPressed: isEnabled
+                ? () => context.read<MakeOfferCubit>().submitOffer()
+                : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: isEnabled ? AppColors.primary : AppColors.lightGrey,
-              foregroundColor: isEnabled ? AppColors.white : AppColors.textSecondary,
+              backgroundColor: isEnabled
+                  ? AppColors.primary
+                  : AppColors.lightGrey,
+              foregroundColor: isEnabled
+                  ? AppColors.white
+                  : AppColors.textSecondary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -540,7 +535,9 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
                     'Make Offer',
                     style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: isEnabled ? AppColors.white : AppColors.textSecondary,
+                      color: isEnabled
+                          ? AppColors.white
+                          : AppColors.textSecondary,
                     ),
                   ),
           ),

@@ -2,8 +2,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import '../../../../config/env/app_config.dart';
 import '../../../../core/errors/exceptions.dart';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 
 /// Google Sign-In local datasource
 /// Responsible only for interacting with Google Sign-In SDK
@@ -60,14 +58,6 @@ class GoogleSignInLocalDataSourceImpl implements GoogleSignInLocalDataSource {
       final account = await _googleSignIn.authenticate();
       final idToken = account.authentication.idToken;
 
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/token.txt');
-
-      await file.writeAsString(idToken!);
-
-      print("Token saved to: ${file.path}");
-
-      // File('token.txt').writeAsStringSync(idToken!);
       if (idToken == null || idToken.isEmpty) {
         throw const ServerException(
           message: 'Google sign-in did not return an ID token.',

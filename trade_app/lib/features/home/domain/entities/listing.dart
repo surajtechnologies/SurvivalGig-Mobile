@@ -8,6 +8,10 @@ class Listing {
   final String? condition;
   final String? categoryId;
   final String? location;
+  final double? latitude;
+  final double? longitude;
+  final String? urgencyLevel;
+  final DateTime? expiresAt;
   final String priceMode;
   final int? pricePoints;
   final String? barterWanted;
@@ -27,6 +31,10 @@ class Listing {
     this.condition,
     this.categoryId,
     this.location,
+    this.latitude,
+    this.longitude,
+    this.urgencyLevel,
+    this.expiresAt,
     required this.priceMode,
     this.pricePoints,
     this.barterWanted,
@@ -48,6 +56,10 @@ class Listing {
     String? condition,
     String? categoryId,
     String? location,
+    double? latitude,
+    double? longitude,
+    String? urgencyLevel,
+    DateTime? expiresAt,
     String? priceMode,
     int? pricePoints,
     String? barterWanted,
@@ -67,6 +79,10 @@ class Listing {
       condition: condition ?? this.condition,
       categoryId: categoryId ?? this.categoryId,
       location: location ?? this.location,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      urgencyLevel: urgencyLevel ?? this.urgencyLevel,
+      expiresAt: expiresAt ?? this.expiresAt,
       priceMode: priceMode ?? this.priceMode,
       pricePoints: pricePoints ?? this.pricePoints,
       barterWanted: barterWanted ?? this.barterWanted,

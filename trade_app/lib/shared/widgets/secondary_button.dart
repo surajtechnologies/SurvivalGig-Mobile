@@ -31,7 +31,7 @@ class SecondaryButton extends StatelessWidget {
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
-          disabledBackgroundColor: backgroundColor.withOpacity(0.6),
+          disabledBackgroundColor: backgroundColor.withValues(alpha: 0.6),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -50,9 +50,7 @@ class SecondaryButton extends StatelessWidget {
               )
             : Text(
                 label,
-                style: AppTextStyles.buttonLarge.copyWith(
-                  color: textColor,
-                ),
+                style: AppTextStyles.buttonLarge.copyWith(color: textColor),
               ),
       ),
     );

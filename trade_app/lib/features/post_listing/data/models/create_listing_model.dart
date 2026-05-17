@@ -11,9 +11,11 @@ class CreateListingRequestModel {
   final String priceMode;
   final int? pricePoints;
   final String? barterWanted;
-
-  /// Array of image URLs (already uploaded)
   final List<String> photos;
+  final String? urgencyLevel;
+  final DateTime? expiresAt;
+  final double? latitude;
+  final double? longitude;
 
   const CreateListingRequestModel({
     required this.type,
@@ -26,6 +28,10 @@ class CreateListingRequestModel {
     this.pricePoints,
     this.barterWanted,
     required this.photos,
+    this.urgencyLevel,
+    this.expiresAt,
+    this.latitude,
+    this.longitude,
   });
 
   /// Create from domain entity
@@ -41,6 +47,10 @@ class CreateListingRequestModel {
       pricePoints: entity.pricePoints,
       barterWanted: entity.barterWanted,
       photos: entity.photos,
+      urgencyLevel: entity.urgencyLevel,
+      expiresAt: entity.expiresAt,
+      latitude: entity.latitude,
+      longitude: entity.longitude,
     );
   }
 
@@ -50,7 +60,8 @@ class CreateListingRequestModel {
       'type': type,
       'title': title,
       'description': description,
-      if (categoryId != null && categoryId!.isNotEmpty) 'categoryId': categoryId,
+      if (categoryId != null && categoryId!.isNotEmpty)
+        'categoryId': categoryId,
       if (condition != null && condition!.isNotEmpty) 'condition': condition,
       'location': location,
       'priceMode': priceMode,
@@ -58,6 +69,11 @@ class CreateListingRequestModel {
       if (barterWanted != null && barterWanted!.isNotEmpty)
         'barterWanted': barterWanted,
       'photos': photos.where((url) => url.trim().isNotEmpty).toList(),
+      if (urgencyLevel != null && urgencyLevel!.isNotEmpty)
+        'urgencyLevel': urgencyLevel,
+      if (expiresAt != null) 'expiresAt': expiresAt!.toUtc().toIso8601String(),
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
     };
   }
 }
@@ -102,25 +118,27 @@ class CreateListingResponseModel {
 
   /// Convert from JSON (API response)
   factory CreateListingResponseModel.fromJson(Map<String, dynamic> json) {
-    final listing = json['listing'] as Map<String, dynamic>? ?? json;
+    final listing = _extractListingJson(json);
+    final createdAt = _readDateTime(listing['createdAt']) ?? DateTime.now();
+    final updatedAt = _readDateTime(listing['updatedAt']) ?? createdAt;
 
     return CreateListingResponseModel(
       success: json['success'] as bool? ?? true,
       message: json['message'] as String?,
-      id: listing['id'] as String,
-      userId: listing['userId'] as String,
-      type: listing['type'] as String,
-      title: listing['title'] as String,
-      description: listing['description'] as String? ?? '',
-      condition: listing['condition'] as String?,
-      categoryId: listing['categoryId'] as String?,
-      location: listing['location'] as String? ?? '',
-      priceMode: listing['priceMode'] as String,
-      pricePoints: listing['pricePoints'] as int?,
-      barterWanted: listing['barterWanted'] as String?,
-      status: listing['status'] as String,
-      createdAt: DateTime.parse(listing['createdAt'] as String),
-      updatedAt: DateTime.parse(listing['updatedAt'] as String),
+      id: _readString(listing['id']) ?? _readString(listing['_id']) ?? '',
+      userId: _readString(listing['userId']) ?? '',
+      type: _readString(listing['type']) ?? 'ITEM_OFFERING',
+      title: _readString(listing['title']) ?? '',
+      description: _readString(listing['description']) ?? '',
+      condition: _readString(listing['condition']),
+      categoryId: _readString(listing['categoryId']),
+      location: _readString(listing['location']) ?? '',
+      priceMode: _readString(listing['priceMode']) ?? 'POINTS',
+      pricePoints: _readInt(listing['pricePoints']),
+      barterWanted: _readString(listing['barterWanted']),
+      status: _readString(listing['status']) ?? 'ACTIVE',
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 
@@ -142,5 +160,44 @@ class CreateListingResponseModel {
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
+  }
+
+  static Map<String, dynamic> _extractListingJson(Map<String, dynamic> json) {
+    final listing = json['listing'];
+    if (listing is Map<String, dynamic>) {
+      return listing;
+    }
+
+    final data = json['data'];
+    if (data is Map<String, dynamic>) {
+      final wrappedListing = data['listing'];
+      if (wrappedListing is Map<String, dynamic>) {
+        return wrappedListing;
+      }
+      return data;
+    }
+
+    return json;
+  }
+
+  static String? _readString(dynamic value) {
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+    return null;
+  }
+
+  static int? _readInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value.trim());
+    return null;
+  }
+
+  static DateTime? _readDateTime(dynamic value) {
+    if (value is String && value.trim().isNotEmpty) {
+      return DateTime.tryParse(value.trim());
+    }
+    return null;
   }
 }

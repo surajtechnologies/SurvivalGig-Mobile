@@ -1,392 +1,271 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../config/di/service_locator.dart';
+import 'package:geocoding/geocoding.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/utils/user_session.dart';
-import '../../domain/entities/listing.dart';
-import '../cubit/home_cubit.dart';
-import '../cubit/home_state.dart';
-import '../widgets/job_card.dart';
-import '../../../listing_detail/presentation/screens/listing_detail_screen.dart';
 
-/// Search screen for listings.
-/// Keeps search flow isolated from the main Home screen state.
-class HomeSearchScreen extends StatelessWidget {
+const _kDark = Color(0xFF0D0D0D);
+
+/// Full-screen address / city / postcode search.
+/// Returns the selected address string to the caller via Navigator.pop(result).
+class HomeSearchScreen extends StatefulWidget {
   const HomeSearchScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<HomeCubit>()..loadInitialData(),
-      child: const _HomeSearchView(),
-    );
-  }
+  State<HomeSearchScreen> createState() => _HomeSearchScreenState();
 }
 
-class _HomeSearchView extends StatefulWidget {
-  const _HomeSearchView();
+class _HomeSearchScreenState extends State<HomeSearchScreen> {
+  final TextEditingController _ctrl = TextEditingController();
+  final FocusNode _focus = FocusNode();
+
+  List<Placemark> _suggestions = [];
+  List<Location> _locations = [];
+  bool _loading = false;
+  String _error = '';
+
+  Timer? _debounce;
 
   @override
-  State<_HomeSearchView> createState() => _HomeSearchViewState();
-}
-
-class _HomeSearchViewState extends State<_HomeSearchView> {
-  final TextEditingController _searchController = TextEditingController();
-  Timer? _searchDebounce;
-  String? _pendingSearchQuery;
+  void initState() {
+    super.initState();
+    _ctrl.addListener(_onTextChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
+  }
 
   @override
   void dispose() {
-    _searchDebounce?.cancel();
-    _searchController.dispose();
+    _debounce?.cancel();
+    _ctrl.removeListener(_onTextChanged);
+    _ctrl.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
-  void _onSearchChanged(String value) {
-    final query = value.trim();
-
-    setState(() {});
-    _searchDebounce?.cancel();
-
-    if (query.isEmpty) {
-      _pendingSearchQuery = null;
+  void _onTextChanged() {
+    _debounce?.cancel();
+    final query = _ctrl.text.trim();
+    if (query.length < 3) {
+      setState(() {
+        _suggestions = [];
+        _locations = [];
+        _error = '';
+        _loading = false;
+      });
       return;
     }
-
-    _pendingSearchQuery = query;
-    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
-      _performSearch(query);
+    setState(() {
+      _loading = true;
+      _error = '';
     });
+    _debounce = Timer(
+      const Duration(milliseconds: 500),
+      () => _fetchSuggestions(query),
+    );
   }
 
-  void _performSearch(String query) {
-    if (!mounted || query.trim().isEmpty) {
-      return;
-    }
-
-    final trimmedQuery = query.trim();
-    final cubit = context.read<HomeCubit>();
-    final currentState = cubit.state;
-
-    if (currentState is HomeLoaded) {
-      if ((currentState.searchQuery ?? '').trim() == trimmedQuery) {
-        _pendingSearchQuery = null;
+  Future<void> _fetchSuggestions(String query) async {
+    try {
+      final locs = await locationFromAddress(query);
+      if (!mounted) return;
+      if (locs.isEmpty) {
+        setState(() {
+          _suggestions = [];
+          _locations = [];
+          _loading = false;
+          _error = 'No results found';
+        });
         return;
       }
-      _pendingSearchQuery = null;
-      cubit.search(trimmedQuery);
-      return;
+      // Reverse-geocode the first few hits to get readable place names
+      final marks = <Placemark>[];
+      final validLocs = <Location>[];
+      for (final loc in locs.take(5)) {
+        try {
+          final pm = await placemarkFromCoordinates(
+            loc.latitude,
+            loc.longitude,
+          );
+          if (pm.isNotEmpty) {
+            marks.add(pm.first);
+            validLocs.add(loc);
+          }
+        } catch (_) {}
+      }
+      if (!mounted) return;
+      setState(() {
+        _suggestions = marks;
+        _locations = validLocs;
+        _loading = false;
+        _error = marks.isEmpty ? 'No results found' : '';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _suggestions = [];
+        _locations = [];
+        _loading = false;
+        _error = 'Could not search — check connection';
+      });
     }
-
-    _pendingSearchQuery = trimmedQuery;
   }
 
-  Future<void> _refreshSearch() async {
-    final query = _searchController.text.trim();
-    if (query.isEmpty) {
-      return;
+  void _submitQuery() {
+    final q = _ctrl.text.trim();
+    if (q.isNotEmpty) Navigator.pop(context, q);
+  }
+
+  void _selectSuggestion(int index) {
+    // Return a precise "lat,lng" string so the cubit can geocode it exactly,
+    // or just return the human-readable address string.
+    final loc = _locations[index];
+    final address = _formatAddress(_suggestions[index]);
+    // Return coordinates encoded as a string so the cubit geocodes them precisely.
+    Navigator.pop(
+      context,
+      address.isNotEmpty ? address : '${loc.latitude},${loc.longitude}',
+    );
+  }
+
+  String _formatAddress(Placemark p) {
+    final parts = <String>[];
+    if (p.name != null && p.name!.isNotEmpty && p.name != p.locality) {
+      parts.add(p.name!);
     }
-    final currentState = context.read<HomeCubit>().state;
-    if (currentState is HomeLoaded) {
-      await context.read<HomeCubit>().search(query);
-      return;
+    if (p.locality != null && p.locality!.isNotEmpty) {
+      parts.add(p.locality!);
     }
-    _performSearch(query);
+    if (p.administrativeArea != null && p.administrativeArea!.isNotEmpty) {
+      parts.add(p.administrativeArea!);
+    }
+    if (p.country != null && p.country!.isNotEmpty) {
+      parts.add(p.country!);
+    }
+    return parts.join(', ');
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<HomeCubit, HomeState>(
-      listener: (context, state) {
-        if (state is! HomeLoaded) {
-          return;
-        }
+    return Scaffold(
+      backgroundColor: _kDark,
+      appBar: AppBar(
+        backgroundColor: _kDark,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: TextField(
+          controller: _ctrl,
+          focusNode: _focus,
+          style: AppTextStyles.bodyLarge.copyWith(color: Colors.white),
+          cursorColor: AppColors.primary,
+          decoration: InputDecoration(
+            hintText: 'Search address, city or postcode…',
+            hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.white38),
+            border: InputBorder.none,
+            suffixIcon: _ctrl.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white54,
+                      size: 18,
+                    ),
+                    onPressed: () {
+                      _ctrl.clear();
+                      setState(() {
+                        _suggestions = [];
+                        _error = '';
+                      });
+                    },
+                  )
+                : null,
+          ),
+          textInputAction: TextInputAction.search,
+          onSubmitted: (_) => _submitQuery(),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: Colors.white10),
+        ),
+      ),
+      body: Column(
+        children: [
+          // Loading bar
+          if (_loading)
+            const LinearProgressIndicator(
+              color: AppColors.primary,
+              backgroundColor: Colors.transparent,
+              minHeight: 2,
+            ),
 
-        final pendingQuery = _pendingSearchQuery;
-        final currentInput = _searchController.text.trim();
-        if (pendingQuery != null &&
-            pendingQuery.isNotEmpty &&
-            currentInput == pendingQuery &&
-            (state.searchQuery ?? '').trim() != pendingQuery) {
-          _pendingSearchQuery = null;
-          context.read<HomeCubit>().search(pendingQuery);
-        }
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.white,
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: AppColors.white,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Text(
-            'Search',
-            style: AppTextStyles.headlineSmall.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: TextField(
-                controller: _searchController,
-                autofocus: true,
-                textInputAction: TextInputAction.search,
-                style: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.textPrimary,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Search posts by title or keyword',
-                  hintStyle: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    color: AppColors.textSecondary,
-                  ),
-                  suffixIcon: _searchController.text.trim().isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(
-                            Icons.close,
-                            color: AppColors.textSecondary,
-                          ),
-                          onPressed: () {
-                            _searchDebounce?.cancel();
-                            _pendingSearchQuery = null;
-                            _searchController.clear();
-                            setState(() {});
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: AppColors.lightGrey,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                ),
-                onChanged: _onSearchChanged,
-                onSubmitted: _performSearch,
-              ),
-            ),
-            Expanded(child: _buildResults()),
-          ],
-        ),
+          // Results list
+          Expanded(child: _buildBody()),
+        ],
       ),
     );
   }
 
-  Widget _buildResults() {
-    final query = _searchController.text.trim();
-    if (query.isEmpty) {
+  Widget _buildBody() {
+    if (_ctrl.text.trim().length < 3) {
+      return _buildHint();
+    }
+    if (!_loading && _error.isNotEmpty) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            'Start typing to search posts',
-            style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
+        child: Text(
+          _error,
+          style: AppTextStyles.bodyMedium.copyWith(color: Colors.white38),
         ),
       );
     }
-
-    return BlocBuilder<HomeCubit, HomeState>(
-      builder: (context, state) {
-        if (state is HomeLoading) {
-          // Global loading overlay handles loading indicator.
-          return const SizedBox.shrink();
-        }
-
-        if (state is HomeError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.search_off_rounded,
-                    size: 64,
-                    color: AppColors.textSecondary.withValues(alpha: 0.6),
+    if (_suggestions.isEmpty && !_loading) {
+      return _buildHint();
+    }
+    return ListView.separated(
+      itemCount: _suggestions.length,
+      separatorBuilder: (context, index) =>
+          const Divider(color: Colors.white10, height: 1),
+      itemBuilder: (_, i) {
+        final p = _suggestions[i];
+        final address = _formatAddress(p);
+        return ListTile(
+          leading: const Icon(
+            Icons.location_on_outlined,
+            color: AppColors.primary,
+            size: 20,
+          ),
+          title: Text(
+            address.isNotEmpty ? address : 'Unknown location',
+            style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+          ),
+          subtitle: p.postalCode != null && p.postalCode!.isNotEmpty
+              ? Text(
+                  p.postalCode!,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Colors.white38,
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    state.message,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _refreshSearch,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.white,
-                    ),
-                    child: const Text('Try Again'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        if (state is! HomeLoaded) {
-          return const SizedBox.shrink();
-        }
-
-        final resolvedQuery = (state.searchQuery ?? '').trim();
-        if (resolvedQuery != query) {
-          // Prevent second loader while search request is in-flight.
-          return const SizedBox.shrink();
-        }
-
-        if (state.listings.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                'No results found for "$query"',
-                style: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
-        }
-
-        return _buildListingsListView(state.listings);
+                )
+              : null,
+          onTap: () => _selectSuggestion(i),
+        );
       },
     );
   }
 
-  Widget _buildListingsListView(List<Listing> listings) {
-    final listingTagColors = _generateNonRepeatingRandomColors(
-      count: listings.length,
-      palette: AppColors.categoryAccents,
-      seed: _buildSeedFromStrings(listings.map((listing) => listing.id)),
-    );
-
-    return RefreshIndicator(
-      onRefresh: _refreshSearch,
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: listings.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          final listing = listings[index];
-          final firstValidImageUrl = listing.photos
-              .map((photo) => photo.url.trim())
-              .firstWhere((url) => url.isNotEmpty, orElse: () => '');
-
-          return JobCard(
-            category: listing.category?.name ?? 'General',
-            categoryColor: listingTagColors[index],
-            location: listing.location ?? 'Unknown Location',
-            title: listing.title,
-            description: listing.description ?? '',
-            offeringType: listing.priceMode.toLowerCase(),
-            offeringValue: _getOfferingValue(listing),
-            hasImage: firstValidImageUrl.isNotEmpty,
-            isVerified: listing.user.isIdVerified,
-            imageUrl: firstValidImageUrl.isNotEmpty ? firstValidImageUrl : null,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ListingDetailScreen(
-                    listingId: listing.id,
-                    isOwnerView: _isCurrentUserListing(listing),
-                  ),
-                ),
-              );
-            },
-          );
-        },
+  Widget _buildHint() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.search, color: Colors.white12, size: 56),
+          const SizedBox(height: 12),
+          Text(
+            'Type at least 3 characters\nto search for a location',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyMedium.copyWith(color: Colors.white24),
+          ),
+        ],
       ),
     );
-  }
-
-  String _getOfferingValue(Listing listing) {
-    switch (listing.priceMode.toUpperCase()) {
-      case 'POINTS':
-        return '${listing.pricePoints ?? 0} pts';
-      case 'SKILL':
-      case 'BARTER':
-        return listing.barterWanted ?? 'Skill';
-      case 'BOTH':
-        return '${listing.pricePoints ?? 0} pts / Skill';
-      default:
-        return 'N/A';
-    }
-  }
-
-  List<Color> _generateNonRepeatingRandomColors({
-    required int count,
-    required List<Color> palette,
-    required int seed,
-  }) {
-    if (count <= 0) {
-      return const [];
-    }
-
-    if (palette.isEmpty) {
-      return List<Color>.filled(count, AppColors.primary);
-    }
-
-    final random = Random(seed);
-    final colors = <Color>[];
-    Color? previousColor;
-
-    for (var index = 0; index < count; index++) {
-      final options = palette
-          .where((color) => color.toARGB32() != previousColor?.toARGB32())
-          .toList();
-      final available = options.isEmpty ? palette : options;
-      final selectedColor = available[random.nextInt(available.length)];
-      colors.add(selectedColor);
-      previousColor = selectedColor;
-    }
-
-    return colors;
-  }
-
-  int _buildSeedFromStrings(Iterable<String> values) {
-    var seed = 17;
-
-    for (final value in values) {
-      for (final rune in value.runes) {
-        seed = (seed * 31 + rune) & 0x7fffffff;
-      }
-    }
-
-    return seed;
-  }
-
-  bool _isCurrentUserListing(Listing listing) {
-    final currentUserId = sl<UserSession>().currentUser?.id;
-    if (currentUserId == null || currentUserId.isEmpty) {
-      return false;
-    }
-    return listing.userId == currentUserId || listing.user.id == currentUserId;
   }
 }

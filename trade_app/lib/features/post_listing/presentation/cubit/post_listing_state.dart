@@ -35,15 +35,17 @@ class PostListingFormState extends PostListingState {
   final bool isLoadingCategories;
   final String? categoriesError;
 
-  /// List of uploaded image URLs from server
   final List<String> uploadedImageUrls;
-
-  /// Local file paths for preview
   final List<String> localImagePaths;
   final bool isUploadingImage;
   final int? uploadingImageIndex;
   final String? imageError;
   final String? validationError;
+  final String? urgencyLevel;
+  final DateTime? expiresAt;
+  final double? latitude;
+  final double? longitude;
+  final bool isDetectingLocation;
 
   const PostListingFormState({
     this.listingType = ListingType.itemOffering,
@@ -67,6 +69,11 @@ class PostListingFormState extends PostListingState {
     this.uploadingImageIndex,
     this.imageError,
     this.validationError,
+    this.urgencyLevel,
+    this.expiresAt,
+    this.latitude,
+    this.longitude,
+    this.isDetectingLocation = false,
   });
 
   PostListingFormState copyWith({
@@ -93,6 +100,13 @@ class PostListingFormState extends PostListingState {
     int? uploadingImageIndex,
     String? imageError,
     String? validationError,
+    String? urgencyLevel,
+    bool clearUrgencyLevel = false,
+    DateTime? expiresAt,
+    bool clearExpiresAt = false,
+    double? latitude,
+    double? longitude,
+    bool? isDetectingLocation,
   }) {
     return PostListingFormState(
       listingType: listingType ?? this.listingType,
@@ -121,11 +135,21 @@ class PostListingFormState extends PostListingState {
       uploadingImageIndex: uploadingImageIndex,
       imageError: imageError,
       validationError: validationError,
+      urgencyLevel: clearUrgencyLevel
+          ? null
+          : (urgencyLevel ?? this.urgencyLevel),
+      expiresAt: clearExpiresAt ? null : (expiresAt ?? this.expiresAt),
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      isDetectingLocation: isDetectingLocation ?? this.isDetectingLocation,
     );
   }
 
   /// Check if form is valid for submission
   bool get isFormValid {
+    final hasGpsLocation = latitude != null && longitude != null;
+    final hasResolvedLocation =
+        locationCity != null && locationCity!.trim().isNotEmpty;
     final hasRequiredFields =
         title.trim().isNotEmpty &&
         title.trim().length >= 3 &&
@@ -133,9 +157,9 @@ class PostListingFormState extends PostListingState {
         categoryId != null &&
         categoryId!.isNotEmpty &&
         location.trim().isNotEmpty &&
-        RegExp(r'^\d{5,9}$').hasMatch(location.trim()) &&
-        locationCity != null &&
-        locationCity!.trim().isNotEmpty;
+        (hasGpsLocation ||
+            (RegExp(r'^\d{5,9}$').hasMatch(location.trim()) &&
+                hasResolvedLocation));
     // TODO: Re-enable image check once upload is fixed
     // && uploadedImageUrls.isNotEmpty;
 
@@ -149,6 +173,13 @@ class PostListingFormState extends PostListingState {
     // If price mode is skill, we need exchange description
     if (priceMode == PriceMode.skill) {
       return hasRequiredFields && barterWanted.trim().isNotEmpty;
+    }
+
+    if (priceMode == PriceMode.both) {
+      return hasRequiredFields &&
+          int.tryParse(pricePoints) != null &&
+          int.parse(pricePoints) > 0 &&
+          barterWanted.trim().isNotEmpty;
     }
 
     return hasRequiredFields;
@@ -190,6 +221,11 @@ class PostListingFormState extends PostListingState {
     uploadingImageIndex,
     imageError,
     validationError,
+    urgencyLevel,
+    expiresAt,
+    latitude,
+    longitude,
+    isDetectingLocation,
   ];
 }
 

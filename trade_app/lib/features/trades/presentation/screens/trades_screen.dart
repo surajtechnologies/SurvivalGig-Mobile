@@ -63,26 +63,35 @@ class _TradesViewState extends State<_TradesView> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: AppDimensions.spacingMd),
-        Text(
-          'All Chats',
-          style: AppTextStyles.headlineMedium.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppDimensions.spacingMd,
+            AppDimensions.spacingLg,
+            AppDimensions.spacingMd,
+            AppDimensions.spacingMd,
           ),
-          textAlign: TextAlign.center,
+          child: Text(
+            'Messages',
+            style: AppTextStyles.displayLarge.copyWith(
+              color: AppColors.textOnDarkPrimary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ),
-        SizedBox(height: AppDimensions.spacingMd),
         const Divider(
           height: AppDimensions.chatListDividerThickness,
           thickness: AppDimensions.chatListDividerThickness,
+          color: AppColors.dashboardBorder,
         ),
         Expanded(
           child: BlocBuilder<TradesCubit, TradesState>(
             builder: (context, state) {
               if (state is TradesLoading) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                );
               }
 
               if (state is TradesError) {
@@ -126,16 +135,18 @@ class _TradesViewState extends State<_TradesView> {
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: itemCount,
-        separatorBuilder: (_, __) => const Divider(
+        separatorBuilder: (context, index) => const Divider(
           height: AppDimensions.chatListDividerThickness,
           thickness: AppDimensions.chatListDividerThickness,
-          color: AppColors.dividerColor,
+          color: AppColors.dashboardBorder,
         ),
         itemBuilder: (context, index) {
           if (index >= state.trades.length) {
             return Padding(
               padding: EdgeInsets.symmetric(vertical: AppDimensions.spacingMd),
-              child: const Center(child: CircularProgressIndicator()),
+              child: const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
             );
           }
 
@@ -172,7 +183,7 @@ class _TradesViewState extends State<_TradesView> {
             Text(
               message,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: AppColors.textOnDarkSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -181,13 +192,13 @@ class _TradesViewState extends State<_TradesView> {
               onPressed: () => context.read<TradesCubit>().loadTrades(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
+                foregroundColor: AppColors.black,
                 elevation: 0,
               ),
               child: Text(
                 'Retry',
                 style: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.white,
+                  color: AppColors.black,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -206,12 +217,13 @@ class _TradesViewState extends State<_TradesView> {
           Icon(
             Icons.chat_bubble_outline,
             size: AppDimensions.iconSizeXl,
-            color: AppColors.textSecondary,
+            color: AppColors.textOnDarkSecondary,
           ),
           SizedBox(height: AppDimensions.spacingSm),
           Text(
             'No chats yet',
             style: AppTextStyles.bodyLarge.copyWith(
+              color: AppColors.textOnDarkPrimary,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
@@ -220,7 +232,7 @@ class _TradesViewState extends State<_TradesView> {
           Text(
             'Your trades will appear here once started',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: AppColors.textOnDarkSecondary,
             ),
             textAlign: TextAlign.center,
           ),
