@@ -122,18 +122,18 @@ class _ResetPasswordScreenContentState
 
   Widget _buildSuccessScreen() {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.dashboardBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.dashboardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Reset password',
           style: AppTextStyles.headlineSmall.copyWith(
-            color: AppColors.textPrimary,
+            color: AppColors.textOnDarkPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -178,7 +178,7 @@ class _ResetPasswordScreenContentState
                 'A reset password link has been sent to your email address.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textPrimary,
+                  color: AppColors.textOnDarkPrimary,
                   fontSize: 16,
                   height: 1.6,
                 ),
@@ -202,18 +202,18 @@ class _ResetPasswordScreenContentState
 
   Widget _buildFormScreen(bool isLoading) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.dashboardBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.dashboardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Reset password',
           style: AppTextStyles.headlineSmall.copyWith(
-            color: AppColors.textPrimary,
+            color: AppColors.textOnDarkPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -245,7 +245,7 @@ class _ResetPasswordScreenContentState
                   keyboardType: TextInputType.emailAddress,
                   enabled: !isLoading,
                   style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.black,
+                    color: AppColors.textOnDarkPrimary,
                     fontWeight: FontWeight.w500,
                   ),
                   validator: _validateEmail,
@@ -255,7 +255,7 @@ class _ResetPasswordScreenContentState
                       color: AppColors.textDisabled,
                     ),
                     filled: true,
-                    fillColor: AppColors.lightGrey,
+                    fillColor: AppColors.dashboardSurfaceElevated,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16.0,
                       vertical: 16.0,
@@ -267,7 +267,7 @@ class _ResetPasswordScreenContentState
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.0),
                       borderSide: const BorderSide(
-                        color: AppColors.lightGrey,
+                        color: AppColors.dashboardBorder,
                         width: 1.0,
                       ),
                     ),

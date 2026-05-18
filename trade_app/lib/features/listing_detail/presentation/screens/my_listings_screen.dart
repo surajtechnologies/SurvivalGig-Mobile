@@ -30,19 +30,19 @@ class _MyListingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.dashboardBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.dashboardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
         title: Text(
           'My Listings',
           style: AppTextStyles.headlineSmall.copyWith(
-            color: AppColors.textPrimary,
+            color: AppColors.textOnDarkPrimary,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -105,6 +105,7 @@ class _MyListingsView extends StatelessWidget {
             hasImage: firstValidImageUrl.isNotEmpty,
             isVerified: listing.user.isIdVerified,
             imageUrl: firstValidImageUrl.isNotEmpty ? firstValidImageUrl : null,
+            titleColor: AppColors.primary,
             onTap: () async {
               final didDelete = await Navigator.push<bool>(
                 context,

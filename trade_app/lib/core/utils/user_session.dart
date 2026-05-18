@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../features/auth/domain/entities/user.dart';
@@ -14,6 +15,8 @@ class UserSession {
 
   User? _currentUser;
   bool _isFirstLaunch = true;
+  final StreamController<void> _sessionExpiredController =
+      StreamController<void>.broadcast();
 
   UserSession({FlutterSecureStorage? storage})
     : _storage = storage ?? const FlutterSecureStorage();
@@ -27,6 +30,9 @@ class UserSession {
   /// Check if this is the first app launch
   bool get isFirstLaunch => _isFirstLaunch;
 
+  /// Emits when the server invalidates the current session.
+  Stream<void> get sessionExpiredStream => _sessionExpiredController.stream;
+
   /// Set the current user and persist to secure storage
   Future<void> setUser(User user) async {
     _currentUser = user;
@@ -38,6 +44,12 @@ class UserSession {
   Future<void> clearUser() async {
     _currentUser = null;
     await _storage.delete(key: _userKey);
+  }
+
+  /// Clear the current user and notify the UI to reset to login.
+  Future<void> expireSession() async {
+    await clearUser();
+    _sessionExpiredController.add(null);
   }
 
   /// Mark that the app has been launched (call after showing startup screen)

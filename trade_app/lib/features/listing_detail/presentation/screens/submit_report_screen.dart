@@ -68,7 +68,7 @@ class _SubmitReportViewState extends State<_SubmitReportView> {
         final isSubmitting = state is SubmitReportSubmitting;
 
         return Scaffold(
-          backgroundColor: AppColors.white,
+          backgroundColor: AppColors.dashboardBackground,
           appBar: _buildAppBar(context),
           body: Form(
             key: _formKey,
@@ -80,7 +80,7 @@ class _SubmitReportViewState extends State<_SubmitReportView> {
                   Text(
                     'Report an Issue',
                     style: AppTextStyles.headlineLarge.copyWith(
-                      color: AppColors.textPrimary,
+                      color: AppColors.textOnDarkPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -134,16 +134,16 @@ class _SubmitReportViewState extends State<_SubmitReportView> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.dashboardBackground,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+        icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
         'Submit Report',
         style: AppTextStyles.headlineSmall.copyWith(
-          color: AppColors.textPrimary,
+          color: AppColors.textOnDarkPrimary,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -170,7 +170,7 @@ class _SubmitReportViewState extends State<_SubmitReportView> {
             width: AppDimensions.iconSizeLg,
             height: AppDimensions.iconSizeLg,
             decoration: BoxDecoration(
-              color: AppColors.white.withValues(alpha: 0.8),
+              color: AppColors.dashboardSurfaceElevated,
               borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
             ),
             child: Icon(
@@ -187,7 +187,7 @@ class _SubmitReportViewState extends State<_SubmitReportView> {
                 Text(
                   'Quick Tip',
                   style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textOnDarkPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -195,7 +195,7 @@ class _SubmitReportViewState extends State<_SubmitReportView> {
                 Text(
                   'Detailed descriptions help our team resolve issues faster. Include specific steps if possible.',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textOnDarkPrimary,
                   ),
                 ),
               ],
@@ -213,7 +213,7 @@ class _SubmitReportViewState extends State<_SubmitReportView> {
           width: AppDimensions.iconSizeLg,
           height: AppDimensions.iconSizeLg,
           decoration: BoxDecoration(
-            color: AppColors.lightGrey,
+            color: AppColors.dashboardSurfaceElevated,
             borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
           ),
           child: Icon(
@@ -226,7 +226,7 @@ class _SubmitReportViewState extends State<_SubmitReportView> {
         Text(
           title,
           style: AppTextStyles.headlineSmall.copyWith(
-            color: AppColors.textPrimary,
+            color: AppColors.textOnDarkPrimary,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -246,7 +246,7 @@ class _SubmitReportViewState extends State<_SubmitReportView> {
       controller: _reasonController,
       enabled: !isSubmitting,
       textInputAction: TextInputAction.next,
-      style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary),
+      style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textOnDarkPrimary),
       decoration: _buildInputDecoration(
         hintText: 'e.g. Payment failed at checkout',
       ),
@@ -266,7 +266,7 @@ class _SubmitReportViewState extends State<_SubmitReportView> {
       textInputAction: TextInputAction.newline,
       minLines: 6,
       maxLines: 6,
-      style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary),
+      style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textOnDarkPrimary),
       decoration: _buildInputDecoration(
         hintText: 'Provide as much detail as possible...',
       ),
@@ -286,7 +286,7 @@ class _SubmitReportViewState extends State<_SubmitReportView> {
         color: AppColors.textSecondary,
       ),
       filled: true,
-      fillColor: AppColors.white,
+      fillColor: AppColors.dashboardSurfaceElevated,
       contentPadding: EdgeInsets.symmetric(
         horizontal: AppDimensions.spacingMd,
         vertical: AppDimensions.spacingMd,
@@ -323,8 +323,8 @@ class _SubmitReportViewState extends State<_SubmitReportView> {
         AppDimensions.spacingLg,
       ),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        border: const Border(top: BorderSide(color: AppColors.dividerColor)),
+        color: AppColors.dashboardSurface,
+        border: const Border(top: BorderSide(color: AppColors.dashboardBorder)),
         boxShadow: [
           BoxShadow(
             color: AppColors.black.withValues(alpha: 0.04),

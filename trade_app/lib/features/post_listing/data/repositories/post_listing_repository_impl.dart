@@ -76,6 +76,39 @@ class PostListingRepositoryImpl implements PostListingRepository {
   }
 
   @override
+  Future<Either<Failure, void>> updateListing({
+    required String listingId,
+    required String title,
+    required int pricePoints,
+    required String description,
+  }) async {
+    try {
+      await remoteDataSource.updateListing(
+        listingId: listingId,
+        title: title,
+        pricePoints: pricePoints,
+        description: description,
+      );
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(
+        ServerFailure(
+          message: e.message,
+          code: e.code,
+          statusCode: e.statusCode,
+        ),
+      );
+    } catch (e) {
+      return const Left(
+        ServerFailure(
+          message: 'An unexpected error occurred while updating listing',
+          code: 'UNEXPECTED_ERROR',
+        ),
+      );
+    }
+  }
+
+  @override
   Future<Either<Failure, List<Category>>> getCategories() async {
     try {
       final response = await remoteDataSource.getCategories();

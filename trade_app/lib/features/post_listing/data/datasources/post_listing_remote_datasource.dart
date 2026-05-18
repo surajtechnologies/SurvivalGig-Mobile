@@ -19,6 +19,14 @@ abstract class PostListingRemoteDataSource {
     required CreateListingRequestModel request,
   });
 
+  /// Update an existing listing (title, pricePoints, description)
+  Future<void> updateListing({
+    required String listingId,
+    required String title,
+    required int pricePoints,
+    required String description,
+  });
+
   /// Get all categories
   Future<CategoriesResponseModel> getCategories();
 
@@ -127,6 +135,39 @@ class PostListingRemoteDataSourceImpl implements PostListingRemoteDataSource {
           statusCode: response.statusCode,
         );
       }
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<void> updateListing({
+    required String listingId,
+    required String title,
+    required int pricePoints,
+    required String description,
+  }) async {
+    try {
+      final response = await dioClient.dio.patch(
+        ApiEndpoints.updateListing(listingId),
+        data: {
+          'title': title,
+          'pricePoints': pricePoints,
+          'description': description,
+        },
+      );
+
+      if (response.statusCode != null &&
+          response.statusCode! >= 200 &&
+          response.statusCode! < 300) {
+        return;
+      }
+
+      throw ServerException(
+        message: response.data['message'] ?? 'Failed to update listing',
+        code: response.data['code'] ?? 'UPDATE_LISTING_FAILED',
+        statusCode: response.statusCode,
+      );
     } on DioException catch (e) {
       throw _handleDioError(e);
     }

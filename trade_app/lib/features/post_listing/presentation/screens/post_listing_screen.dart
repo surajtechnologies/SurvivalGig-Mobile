@@ -1,7 +1,10 @@
 import 'dart:io';
+import 'package:apple_maps_flutter/apple_maps_flutter.dart' as apple_maps;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../config/di/service_locator.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -10,6 +13,36 @@ import '../../../../shared/models/category.dart';
 import '../../domain/entities/create_listing.dart';
 import '../cubit/post_listing_cubit.dart';
 import '../cubit/post_listing_state.dart';
+
+const _kPostListingDefaultTarget = LatLng(37.7749, -122.4194);
+
+const _kPostListingDarkMapStyle = '''
+[
+  {"elementType":"geometry","stylers":[{"color":"#17231d"}]},
+  {"elementType":"labels.text.fill","stylers":[{"color":"#8fa19a"}]},
+  {"elementType":"labels.text.stroke","stylers":[{"color":"#07100d"}]},
+  {"featureType":"administrative","elementType":"geometry","stylers":[{"color":"#2b3a33"}]},
+  {"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#7c8f86"}]},
+  {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#0f3a2c"}]},
+  {"featureType":"road","elementType":"geometry","stylers":[{"color":"#293832"}]},
+  {"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#111b16"}]},
+  {"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#344a40"}]},
+  {"featureType":"transit","elementType":"geometry","stylers":[{"color":"#213129"}]},
+  {"featureType":"water","elementType":"geometry","stylers":[{"color":"#0b1a20"}]}
+]
+''';
+
+class PostListingResult {
+  final bool didCreate;
+  final double? latitude;
+  final double? longitude;
+
+  const PostListingResult({
+    required this.didCreate,
+    this.latitude,
+    this.longitude,
+  });
+}
 
 /// Post Listing Screen
 /// Allows users to create a new listing with images
@@ -37,7 +70,6 @@ class _PostListingViewState extends State<_PostListingView> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _locationController = TextEditingController();
   final _pointsController = TextEditingController();
   final _imagePicker = ImagePicker();
 
@@ -45,7 +77,6 @@ class _PostListingViewState extends State<_PostListingView> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _locationController.dispose();
     _pointsController.dispose();
     super.dispose();
   }
@@ -96,14 +127,6 @@ class _PostListingViewState extends State<_PostListingView> {
   Widget build(BuildContext context) {
     return BlocConsumer<PostListingCubit, PostListingState>(
       listener: (context, state) {
-        if (state is PostListingFormState &&
-            _locationController.text != state.location) {
-          _locationController.value = TextEditingValue(
-            text: state.location,
-            selection: TextSelection.collapsed(offset: state.location.length),
-          );
-        }
-
         if (state is PostListingSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -111,7 +134,13 @@ class _PostListingViewState extends State<_PostListingView> {
               backgroundColor: AppColors.success,
             ),
           );
-          Navigator.of(context).pop(true);
+          Navigator.of(context).pop(
+            PostListingResult(
+              didCreate: true,
+              latitude: state.formData.latitude,
+              longitude: state.formData.longitude,
+            ),
+          );
         }
 
         if (state is PostListingError) {
@@ -221,8 +250,8 @@ class _PostListingViewState extends State<_PostListingView> {
                       _buildExchangeSection(formState),
                       const SizedBox(height: 20),
 
-                      // 6. Location
-                      _buildLocationField(formState),
+                      // 6. Listing Location
+                      _buildListingLocationSection(formState),
                       const SizedBox(height: 20),
 
                       // 7. Description
@@ -257,10 +286,6 @@ class _PostListingViewState extends State<_PostListingView> {
                       // Expiry Date
                       _buildExpiryDatePicker(formState),
                       const SizedBox(height: 20),
-
-                      // Current Location
-                      _buildCurrentLocationButton(formState),
-                      const SizedBox(height: 32),
 
                       // Post Button
                       SizedBox(
@@ -725,54 +750,240 @@ class _PostListingViewState extends State<_PostListingView> {
     );
   }
 
-  /// Build Zipcode field with resolved city label
-  Widget _buildLocationField(PostListingFormState formState) {
+  Widget _buildListingLocationSection(PostListingFormState formState) {
+    final hasLocation =
+        formState.latitude != null && formState.longitude != null;
+    final locationTitle = formState.locationCity?.trim().isNotEmpty == true
+        ? formState.locationCity!.trim()
+        : hasLocation
+        ? 'Selected location'
+        : 'No location selected';
+    final coordinateLabel = hasLocation
+        ? '${formState.latitude!.toStringAsFixed(6)}, ${formState.longitude!.toStringAsFixed(6)}'
+        : 'Choose a map pin or use your device location';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildTextField(
-          controller: _locationController,
-          label: 'Zipcode',
-          hint: 'Enter zipcode',
-          keyboardType: TextInputType.number,
-          maxLength: 9,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          onChanged: (value) {
-            context.read<PostListingCubit>().updateLocation(value);
-          },
+        Text(
+          'Listing Location',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textOnDarkPrimary,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-        if (formState.isResolvingLocationCity)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              'Fetching city...',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textOnDarkSecondary,
-              ),
-            ),
-          )
-        else if (formState.locationCity != null &&
-            formState.locationCity!.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              'City: ${formState.locationCity!}',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.primaryDark,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          )
-        else if (RegExp(r'^\d{5,9}$').hasMatch(formState.location.trim()) &&
-            formState.locationCityError != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              formState.locationCityError!,
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.dashboardSurfaceElevated,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: hasLocation
+                  ? AppColors.primary.withValues(alpha: 0.45)
+                  : AppColors.dashboardSurfaceElevated,
             ),
           ),
+          child: Row(
+            children: [
+              Icon(
+                hasLocation ? Icons.location_on : Icons.location_searching,
+                color: hasLocation
+                    ? AppColors.primary
+                    : AppColors.textOnDarkSecondary,
+                size: 22,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      locationTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textOnDarkPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      coordinateLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textOnDarkSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildLocationAction(
+                icon: Icons.map_rounded,
+                label: 'Select from Map',
+                onPressed: formState.isDetectingLocation
+                    ? null
+                    : () => _openMapLocationPicker(formState),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildLocationAction(
+                icon: Icons.my_location_rounded,
+                label: formState.isDetectingLocation
+                    ? 'Detecting...'
+                    : 'Use Current Location',
+                isLoading: formState.isDetectingLocation,
+                onPressed: formState.isDetectingLocation
+                    ? null
+                    : () => _useCurrentLocation(),
+              ),
+            ),
+          ],
+        ),
       ],
+    );
+  }
+
+  Widget _buildLocationAction({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onPressed,
+    bool isLoading = false,
+  }) {
+    return SizedBox(
+      height: 48,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: isLoading
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary,
+                ),
+              )
+            : Icon(icon, size: 18),
+        label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          disabledForegroundColor: AppColors.textOnDarkSecondary,
+          side: BorderSide(color: AppColors.primary.withValues(alpha: 0.45)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openMapLocationPicker(PostListingFormState formState) async {
+    final initialTarget =
+        formState.latitude != null && formState.longitude != null
+        ? LatLng(formState.latitude!, formState.longitude!)
+        : _kPostListingDefaultTarget;
+
+    final selected = await Navigator.push<_PickedMapLocation>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _MapLocationPickerScreen(initialTarget: initialTarget),
+      ),
+    );
+
+    if (selected == null || !mounted) return;
+    context.read<PostListingCubit>().updateSelectedMapLocation(
+      latitude: selected.latitude,
+      longitude: selected.longitude,
+    );
+  }
+
+  Future<void> _useCurrentLocation() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!mounted) return;
+    if (!serviceEnabled) {
+      await _showLocationSettingsAlert(openLocationSettings: true);
+      return;
+    }
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (!mounted) return;
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      await _showLocationSettingsAlert(openLocationSettings: false);
+      return;
+    }
+
+    context.read<PostListingCubit>().detectCurrentLocation();
+  }
+
+  Future<void> _showLocationSettingsAlert({
+    required bool openLocationSettings,
+  }) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppColors.dashboardSurface,
+          title: Text(
+            'Location Permission',
+            style: AppTextStyles.headlineSmall.copyWith(
+              color: AppColors.textOnDarkPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Text(
+            openLocationSettings
+                ? 'Location services are disabled. Please update it in Settings.'
+                : 'Location permission not given. Please update it in Settings.',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textOnDarkSecondary,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'Cancel',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textOnDarkSecondary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                if (openLocationSettings) {
+                  await Geolocator.openLocationSettings();
+                } else {
+                  await Geolocator.openAppSettings();
+                }
+              },
+              child: Text(
+                'Open Settings',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -843,7 +1054,7 @@ class _PostListingViewState extends State<_PostListingView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Urgency Level (optional)',
+          'Urgency Level',
           style: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.textOnDarkPrimary,
             fontWeight: FontWeight.w500,
@@ -881,14 +1092,14 @@ class _PostListingViewState extends State<_PostListingView> {
   /// Expiry date picker
   Widget _buildExpiryDatePicker(PostListingFormState formState) {
     final label = formState.expiresAt == null
-        ? 'Select expiry date (optional)'
+        ? 'Select expiry date'
         : 'Expires: ${formState.expiresAt!.toLocal().toString().split(' ').first}';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Expiry Date (optional)',
+          'Expiry Date',
           style: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.textOnDarkPrimary,
             fontWeight: FontWeight.w500,
@@ -943,61 +1154,239 @@ class _PostListingViewState extends State<_PostListingView> {
       ],
     );
   }
+}
 
-  /// Use current GPS location button
-  Widget _buildCurrentLocationButton(PostListingFormState formState) {
-    final hasLocation =
-        formState.latitude != null && formState.longitude != null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Listing Location',
-          style: AppTextStyles.bodyMedium.copyWith(
+class _PickedMapLocation {
+  final double latitude;
+  final double longitude;
+
+  const _PickedMapLocation({required this.latitude, required this.longitude});
+}
+
+class _MapLocationPickerScreen extends StatefulWidget {
+  final LatLng initialTarget;
+
+  const _MapLocationPickerScreen({required this.initialTarget});
+
+  @override
+  State<_MapLocationPickerScreen> createState() =>
+      _MapLocationPickerScreenState();
+}
+
+class _MapLocationPickerScreenState extends State<_MapLocationPickerScreen> {
+  late LatLng _selectedLocation;
+  late final ValueNotifier<LatLng> _locationNotifier;
+  GoogleMapController? _googleMapController;
+  apple_maps.AppleMapController? _appleMapController;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedLocation = widget.initialTarget;
+    _locationNotifier = ValueNotifier<LatLng>(_selectedLocation);
+  }
+
+  @override
+  void dispose() {
+    _googleMapController?.dispose();
+    _appleMapController = null;
+    _locationNotifier.dispose();
+    super.dispose();
+  }
+
+  void _updateGoogleCamera(CameraPosition position) {
+    _selectedLocation = position.target;
+    _locationNotifier.value = _selectedLocation;
+  }
+
+  void _updateAppleCamera(apple_maps.CameraPosition position) {
+    _selectedLocation = LatLng(
+      position.target.latitude,
+      position.target.longitude,
+    );
+    _locationNotifier.value = _selectedLocation;
+  }
+
+  Future<void> _onGoogleCameraIdle() async {
+    final bounds = await _googleMapController?.getVisibleRegion();
+    if (bounds == null) return;
+    final center = LatLng(
+      (bounds.southwest.latitude + bounds.northeast.latitude) / 2,
+      (bounds.southwest.longitude + bounds.northeast.longitude) / 2,
+    );
+    _selectedLocation = center;
+    _locationNotifier.value = center;
+  }
+
+  Future<void> _onAppleCameraIdle() async {
+    final bounds = await _appleMapController?.getVisibleRegion();
+    if (bounds == null) return;
+    final center = LatLng(
+      (bounds.southwest.latitude + bounds.northeast.latitude) / 2,
+      (bounds.southwest.longitude + bounds.northeast.longitude) / 2,
+    );
+    _selectedLocation = center;
+    _locationNotifier.value = center;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.dashboardBackground,
+      appBar: AppBar(
+        backgroundColor: AppColors.dashboardBackground,
+        surfaceTintColor: AppColors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_rounded,
             color: AppColors.textOnDarkPrimary,
-            fontWeight: FontWeight.w500,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Select Location',
+          style: AppTextStyles.headlineSmall.copyWith(
+            color: AppColors.textOnDarkPrimary,
+            fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: formState.isDetectingLocation
-                ? null
-                : () =>
-                      context.read<PostListingCubit>().detectCurrentLocation(),
-            icon: formState.isDetectingLocation
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Icon(
-                    hasLocation ? Icons.location_on : Icons.my_location,
-                    size: 18,
-                    color: hasLocation ? AppColors.primary : null,
+      ),
+      body: Stack(
+        children: [
+          Positioned.fill(child: _buildMap()),
+          IgnorePointer(
+            child: Center(
+              child: Transform.translate(
+                offset: const Offset(0, -18),
+                child: Icon(
+                  Icons.location_pin,
+                  color: AppColors.primary,
+                  size: 52,
+                  shadows: [
+                    Shadow(
+                      color: AppColors.black.withValues(alpha: 0.45),
+                      blurRadius: 12,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: _buildBottomPanel(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMap() {
+    if (Platform.isIOS) {
+      return apple_maps.AppleMap(
+        initialCameraPosition: apple_maps.CameraPosition(
+          target: apple_maps.LatLng(
+            widget.initialTarget.latitude,
+            widget.initialTarget.longitude,
+          ),
+          zoom: 15,
+        ),
+        onMapCreated: (controller) => _appleMapController = controller,
+        onCameraMove: _updateAppleCamera,
+        onCameraIdle: _onAppleCameraIdle,
+        compassEnabled: true,
+        mapType: apple_maps.MapType.standard,
+        myLocationEnabled: false,
+        myLocationButtonEnabled: false,
+        rotateGesturesEnabled: true,
+        scrollGesturesEnabled: true,
+        zoomGesturesEnabled: true,
+        pitchGesturesEnabled: true,
+      );
+    }
+
+    return GoogleMap(
+      initialCameraPosition: CameraPosition(
+        target: widget.initialTarget,
+        zoom: 15,
+      ),
+      onMapCreated: (controller) => _googleMapController = controller,
+      onCameraMove: _updateGoogleCamera,
+      onCameraIdle: _onGoogleCameraIdle,
+      myLocationEnabled: false,
+      myLocationButtonEnabled: false,
+      zoomControlsEnabled: false,
+      compassEnabled: true,
+      mapToolbarEnabled: false,
+      mapType: MapType.normal,
+      style: _kPostListingDarkMapStyle,
+    );
+  }
+
+  Widget _buildBottomPanel() {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.dashboardSurface.withValues(alpha: 0.96),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.dashboardBorder),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ValueListenableBuilder<LatLng>(
+                valueListenable: _locationNotifier,
+                builder: (context, location, child) {
+                  return Text(
+                    '${location.latitude.toStringAsFixed(6)}, ${location.longitude.toStringAsFixed(6)}',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textOnDarkPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(
+                    context,
+                    _PickedMapLocation(
+                      latitude: _selectedLocation.latitude,
+                      longitude: _selectedLocation.longitude,
+                    ),
                   ),
-            label: Text(
-              formState.isDetectingLocation
-                  ? 'Detecting...'
-                  : hasLocation
-                  ? 'Current location detected'
-                  : 'Use Current Location',
-            ),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(
-                color: hasLocation
-                    ? AppColors.primary
-                    : AppColors.dashboardSurfaceElevated,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.black,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Confirm Location',
+                    style: AppTextStyles.buttonMedium.copyWith(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

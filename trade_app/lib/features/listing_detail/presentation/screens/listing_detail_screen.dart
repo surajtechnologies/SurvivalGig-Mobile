@@ -1,11 +1,15 @@
+import 'dart:io';
+import 'package:apple_maps_flutter/apple_maps_flutter.dart' as apple_maps;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
 import '../../../../config/di/service_locator.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../home/domain/entities/listing.dart';
 import '../../../make_offer/presentation/screens/make_offer_screen.dart';
+import '../../../post_listing/presentation/screens/edit_listing_screen.dart';
 import '../../domain/entities/listing_pending_trade_offer.dart';
 import '../../domain/entities/user_review_summary.dart';
 import 'submit_report_screen.dart';
@@ -110,7 +114,7 @@ class _ListingDetailView extends StatelessWidget {
 
   Widget _buildScaffold(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.dashboardBackground,
       appBar: _buildAppBar(context),
       body: BlocBuilder<ListingDetailCubit, ListingDetailState>(
         builder: (context, state) {
@@ -151,27 +155,56 @@ class _ListingDetailView extends StatelessWidget {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.dashboardBackground,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+        icon: Icon(
+          Icons.arrow_back,
+          color: isOwnerView ? AppColors.primary : AppColors.textOnDarkPrimary,
+        ),
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
         isOwnerView ? 'My Order Detail' : 'Details',
         style: AppTextStyles.headlineSmall.copyWith(
-          color: AppColors.textPrimary,
+          color: isOwnerView ? AppColors.primary : AppColors.textOnDarkPrimary,
           fontWeight: FontWeight.w600,
         ),
       ),
       centerTitle: true,
       actions: isOwnerView
-          ? null
+          ? [
+              BlocBuilder<ListingDetailCubit, ListingDetailState>(
+                builder: (context, state) {
+                  if (state is! ListingDetailLoaded) return const SizedBox();
+                  return IconButton(
+                    icon: const Icon(
+                      Icons.edit_rounded,
+                      color: AppColors.primary,
+                    ),
+                    onPressed: () async {
+                      final updated = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              EditListingScreen(listing: state.listing),
+                        ),
+                      );
+                      if (updated == true && context.mounted) {
+                        context
+                            .read<ListingDetailCubit>()
+                            .loadListing(listingId);
+                      }
+                    },
+                  );
+                },
+              ),
+            ]
           : [
               IconButton(
                 icon: const Icon(
                   Icons.report_gmailerrorred_outlined,
-                  color: AppColors.textPrimary,
+                  color: AppColors.textOnDarkPrimary,
                 ),
                 onPressed: () {
                   Navigator.push(
@@ -209,7 +242,7 @@ class _ListingDetailView extends StatelessWidget {
                   listing.title,
                   style: AppTextStyles.headlineMedium.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: AppColors.textOnDarkPrimary,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -222,13 +255,6 @@ class _ListingDetailView extends StatelessWidget {
                 _buildInfoSection(
                   label: 'Offering',
                   value: _getOfferingValue(listing),
-                ),
-                const SizedBox(height: 20),
-
-                // Location section
-                _buildInfoSection(
-                  label: 'Location',
-                  value: listing.location ?? 'Not specified',
                 ),
                 const SizedBox(height: 20),
 
@@ -249,6 +275,21 @@ class _ListingDetailView extends StatelessWidget {
 
                 // Category section
                 _buildCategorySection(listing),
+                const SizedBox(height: 20),
+
+                // Location section (last)
+                if (listing.latitude != null && listing.longitude != null)
+                  _buildLocationMapSection(
+                    context,
+                    listing.latitude!,
+                    listing.longitude!,
+                    listing.location,
+                  )
+                else
+                  _buildInfoSection(
+                    label: 'Location',
+                    value: listing.location ?? 'Not specified',
+                  ),
               ],
             ),
           ),
@@ -264,7 +305,7 @@ class _ListingDetailView extends StatelessWidget {
         Container(
           width: double.infinity,
           height: AppDimensions.listingImageHeight,
-          color: AppColors.lightGrey,
+          color: AppColors.dashboardSurfaceElevated,
           child: listing.photos.isNotEmpty
               ? _ListingImageCarousel(
                   photos: listing.photos,
@@ -281,7 +322,7 @@ class _ListingDetailView extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: AppColors.dashboardSurface,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
@@ -304,7 +345,7 @@ class _ListingDetailView extends StatelessWidget {
                     'ID Verified',
                     style: AppTextStyles.bodySmall.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: AppColors.textOnDarkPrimary,
                     ),
                   ),
                 ],
@@ -339,8 +380,86 @@ class _ListingDetailView extends StatelessWidget {
         Text(
           value,
           style: AppTextStyles.bodyLarge.copyWith(
-            color: AppColors.textPrimary,
+            color: AppColors.textOnDarkPrimary,
             fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLocationMapSection(
+    BuildContext context,
+    double latitude,
+    double longitude,
+    String? locationLabel,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Location',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => _FullScreenMapScreen(
+                latitude: latitude,
+                longitude: longitude,
+                locationLabel: locationLabel,
+              ),
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              height: 150,
+              child: Stack(
+                children: [
+                  _SmallMapView(latitude: latitude, longitude: longitude),
+                  // Tap hint overlay
+                  Positioned(
+                    bottom: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.dashboardBackground.withValues(
+                          alpha: 0.8,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.open_in_full_rounded,
+                            color: AppColors.primary,
+                            size: 12,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Expand',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -389,7 +508,7 @@ class _ListingDetailView extends StatelessWidget {
             Text(
               userReviewSummary.averageRating.toStringAsFixed(1),
               style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.textPrimary,
+                color: AppColors.textOnDarkPrimary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -443,7 +562,7 @@ class _ListingDetailView extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: AppColors.dashboardSurface,
           boxShadow: [
             BoxShadow(
               color: AppColors.black.withValues(alpha: 0.05),
@@ -504,7 +623,7 @@ class _ListingDetailView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.dashboardSurface,
         boxShadow: [
           BoxShadow(
             color: AppColors.black.withValues(alpha: 0.05),
@@ -559,7 +678,7 @@ class _ListingDetailView extends StatelessWidget {
           title: Text(
             'Delete Listing',
             style: AppTextStyles.headlineSmall.copyWith(
-              color: AppColors.textPrimary,
+              color: AppColors.textOnDarkPrimary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -607,7 +726,7 @@ class _ListingDetailView extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.dashboardBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppDimensions.radiusLg),
@@ -653,7 +772,7 @@ class _ListingDetailView extends StatelessWidget {
       barrierDismissible: false,
       builder: (dialogContext) {
         return Dialog(
-          backgroundColor: AppColors.white,
+          backgroundColor: AppColors.dashboardBackground,
           insetPadding: EdgeInsets.all(AppDimensions.spacingLg),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
@@ -682,7 +801,7 @@ class _ListingDetailView extends StatelessWidget {
                 Text(
                   titleText,
                   style: AppTextStyles.headlineSmall.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textOnDarkPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.center,
@@ -849,13 +968,13 @@ class _MakeOfferOptionsSheet extends StatelessWidget {
                 Text(
                   'Make Offer',
                   style: AppTextStyles.headlineSmall.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textOnDarkPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: AppColors.textPrimary),
+                  icon: const Icon(Icons.close, color: AppColors.textOnDarkPrimary),
                   iconSize: AppDimensions.iconSizeMd,
                 ),
               ],
@@ -871,7 +990,7 @@ class _MakeOfferOptionsSheet extends StatelessWidget {
             Text(
               offeringValue,
               style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.textPrimary,
+                color: AppColors.textOnDarkPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -906,8 +1025,8 @@ class _MakeOfferOptionsSheet extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: onProposeOffer,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.lightGrey,
-                  foregroundColor: AppColors.textPrimary,
+                  backgroundColor: AppColors.dashboardSurfaceElevated,
+                  foregroundColor: AppColors.textOnDarkPrimary,
                   padding: EdgeInsets.symmetric(
                     vertical: AppDimensions.spacingSm,
                   ),
@@ -920,7 +1039,7 @@ class _MakeOfferOptionsSheet extends StatelessWidget {
                   'Or Propose New Offer',
                   style: AppTextStyles.bodyLarge.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: AppColors.textOnDarkPrimary,
                   ),
                 ),
               ),
@@ -981,7 +1100,7 @@ class _OfferedTradeSummaryCard extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(AppDimensions.spacingMd),
       decoration: BoxDecoration(
-        color: AppColors.lightGrey,
+        color: AppColors.dashboardSurfaceElevated,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         border: Border.all(color: AppColors.dividerColor),
       ),
@@ -1301,6 +1420,168 @@ class _ListingImageGalleryScreenState
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Small non-interactive map thumbnail
+// ---------------------------------------------------------------------------
+
+class _SmallMapView extends StatefulWidget {
+  final double latitude;
+  final double longitude;
+
+  const _SmallMapView({required this.latitude, required this.longitude});
+
+  @override
+  State<_SmallMapView> createState() => _SmallMapViewState();
+}
+
+class _SmallMapViewState extends State<_SmallMapView> {
+  @override
+  Widget build(BuildContext context) {
+    if (Platform.isIOS) {
+      return apple_maps.AppleMap(
+        initialCameraPosition: apple_maps.CameraPosition(
+          target: apple_maps.LatLng(widget.latitude, widget.longitude),
+          zoom: 14,
+        ),
+        annotations: {
+          apple_maps.Annotation(
+            annotationId: apple_maps.AnnotationId('pin'),
+            position: apple_maps.LatLng(widget.latitude, widget.longitude),
+          ),
+        },
+        myLocationEnabled: false,
+        myLocationButtonEnabled: false,
+        zoomGesturesEnabled: false,
+        rotateGesturesEnabled: false,
+        scrollGesturesEnabled: false,
+        pitchGesturesEnabled: false,
+      );
+    }
+
+    return gmap.GoogleMap(
+      initialCameraPosition: gmap.CameraPosition(
+        target: gmap.LatLng(widget.latitude, widget.longitude),
+        zoom: 14,
+      ),
+      markers: {
+        gmap.Marker(
+          markerId: const gmap.MarkerId('pin'),
+          position: gmap.LatLng(widget.latitude, widget.longitude),
+        ),
+      },
+      myLocationEnabled: false,
+      myLocationButtonEnabled: false,
+      zoomGesturesEnabled: false,
+      rotateGesturesEnabled: false,
+      scrollGesturesEnabled: false,
+      zoomControlsEnabled: false,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Full-screen map screen with lat/lng overlay
+// ---------------------------------------------------------------------------
+
+class _FullScreenMapScreen extends StatelessWidget {
+  final double latitude;
+  final double longitude;
+  final String? locationLabel;
+
+  const _FullScreenMapScreen({
+    required this.latitude,
+    required this.longitude,
+    this.locationLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.dashboardBackground,
+      appBar: AppBar(
+        backgroundColor: AppColors.dashboardBackground,
+        surfaceTintColor: AppColors.transparent,
+        elevation: 0,
+        title: Text(
+          'Location',
+          style: AppTextStyles.headlineSmall.copyWith(
+            color: AppColors.textOnDarkPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back,
+            color: AppColors.textOnDarkPrimary,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Stack(
+        children: [
+          // Full map
+          _SmallMapView(latitude: latitude, longitude: longitude),
+
+          // Lat/Lng info card at bottom
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 24,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.dashboardSurface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.dashboardBorder),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (locationLabel != null && locationLabel!.isNotEmpty) ...[
+                    Text(
+                      locationLabel!,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: AppColors.textOnDarkPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on_rounded,
+                        color: AppColors.primary,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Lat: ${latitude.toStringAsFixed(6)}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textOnDarkSecondary,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        'Lng: ${longitude.toStringAsFixed(6)}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textOnDarkSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

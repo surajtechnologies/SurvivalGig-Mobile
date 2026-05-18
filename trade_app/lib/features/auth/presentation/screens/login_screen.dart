@@ -59,18 +59,18 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.dashboardBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.dashboardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Log In to SurvivalGig',
           style: AppTextStyles.headlineSmall.copyWith(
-            color: AppColors.textPrimary,
+            color: AppColors.textOnDarkPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -112,7 +112,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                       keyboardType: TextInputType.emailAddress,
                       enabled: !isLoading,
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.black,
+                        color: AppColors.textOnDarkPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                       onChanged: (_) => setState(() {}),
@@ -134,7 +134,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                           color: AppColors.textDisabled,
                         ),
                         filled: true,
-                        fillColor: AppColors.lightGrey,
+                        fillColor: AppColors.dashboardSurfaceElevated,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16.0,
                           vertical: 16.0,
@@ -146,7 +146,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.0),
                           borderSide: const BorderSide(
-                            color: AppColors.lightGrey,
+                            color: AppColors.dashboardBorder,
                             width: 1.0,
                           ),
                         ),
@@ -200,7 +200,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                       obscureText: !_showPassword,
                       enabled: !isLoading,
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.black,
+                        color: AppColors.textOnDarkPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                       validator: (value) {
@@ -218,7 +218,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                           color: AppColors.textDisabled,
                         ),
                         filled: true,
-                        fillColor: AppColors.lightGrey,
+                        fillColor: AppColors.dashboardSurfaceElevated,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16.0,
                           vertical: 16.0,
@@ -230,7 +230,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.0),
                           borderSide: const BorderSide(
-                            color: AppColors.lightGrey,
+                            color: AppColors.dashboardBorder,
                             width: 1.0,
                           ),
                         ),

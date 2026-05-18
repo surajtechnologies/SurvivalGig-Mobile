@@ -16,6 +16,14 @@ abstract class PostListingRepository {
     required CreateListingRequest request,
   });
 
+  /// Update an existing listing (title, pricePoints, description only)
+  Future<Either<Failure, void>> updateListing({
+    required String listingId,
+    required String title,
+    required int pricePoints,
+    required String description,
+  });
+
   /// Get all categories
   Future<Either<Failure, List<Category>>> getCategories();
 

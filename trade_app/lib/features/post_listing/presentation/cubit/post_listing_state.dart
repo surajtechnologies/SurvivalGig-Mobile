@@ -242,11 +242,12 @@ class PostListingSubmitting extends PostListingState {
 /// Success state - listing created successfully
 class PostListingSuccess extends PostListingState {
   final CreatedListing listing;
+  final PostListingFormState formData;
 
-  const PostListingSuccess({required this.listing});
+  const PostListingSuccess({required this.listing, required this.formData});
 
   @override
-  List<Object?> get props => [listing];
+  List<Object?> get props => [listing, formData];
 }
 
 /// Error state - failed to create listing

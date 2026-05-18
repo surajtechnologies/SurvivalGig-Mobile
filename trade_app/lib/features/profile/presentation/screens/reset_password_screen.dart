@@ -88,18 +88,18 @@ class _ResetPasswordViewState extends State<_ResetPasswordView> {
 
   Widget _buildLoadedState(ResetPasswordLoaded state) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.dashboardBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.dashboardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Reset Password',
           style: AppTextStyles.headlineMedium.copyWith(
-            color: AppColors.textPrimary,
+            color: AppColors.textOnDarkPrimary,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -119,7 +119,7 @@ class _ResetPasswordViewState extends State<_ResetPasswordView> {
                 width: AppDimensions.dialogIconContainerSize * 2,
                 height: AppDimensions.dialogIconContainerSize * 2,
                 decoration: const BoxDecoration(
-                  color: AppColors.lightGrey,
+                  color: AppColors.dashboardSurfaceElevated,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -133,7 +133,7 @@ class _ResetPasswordViewState extends State<_ResetPasswordView> {
             Text(
               'Reset Password',
               style: AppTextStyles.headlineLarge.copyWith(
-                color: AppColors.textPrimary,
+                color: AppColors.textOnDarkPrimary,
                 fontWeight: FontWeight.w700,
               ),
               textAlign: TextAlign.center,
@@ -262,7 +262,7 @@ class _ResetPasswordViewState extends State<_ResetPasswordView> {
     return Text(
       label,
       style: AppTextStyles.headlineSmall.copyWith(
-        color: AppColors.textPrimary,
+        color: AppColors.textOnDarkPrimary,
         fontWeight: FontWeight.w700,
       ),
     );
@@ -279,15 +279,15 @@ class _ResetPasswordViewState extends State<_ResetPasswordView> {
       controller: controller,
       enabled: enabled,
       obscureText: obscureText,
-      style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary),
+      style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textOnDarkPrimary),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: AppTextStyles.bodyLarge.copyWith(
           color: AppColors.textSecondary,
         ),
-        prefixIcon: Icon(icon, color: AppColors.textSecondary),
+        prefixIcon: Icon(icon, color: AppColors.textOnDarkSecondary),
         filled: true,
-        fillColor: AppColors.white,
+        fillColor: AppColors.dashboardSurfaceElevated,
         contentPadding: EdgeInsets.symmetric(
           horizontal: AppDimensions.spacingMd,
           vertical: AppDimensions.spacingMd,
@@ -312,7 +312,7 @@ class _ResetPasswordViewState extends State<_ResetPasswordView> {
     return Container(
       padding: EdgeInsets.all(AppDimensions.spacingMd),
       decoration: BoxDecoration(
-        color: AppColors.lightGrey,
+        color: AppColors.dashboardSurfaceElevated,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
       ),
       child: Row(
@@ -339,7 +339,7 @@ class _ResetPasswordViewState extends State<_ResetPasswordView> {
                 Text(
                   'Security Tip',
                   style: AppTextStyles.headlineSmall.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textOnDarkPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

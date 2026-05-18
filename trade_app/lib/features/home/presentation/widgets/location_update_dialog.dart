@@ -99,14 +99,14 @@ class _LocationUpdateDialogState extends State<LocationUpdateDialog> {
                   color: AppColors.textSecondary,
                 ),
                 filled: true,
-                fillColor: AppColors.white,
+                fillColor: AppColors.dashboardSurfaceElevated,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.spacingMd,
                   vertical: AppDimensions.spacingSm,
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                  borderSide: const BorderSide(color: AppColors.dividerColor),
+                  borderSide: const BorderSide(color: AppColors.dashboardBorder),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppDimensions.radiusSm),

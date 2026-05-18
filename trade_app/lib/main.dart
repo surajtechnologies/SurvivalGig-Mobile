@@ -10,7 +10,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:trade_app/config/di/service_locator.dart';
 import 'package:trade_app/core/theme/app_theme.dart';
-import 'package:trade_app/core/theme/theme_mode_cubit.dart';
 import 'package:trade_app/core/utils/fcm_notifications.dart';
 import 'package:trade_app/core/utils/user_session.dart';
 import 'package:trade_app/features/auth/presentation/screens/login_landing_screen.dart';
@@ -25,6 +24,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Apple Signin state manage
 bool showAppleSignIn = false;
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -146,8 +146,41 @@ bool _isFirebaseSupportedPlatform() {
       defaultTargetPlatform == TargetPlatform.iOS;
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  StreamSubscription<void>? _sessionExpiredSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _sessionExpiredSubscription = sl<UserSession>().sessionExpiredStream.listen(
+      (_) => _resetToLoginRoot(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _sessionExpiredSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _resetToLoginRoot() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navigator = appNavigatorKey.currentState;
+      if (navigator == null) return;
+
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginLandingScreen()),
+        (_) => false,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -155,29 +188,23 @@ class MyApp extends StatelessWidget {
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider<ThemeModeCubit>(
-          create: (context) => sl<ThemeModeCubit>()..loadThemeMode(),
-        ),
         BlocProvider<LoadingCubit>(create: (context) => sl<LoadingCubit>()),
         BlocProvider<AppUpdateCubit>(create: (context) => sl<AppUpdateCubit>()),
       ],
-      child: BlocBuilder<ThemeModeCubit, ThemeMode>(
-        builder: (context, themeMode) {
-          return MaterialApp(
-            title: 'SurvivalGig',
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: themeMode,
-            debugShowCheckedModeBanner: false,
-            builder: (context, child) {
-              return LoadingOverlay(child: child ?? const SizedBox.shrink());
-            },
-            // Determine root screen based on first launch and login status:
-            // - First launch: StartupScreen
-            // - Subsequent launches: HomeScreen if logged in, LoginLandingScreen if not
-            home: _getHomeScreen(userSession),
-          );
+      child: MaterialApp(
+        navigatorKey: appNavigatorKey,
+        title: 'SurvivalGig',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.dark,
+        debugShowCheckedModeBanner: false,
+        builder: (context, child) {
+          return LoadingOverlay(child: child ?? const SizedBox.shrink());
         },
+        // Determine root screen based on first launch and login status:
+        // - First launch: StartupScreen
+        // - Subsequent launches: HomeScreen if logged in, LoginLandingScreen if not
+        home: _getHomeScreen(userSession),
       ),
     );
   }

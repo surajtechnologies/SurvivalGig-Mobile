@@ -27,7 +27,7 @@ class StartupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.dashboardBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(

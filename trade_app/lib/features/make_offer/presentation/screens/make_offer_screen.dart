@@ -109,7 +109,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
       builder: (context, state) {
         if (state is MakeOfferFormState) {
           return Scaffold(
-            backgroundColor: AppColors.white,
+            backgroundColor: AppColors.dashboardBackground,
             appBar: _buildAppBar(),
             body: _buildBody(state),
             bottomNavigationBar: _buildSubmitButton(state),
@@ -122,16 +122,16 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.dashboardBackground,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+        icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
         'Propose New Offer',
         style: AppTextStyles.headlineSmall.copyWith(
-          color: AppColors.textPrimary,
+          color: AppColors.textOnDarkPrimary,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -156,7 +156,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
           Text(
             widget.listing.title,
             style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textPrimary,
+              color: AppColors.textOnDarkPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -204,7 +204,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.lightGrey,
+          color: AppColors.dashboardSurfaceElevated,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -213,7 +213,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
             Text(
               state.selectedOfferType.displayName,
               style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.textPrimary,
+                color: AppColors.textOnDarkPrimary,
               ),
             ),
             const Icon(
@@ -241,7 +241,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.lightGrey,
+        color: AppColors.dashboardSurfaceElevated,
         borderRadius: BorderRadius.circular(8),
       ),
       child: TextField(
@@ -261,7 +261,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
             color: AppColors.textSecondary,
           ),
         ),
-        style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary),
+        style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textOnDarkPrimary),
         onChanged: (value) {
           final points = int.tryParse(value);
           context.read<MakeOfferCubit>().updatePoints(points);
@@ -278,7 +278,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.lightGrey,
+            color: AppColors.dashboardSurfaceElevated,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
@@ -299,7 +299,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
                   counterText: '',
                 ),
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textPrimary,
+                  color: AppColors.textOnDarkPrimary,
                 ),
                 onChanged: (value) {
                   context.read<MakeOfferCubit>().updateItemDescription(value);
@@ -389,7 +389,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: const BoxDecoration(
-                              color: AppColors.textPrimary,
+                              color: AppColors.textOnDarkPrimary,
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -446,7 +446,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.lightGrey,
+        color: AppColors.dashboardSurfaceElevated,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -465,7 +465,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
               ),
             ),
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: AppColors.textOnDarkPrimary,
             ),
             onChanged: (value) {
               context.read<MakeOfferCubit>().updateSkillDescription(value);
@@ -493,7 +493,7 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.dashboardSurface,
         boxShadow: [
           BoxShadow(
             color: AppColors.black.withValues(alpha: 0.05),
@@ -512,10 +512,10 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
             style: ElevatedButton.styleFrom(
               backgroundColor: isEnabled
                   ? AppColors.primary
-                  : AppColors.lightGrey,
+                  : AppColors.dashboardSurfaceElevated,
               foregroundColor: isEnabled
                   ? AppColors.white
-                  : AppColors.textSecondary,
+                  : AppColors.textOnDarkSecondary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -629,7 +629,7 @@ class _OfferTypeBottomSheet extends StatelessWidget {
           Text(
             type.displayName,
             style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textPrimary,
+              color: AppColors.textOnDarkPrimary,
             ),
           ),
         ],

@@ -69,7 +69,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
         fontWeight: FontWeight.w400,
       ),
       filled: true,
-      fillColor: AppColors.lightGrey,
+      fillColor: AppColors.dashboardSurfaceElevated,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 16.0,
         vertical: 16.0,
@@ -106,13 +106,13 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.dashboardBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.dashboardBackground,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -120,7 +120,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
           style: AppTextStyles.headlineMedium.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: AppColors.black,
+            color: AppColors.textOnDarkPrimary,
           ),
         ),
       ),
@@ -180,7 +180,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                       keyboardType: TextInputType.name,
                       enabled: !isLoading,
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.black,
+                        color: AppColors.textOnDarkPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                       validator: (value) {
@@ -203,7 +203,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                       keyboardType: TextInputType.emailAddress,
                       enabled: !isLoading,
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.black,
+                        color: AppColors.textOnDarkPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                       validator: (value) {
@@ -231,7 +231,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                       obscureText: !_showPassword,
                       enabled: !isLoading,
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.black,
+                        color: AppColors.textOnDarkPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                       validator: (value) {

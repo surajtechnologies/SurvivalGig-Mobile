@@ -18,9 +18,9 @@ class ProfileInfoTile extends StatelessWidget {
         vertical: AppDimensions.spacingMd,
       ),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.dashboardSurface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        border: Border.all(color: AppColors.dividerColor),
+        border: Border.all(color: AppColors.dashboardBorder),
       ),
       child: Row(
         children: [
@@ -30,7 +30,7 @@ class ProfileInfoTile extends StatelessWidget {
             child: Text(
               value,
               style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.textPrimary,
+                color: AppColors.textOnDarkPrimary,
                 fontWeight: FontWeight.w600,
               ),
               maxLines: 1,

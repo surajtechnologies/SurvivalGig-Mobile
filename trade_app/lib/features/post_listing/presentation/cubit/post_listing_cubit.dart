@@ -29,7 +29,6 @@ class PostListingCubit extends Cubit<PostListingState> {
     required this.detectCurrentLocationUseCase,
   }) : super(const PostListingFormState()) {
     loadCategories();
-    detectCurrentLocation();
   }
 
   /// Get current form state
@@ -193,18 +192,44 @@ class PostListingCubit extends Cubit<PostListingState> {
         );
       },
       (location) {
+        final city = location.city?.trim();
+        final postalCode = location.postalCode?.trim();
         emit(
           _formState.copyWith(
             latitude: location.latitude,
             longitude: location.longitude,
-            location:
-                location.postalCode ?? location.city ?? _formState.location,
-            locationCity: location.city,
+            location: _firstNonEmpty([
+              postalCode,
+              city,
+              _coordinateLabel(location.latitude, location.longitude),
+            ])!,
+            locationCity: city,
+            clearLocationCity: city == null || city.isEmpty,
             isDetectingLocation: false,
             clearLocationCityError: true,
+            validationError: null,
           ),
         );
       },
+    );
+  }
+
+  void updateSelectedMapLocation({
+    required double latitude,
+    required double longitude,
+  }) {
+    _locationLookupRequestId++;
+    _zipcodeDebounce?.cancel();
+    emit(
+      _formState.copyWith(
+        location: _coordinateLabel(latitude, longitude),
+        latitude: latitude,
+        longitude: longitude,
+        clearLocationCity: true,
+        isResolvingLocationCity: false,
+        clearLocationCityError: true,
+        validationError: null,
+      ),
     );
   }
 
@@ -417,7 +442,7 @@ class PostListingCubit extends Cubit<PostListingState> {
         );
       },
       (listing) {
-        emit(PostListingSuccess(listing: listing));
+        emit(PostListingSuccess(listing: listing, formData: currentForm));
       },
     );
   }
@@ -462,6 +487,20 @@ class PostListingCubit extends Cubit<PostListingState> {
         );
       },
     );
+  }
+
+  String? _firstNonEmpty(List<String?> values) {
+    for (final value in values) {
+      final trimmed = value?.trim();
+      if (trimmed != null && trimmed.isNotEmpty) {
+        return trimmed;
+      }
+    }
+    return null;
+  }
+
+  String _coordinateLabel(double latitude, double longitude) {
+    return '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
   }
 
   @override

@@ -36,6 +36,8 @@ const _kDefaultCamera = CameraPosition(
   zoom: 13,
 );
 
+const _kPostRefreshDelta = 0.05;
+
 const _kDarkMapStyle = '''
 [
   {"elementType":"geometry","stylers":[{"color":"#17231d"}]},
@@ -84,6 +86,11 @@ class _HomeViewState extends State<_HomeView> {
   late _MapProvider _activeMapProvider;
   Map<String, BitmapDescriptor> _pinIcons = const {};
   Map<String, apple_maps.BitmapDescriptor> _applePinIcons = const {};
+
+  // Last bounds sent to the API — used to skip duplicate requests
+  // that occur when marker updates trigger onCameraIdle internally.
+  double? _lastSwLat, _lastSwLng, _lastNeLat, _lastNeLng;
+  static const _kBoundsDeltaThreshold = 0.0001;
 
   @override
   void initState() {
@@ -137,9 +144,9 @@ class _HomeViewState extends State<_HomeView> {
     final canvas = Canvas(recorder);
 
     final glowPaint = Paint()
-      ..color = color.withValues(alpha: 0.24)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-    canvas.drawCircle(center, 18, glowPaint);
+      ..color = color.withValues(alpha: 0.10)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    canvas.drawCircle(center, 13, glowPaint);
 
     final pinPath = Path()
       ..addOval(Rect.fromCircle(center: center, radius: 16))
@@ -195,37 +202,72 @@ class _HomeViewState extends State<_HomeView> {
 
   void _onGoogleMapCreated(GoogleMapController controller) {
     _googleMapController = controller;
+    _syncCameraToLoadedTarget();
   }
 
   void _onAppleMapCreated(apple_maps.AppleMapController controller) {
     _appleMapController = controller;
-    _verifyAppleMapRendered(controller);
+    _appleMapRendered = true;
+    _appleMapFallbackTimer?.cancel();
+    _syncCameraToLoadedTarget();
   }
 
   void _onCameraIdle() {
     _idleDebounce?.cancel();
     _idleDebounce = Timer(const Duration(milliseconds: 600), () async {
-      if (!mounted) return;
-      if (_activeMapProvider == _MapProvider.apple) {
-        final bounds = await _appleMapController?.getVisibleRegion();
-        if (bounds == null || !mounted) return;
-        context.read<HomeCubit>().loadMapListings(
-          swLat: bounds.southwest.latitude,
-          swLng: bounds.southwest.longitude,
-          neLat: bounds.northeast.latitude,
-          neLng: bounds.northeast.longitude,
-        );
-      } else {
-        final bounds = await _googleMapController?.getVisibleRegion();
-        if (bounds == null || !mounted) return;
-        context.read<HomeCubit>().loadMapListings(
-          swLat: bounds.southwest.latitude,
-          swLng: bounds.southwest.longitude,
-          neLat: bounds.northeast.latitude,
-          neLng: bounds.northeast.longitude,
-        );
-      }
+      await _refreshVisibleMapListings();
     });
+  }
+
+  bool _boundsChanged(double swLat, double swLng, double neLat, double neLng) {
+    if (_lastSwLat == null) return true;
+    return (swLat - _lastSwLat!).abs() > _kBoundsDeltaThreshold ||
+        (swLng - _lastSwLng!).abs() > _kBoundsDeltaThreshold ||
+        (neLat - _lastNeLat!).abs() > _kBoundsDeltaThreshold ||
+        (neLng - _lastNeLng!).abs() > _kBoundsDeltaThreshold;
+  }
+
+  void _recordBounds(double swLat, double swLng, double neLat, double neLng) {
+    _lastSwLat = swLat;
+    _lastSwLng = swLng;
+    _lastNeLat = neLat;
+    _lastNeLng = neLng;
+  }
+
+  Future<void> _refreshVisibleMapListings() async {
+    if (!mounted) return;
+    if (_activeMapProvider == _MapProvider.apple) {
+      final bounds = await _appleMapController?.getVisibleRegion();
+      if (bounds == null || !mounted) return;
+      final swLat = bounds.southwest.latitude;
+      final swLng = bounds.southwest.longitude;
+      final neLat = bounds.northeast.latitude;
+      final neLng = bounds.northeast.longitude;
+      if (!_boundsChanged(swLat, swLng, neLat, neLng)) return;
+      _recordBounds(swLat, swLng, neLat, neLng);
+      await context.read<HomeCubit>().loadMapListings(
+        swLat: swLat,
+        swLng: swLng,
+        neLat: neLat,
+        neLng: neLng,
+      );
+      return;
+    }
+
+    final bounds = await _googleMapController?.getVisibleRegion();
+    if (bounds == null || !mounted) return;
+    final swLat = bounds.southwest.latitude;
+    final swLng = bounds.southwest.longitude;
+    final neLat = bounds.northeast.latitude;
+    final neLng = bounds.northeast.longitude;
+    if (!_boundsChanged(swLat, swLng, neLat, neLng)) return;
+    _recordBounds(swLat, swLng, neLat, neLng);
+    await context.read<HomeCubit>().loadMapListings(
+      swLat: swLat,
+      swLng: swLng,
+      neLat: neLat,
+      neLng: neLng,
+    );
   }
 
   void _scheduleAppleMapFallback() {
@@ -239,65 +281,6 @@ class _HomeViewState extends State<_HomeView> {
     });
   }
 
-  Future<void> _verifyAppleMapRendered(
-    apple_maps.AppleMapController controller,
-  ) async {
-    await Future<void>.delayed(const Duration(milliseconds: 1400));
-    if (!mounted || _activeMapProvider != _MapProvider.apple) return;
-
-    Uint8List? snapshot;
-    try {
-      snapshot = await controller.takeSnapshot();
-    } catch (_) {
-      snapshot = null;
-    }
-    final hasRenderedMap = await _snapshotHasVisualDetail(snapshot);
-    if (!mounted || _activeMapProvider != _MapProvider.apple) return;
-
-    if (hasRenderedMap) {
-      _appleMapRendered = true;
-      _appleMapFallbackTimer?.cancel();
-    } else {
-      _switchToGoogleMapFallback();
-    }
-  }
-
-  Future<bool> _snapshotHasVisualDetail(Uint8List? bytes) async {
-    if (bytes == null || bytes.length < 800) return false;
-
-    try {
-      final codec = await ui.instantiateImageCodec(
-        bytes,
-        targetWidth: 32,
-        targetHeight: 32,
-      );
-      final frame = await codec.getNextFrame();
-      final data = await frame.image.toByteData(
-        format: ui.ImageByteFormat.rawRgba,
-      );
-      final pixels = data?.buffer.asUint8List();
-      if (pixels == null || pixels.length < 4) return false;
-
-      var minLuma = 255;
-      var maxLuma = 0;
-      var visiblePixels = 0;
-      for (var i = 0; i < pixels.length; i += 4) {
-        final alpha = pixels[i + 3];
-        if (alpha < 12) continue;
-        visiblePixels++;
-        final luma =
-            (0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2])
-                .round();
-        if (luma < minLuma) minLuma = luma;
-        if (luma > maxLuma) maxLuma = luma;
-      }
-
-      return visiblePixels > 32 && (maxLuma - minLuma) > 12;
-    } catch (_) {
-      return bytes.length > 2500;
-    }
-  }
-
   void _switchToGoogleMapFallback() {
     if (!mounted) return;
     _appleMapFallbackTimer?.cancel();
@@ -305,6 +288,39 @@ class _HomeViewState extends State<_HomeView> {
       _activeMapProvider = _MapProvider.google;
       _appleMapController = null;
     });
+  }
+
+  void _syncCameraToLoadedTarget() {
+    final state = context.read<HomeCubit>().state;
+    if (state is! HomeLoaded) return;
+    final target = state.cameraTarget ?? state.userLocation;
+    if (target == null) return;
+    _moveCameraTo(target, zoom: 14);
+    context.read<HomeCubit>().clearCameraTarget();
+  }
+
+  void _moveCameraTo(LatLng target, {double zoom = 14}) {
+    if (_activeMapProvider == _MapProvider.apple) {
+      final controller = _appleMapController;
+      if (controller == null) return;
+      controller.animateCamera(
+        apple_maps.CameraUpdate.newCameraPosition(
+          apple_maps.CameraPosition(
+            target: apple_maps.LatLng(target.latitude, target.longitude),
+            zoom: zoom,
+          ),
+        ),
+      );
+      return;
+    }
+
+    final controller = _googleMapController;
+    if (controller == null) return;
+    controller.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: target, zoom: zoom),
+      ),
+    );
   }
 
   Future<void> _openSearch() async {
@@ -317,12 +333,68 @@ class _HomeViewState extends State<_HomeView> {
     }
   }
 
+  Future<void> _openPostListing() async {
+    final result = await Navigator.push<Object?>(
+      context,
+      MaterialPageRoute(builder: (_) => const PostListingScreen()),
+    );
+
+    final didCreateListing =
+        result == true ||
+        (result is PostListingResult && result.didCreate == true);
+    if (!didCreateListing || !mounted) return;
+    setState(() => _selectedNavIndex = 0);
+
+    if (result is PostListingResult &&
+        result.latitude != null &&
+        result.longitude != null) {
+      await _moveToPostedListingAndRefresh(
+        latitude: result.latitude!,
+        longitude: result.longitude!,
+      );
+      return;
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    if (!mounted) return;
+    await _refreshVisibleMapListings();
+  }
+
+  Future<void> _moveToPostedListingAndRefresh({
+    required double latitude,
+    required double longitude,
+  }) async {
+    if (_activeMapProvider == _MapProvider.apple) {
+      await _appleMapController?.animateCamera(
+        apple_maps.CameraUpdate.newCameraPosition(
+          apple_maps.CameraPosition(
+            target: apple_maps.LatLng(latitude, longitude),
+            zoom: 15,
+          ),
+        ),
+      );
+    } else {
+      await _googleMapController?.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: LatLng(latitude, longitude), zoom: 15),
+        ),
+      );
+    }
+
+    if (!mounted) return;
+    // Reset cached bounds so the post-animation idle always fires a fresh fetch.
+    _lastSwLat = null;
+    await context.read<HomeCubit>().loadMapListings(
+      swLat: latitude - _kPostRefreshDelta,
+      swLng: longitude - _kPostRefreshDelta,
+      neLat: latitude + _kPostRefreshDelta,
+      neLng: longitude + _kPostRefreshDelta,
+    );
+  }
+
   void _onNavTap(int index) {
     if (index == 2) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const PostListingScreen()),
-      );
+      _openPostListing();
       return;
     }
 
@@ -342,25 +414,11 @@ class _HomeViewState extends State<_HomeView> {
         }
 
         if (state is HomeLoaded && state.cameraTarget != null) {
-          if (_activeMapProvider == _MapProvider.apple) {
-            _appleMapController?.animateCamera(
-              apple_maps.CameraUpdate.newCameraPosition(
-                apple_maps.CameraPosition(
-                  target: apple_maps.LatLng(
-                    state.cameraTarget!.latitude,
-                    state.cameraTarget!.longitude,
-                  ),
-                  zoom: 14,
-                ),
-              ),
-            );
-          } else {
-            _googleMapController?.animateCamera(
-              CameraUpdate.newCameraPosition(
-                CameraPosition(target: state.cameraTarget!, zoom: 14),
-              ),
-            );
-          }
+          _moveCameraTo(state.cameraTarget!, zoom: 14);
+          final hasController = _activeMapProvider == _MapProvider.apple
+              ? _appleMapController != null
+              : _googleMapController != null;
+          if (!hasController) return;
           context.read<HomeCubit>().clearCameraTarget();
           _checkLocationPermission();
         }
@@ -413,8 +471,7 @@ class _HomeViewState extends State<_HomeView> {
                 ],
               ),
             ),
-            if (state is HomeLoading ||
-                (state is HomeLoaded && state.isLoadingMap))
+            if (state is HomeLoading)
               const Positioned(top: 208, right: 16, child: _LoadingChip()),
             if (state is HomeError)
               Positioned(
@@ -445,15 +502,16 @@ class _HomeViewState extends State<_HomeView> {
     final listings = state is HomeLoaded
         ? state.filteredListings
         : <MapListing>[];
+    final initialCamera = _initialCameraPositionFor(state);
 
     if (_activeMapProvider == _MapProvider.apple) {
       return apple_maps.AppleMap(
         initialCameraPosition: apple_maps.CameraPosition(
           target: apple_maps.LatLng(
-            _kDefaultCamera.target.latitude,
-            _kDefaultCamera.target.longitude,
+            initialCamera.target.latitude,
+            initialCamera.target.longitude,
           ),
-          zoom: _kDefaultCamera.zoom,
+          zoom: initialCamera.zoom,
         ),
         onMapCreated: _onAppleMapCreated,
         onCameraIdle: _onCameraIdle,
@@ -471,7 +529,7 @@ class _HomeViewState extends State<_HomeView> {
     }
 
     return GoogleMap(
-      initialCameraPosition: _kDefaultCamera,
+      initialCameraPosition: initialCamera,
       onMapCreated: _onGoogleMapCreated,
       onCameraIdle: _onCameraIdle,
       markers: _buildMarkers(listings),
@@ -483,6 +541,16 @@ class _HomeViewState extends State<_HomeView> {
       mapType: MapType.normal,
       style: _kDarkMapStyle,
     );
+  }
+
+  CameraPosition _initialCameraPositionFor(HomeState state) {
+    if (state is HomeLoaded) {
+      final target = state.cameraTarget ?? state.userLocation;
+      if (target != null) {
+        return CameraPosition(target: target, zoom: 14);
+      }
+    }
+    return _kDefaultCamera;
   }
 
   Set<apple_maps.Annotation> _buildAppleMarkers(List<MapListing> listings) {
@@ -656,7 +724,7 @@ class _HomeViewState extends State<_HomeView> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: MapFilter.values.map((filter) {
+                  children: const [MapFilter.all, MapFilter.requests, MapFilter.offers].map((filter) {
                     final isActive = filter == selectedFilter;
                     final activeColor = _filterColor(filter);
                     return Padding(
@@ -731,10 +799,7 @@ class _HomeViewState extends State<_HomeView> {
             heroTag: 'post_listing_fab',
             backgroundColor: AppColors.dashboardSurface,
             elevation: 4,
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const PostListingScreen()),
-            ),
+            onPressed: _openPostListing,
             child: Icon(
               Icons.edit_rounded,
               color: AppColors.textOnDarkPrimary,
@@ -744,12 +809,12 @@ class _HomeViewState extends State<_HomeView> {
           SizedBox(height: AppDimensions.spacingSm),
           FloatingActionButton.small(
             heroTag: 'location_fab',
-            backgroundColor: AppColors.dashboardSurface,
+            backgroundColor: const Color(0xFF1A73E8),
             elevation: 4,
             onPressed: () => context.read<HomeCubit>().moveToUserLocation(),
             child: Icon(
-              Icons.navigation_rounded,
-              color: AppColors.primary,
+              Icons.my_location_rounded,
+              color: AppColors.white,
               size: AppDimensions.iconSizeMd,
             ),
           ),
@@ -1113,38 +1178,20 @@ class _MapListingDetailSheet extends StatelessWidget {
           ),
         ),
         SizedBox(height: AppDimensions.spacingMd),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Wrap(
-                spacing: AppDimensions.spacingSm,
-                runSpacing: AppDimensions.spacingSm,
-                children: [
-                  _Badge(label: typeLabel, color: accentColor),
-                  _Badge(label: categoryName, color: AppColors.warning),
-                  if (urgency != null && urgency.trim().isNotEmpty)
-                    _Badge(
-                      label: '${urgency.toLowerCase()} urgency',
-                      color: _urgencyColor(urgency),
-                    ),
-                ],
+        Align(
+          alignment: Alignment.centerRight,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () => Navigator.pop(context),
+            child: const Padding(
+              padding: EdgeInsets.all(6),
+              child: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: AppColors.textOnDarkSecondary,
+                size: 26,
               ),
             ),
-            SizedBox(width: AppDimensions.spacingSm),
-            InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () => Navigator.pop(context),
-              child: const Padding(
-                padding: EdgeInsets.all(6),
-                child: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.textOnDarkSecondary,
-                  size: 26,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
         SizedBox(height: AppDimensions.spacingMd),
         Text(
@@ -1430,9 +1477,11 @@ class _LoadedListingDetails extends StatelessWidget {
               value: _timeAgo(listing.createdAt),
             ),
             _DetailItem(
-              icon: Icons.inventory_2_rounded,
-              label: 'Condition',
-              value: listing.condition ?? 'Not specified',
+              icon: Icons.flash_on_rounded,
+              label: 'Urgency',
+              value: listing.urgencyLevel != null && listing.urgencyLevel!.trim().isNotEmpty
+                  ? '${listing.urgencyLevel![0].toUpperCase()}${listing.urgencyLevel!.substring(1).toLowerCase()}'
+                  : 'Not specified',
             ),
             _DetailItem(
               icon: Icons.local_offer_rounded,

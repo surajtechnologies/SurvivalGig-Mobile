@@ -16,6 +16,7 @@ class JobCard extends StatelessWidget {
   final bool isVerified;
   final String? imageUrl;
   final VoidCallback? onTap;
+  final Color? titleColor;
 
   const JobCard({
     super.key,
@@ -30,6 +31,7 @@ class JobCard extends StatelessWidget {
     this.isVerified = false,
     this.imageUrl,
     this.onTap,
+    this.titleColor,
   });
 
   @override
@@ -39,10 +41,10 @@ class JobCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: AppColors.dashboardSurface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: AppColors.dividerColor.withValues(alpha: 0.5),
+            color: AppColors.dashboardBorder.withValues(alpha: 0.5),
           ),
         ),
         child: Row(
@@ -82,7 +84,7 @@ class JobCard extends StatelessWidget {
                     title,
                     style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: titleColor ?? AppColors.textPrimary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -126,7 +128,7 @@ class JobCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.lightGrey,
+        color: AppColors.dashboardSurfaceElevated,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
@@ -163,7 +165,7 @@ class JobCard extends StatelessWidget {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: AppColors.lightGrey,
+              color: AppColors.dashboardSurfaceElevated,
               borderRadius: BorderRadius.circular(8),
             ),
             child: imageUrl != null && imageUrl!.isNotEmpty
@@ -196,9 +198,9 @@ class JobCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.white,
+                  color: AppColors.dashboardSurface,
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: AppColors.dividerColor, width: 0.5),
+                  border: Border.all(color: AppColors.dashboardBorder, width: 0.5),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

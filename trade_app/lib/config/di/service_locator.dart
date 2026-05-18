@@ -62,7 +62,9 @@ import '../../features/post_listing/domain/usecases/detect_current_location_usec
 import '../../features/post_listing/domain/usecases/get_categories_usecase.dart'
     as post_listing;
 import '../../features/post_listing/domain/usecases/get_city_by_zipcode_usecase.dart';
+import '../../features/post_listing/domain/usecases/update_listing_usecase.dart';
 import '../../features/post_listing/domain/usecases/upload_images_usecase.dart';
+import '../../features/post_listing/presentation/cubit/edit_listing_cubit.dart';
 import '../../features/post_listing/presentation/cubit/post_listing_cubit.dart';
 import '../../features/make_offer/data/datasources/make_offer_remote_datasource.dart';
 import '../../features/make_offer/data/repositories/make_offer_repository_impl.dart';
@@ -316,6 +318,10 @@ void setupServiceLocator() {
     () => CreateListingUseCase(repository: sl()),
   );
 
+  sl.registerLazySingleton<UpdateListingUseCase>(
+    () => UpdateListingUseCase(repository: sl()),
+  );
+
   sl.registerLazySingleton<DetectCurrentLocationUseCase>(
     () => DetectCurrentLocationUseCase(repository: sl()),
   );
@@ -337,6 +343,10 @@ void setupServiceLocator() {
       getCityByZipcodeUseCase: sl(),
       detectCurrentLocationUseCase: sl(),
     ),
+  );
+
+  sl.registerFactory<EditListingCubit>(
+    () => EditListingCubit(updateListingUseCase: sl()),
   );
 
   // Listing Detail - Data Layer

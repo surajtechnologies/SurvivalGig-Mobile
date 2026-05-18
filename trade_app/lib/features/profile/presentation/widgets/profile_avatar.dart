@@ -71,7 +71,7 @@ class ProfileAvatar extends StatelessWidget {
   Widget _buildAvatarContent() {
     if (isUploading) {
       return Container(
-        color: AppColors.lightGrey,
+        color: AppColors.dashboardSurfaceElevated,
         child: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -84,7 +84,7 @@ class ProfileAvatar extends StatelessWidget {
       imageUrl: imageUrl!,
       fit: BoxFit.cover,
       placeholder: (_, _) => Container(
-        color: AppColors.lightGrey,
+        color: AppColors.dashboardSurfaceElevated,
         child: const Center(child: CircularProgressIndicator()),
       ),
       errorWidget: (_, _, _) => _buildPlaceholder(),
@@ -93,7 +93,7 @@ class ProfileAvatar extends StatelessWidget {
 
   Widget _buildPlaceholder() {
     return Container(
-      color: AppColors.lightGrey,
+      color: AppColors.dashboardSurfaceElevated,
       child: Icon(
         Icons.phone_android_rounded,
         color: AppColors.textSecondary,

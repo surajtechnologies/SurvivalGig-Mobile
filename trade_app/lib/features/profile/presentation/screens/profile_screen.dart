@@ -5,7 +5,6 @@ import '../../../../config/di/service_locator.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/theme/theme_mode_cubit.dart';
 import '../../../auth/presentation/screens/login_landing_screen.dart';
 import '../../../listing_detail/presentation/screens/my_listings_screen.dart';
 import '../cubit/profile_cubit.dart';
@@ -260,41 +259,6 @@ class _ProfileViewState extends State<_ProfileView> {
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: AppDimensions.spacingMd),
-            _buildRatingRow(state.profile.isVerified),
-            SizedBox(height: AppDimensions.spacingXl),
-            Row(
-              children: [
-                Expanded(
-                  child: _ProfileStatCard(
-                    icon: Icons.check_circle_rounded,
-                    value: state.profile.isVerified ? 'Verified' : 'Pending',
-                    label: 'Profile',
-                    color: AppColors.primary,
-                  ),
-                ),
-                SizedBox(width: AppDimensions.spacingSm),
-                Expanded(
-                  child: _ProfileStatCard(
-                    icon: Icons.shield_rounded,
-                    value: state.profile.isVerified ? '85%' : '--',
-                    label: 'Trust Score',
-                    color: AppColors.itemPin,
-                  ),
-                ),
-                SizedBox(width: AppDimensions.spacingSm),
-                Expanded(
-                  child: _ProfileStatCard(
-                    icon: Icons.diamond_rounded,
-                    value: '--',
-                    label: 'Balance',
-                    color: AppColors.hybridPin,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: AppDimensions.spacingXl),
-            _buildAppearanceSection(),
             SizedBox(height: AppDimensions.spacingXl),
             Text(
               'My Active Listings',
@@ -339,19 +303,17 @@ class _ProfileViewState extends State<_ProfileView> {
               },
             ),
             SizedBox(height: AppDimensions.spacingMd),
-            _ActionTile(
-              icon: Icons.verified_user_rounded,
-              title: state.profile.isVerified
-                  ? 'Verified Profile'
-                  : 'Verify Profile',
-              subtitle: state.profile.isVerified
-                  ? 'Your ID has been verified'
-                  : 'Upload an ID document',
-              color: AppColors.primary,
-              isLoading: state.isUploadingVerificationDocument,
-              onTap: state.profile.isVerified ? null : _onVerifyProfileTap,
-            ),
-            SizedBox(height: AppDimensions.spacingMd),
+            if (!state.profile.isVerified) ...[
+              _ActionTile(
+                icon: Icons.verified_user_rounded,
+                title: 'Verify Profile',
+                subtitle: 'Upload an ID document',
+                color: AppColors.primary,
+                isLoading: state.isUploadingVerificationDocument,
+                onTap: _onVerifyProfileTap,
+              ),
+              SizedBox(height: AppDimensions.spacingMd),
+            ],
             _ActionTile(
               icon: Icons.logout_rounded,
               title: 'Logout',
@@ -418,66 +380,6 @@ class _ProfileViewState extends State<_ProfileView> {
           style: AppTextStyles.headlineSmall.copyWith(
             color: _profileSecondaryText(context),
             fontWeight: FontWeight.w800,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAppearanceSection() {
-    final currentMode = context.watch<ThemeModeCubit>().state;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Appearance',
-          style: AppTextStyles.headlineLarge.copyWith(
-            color: _profilePrimaryText(context),
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        SizedBox(height: AppDimensions.spacingMd),
-        Container(
-          padding: EdgeInsets.all(AppDimensions.spacingXs),
-          decoration: BoxDecoration(
-            color: _profileSurface(context),
-            borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-            border: Border.all(color: _profileBorder(context)),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _AppearanceOption(
-                  icon: Icons.brightness_auto_rounded,
-                  label: 'System',
-                  selected: currentMode == ThemeMode.system,
-                  onTap: () => context.read<ThemeModeCubit>().setThemeMode(
-                    ThemeMode.system,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: _AppearanceOption(
-                  icon: Icons.light_mode_rounded,
-                  label: 'Light',
-                  selected: currentMode == ThemeMode.light,
-                  onTap: () => context.read<ThemeModeCubit>().setThemeMode(
-                    ThemeMode.light,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: _AppearanceOption(
-                  icon: Icons.dark_mode_rounded,
-                  label: 'Dark',
-                  selected: currentMode == ThemeMode.dark,
-                  onTap: () => context.read<ThemeModeCubit>().setThemeMode(
-                    ThemeMode.dark,
-                  ),
-                ),
-              ),
-            ],
           ),
         ),
       ],
@@ -779,56 +681,6 @@ class _ProfileStatCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _AppearanceOption extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _AppearanceOption({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: AppDimensions.spacingMd),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary.withValues(alpha: 0.18) : null,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: selected
-                  ? AppColors.primary
-                  : _profileSecondaryText(context),
-              size: AppDimensions.iconSizeLg,
-            ),
-            SizedBox(height: AppDimensions.spacingXs),
-            Text(
-              label,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: selected
-                    ? AppColors.primary
-                    : _profileSecondaryText(context),
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

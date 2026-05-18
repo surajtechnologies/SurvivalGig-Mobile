@@ -43,7 +43,7 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.dashboardBackground,
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) async {
           if (state is LoginSuccess) {
@@ -82,7 +82,7 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                   style: AppTextStyles.displayLarge.copyWith(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: AppColors.textOnDarkPrimary,
                   ),
                 ),
 
@@ -269,7 +269,7 @@ class _SocialLoginButton extends StatelessWidget {
       child: Container(
         height: 58,
         decoration: BoxDecoration(
-          color: AppColors.lightGrey,
+          color: AppColors.dashboardSurfaceElevated,
           borderRadius: BorderRadius.circular(16),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -282,7 +282,7 @@ class _SocialLoginButton extends StatelessWidget {
               label,
               style: AppTextStyles.headlineMedium.copyWith(
                 fontSize: 16,
-                color: AppColors.textPrimary,
+                color: AppColors.textOnDarkPrimary,
                 fontWeight: FontWeight.w700,
               ),
             ),

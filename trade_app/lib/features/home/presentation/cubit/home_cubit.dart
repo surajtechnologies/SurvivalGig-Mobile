@@ -28,6 +28,7 @@ class HomeCubit extends Cubit<HomeState> {
   final ConnectivityService connectivityService;
 
   StreamSubscription<bool>? _connectivitySubscription;
+  int _mapListingsRequestId = 0;
 
   HomeCubit({
     required this.getCategoriesUseCase,
@@ -122,8 +123,7 @@ class HomeCubit extends Cubit<HomeState> {
   }) async {
     final currentState = state;
     if (currentState is! HomeLoaded) return;
-
-    emit(currentState.copyWith(isLoadingMap: true));
+    final requestId = ++_mapListingsRequestId;
 
     final result = await getMapListingsUseCase(
       swLat: swLat,
@@ -132,12 +132,14 @@ class HomeCubit extends Cubit<HomeState> {
       neLng: neLng,
     );
 
-    result.fold(
-      (_) => emit(currentState.copyWith(isLoadingMap: false)),
-      (listings) => emit(
-        currentState.copyWith(mapListings: listings, isLoadingMap: false),
-      ),
-    );
+    if (requestId != _mapListingsRequestId) return;
+
+    result.fold((_) {}, (listings) {
+      final latest = state;
+      if (latest is HomeLoaded) {
+        emit(latest.copyWith(mapListings: listings, isLoadingMap: false));
+      }
+    });
   }
 
   // ── Filters ──────────────────────────────────────────────────────────────────

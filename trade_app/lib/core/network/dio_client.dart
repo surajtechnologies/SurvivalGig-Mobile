@@ -15,6 +15,7 @@ class DioClient {
   final FlutterSecureStorage _storage;
   final LoadingCubit? _loadingCubit;
   UserSession? _userSession;
+  bool _isExpiringSession = false;
 
   DioClient({FlutterSecureStorage? storage, LoadingCubit? loadingCubit})
     : _storage = storage ?? const FlutterSecureStorage(),
@@ -83,15 +84,24 @@ class DioClient {
 
         return handler.next(options);
       },
-      onError: (error, handler) async {
-        // Handle 401 Unauthorized
-        if (error.response?.statusCode == 401) {
-          // Clear tokens and user session
-          await _storage.delete(key: AppConfig.accessTokenKey);
-          await _storage.delete(key: AppConfig.refreshTokenKey);
+      onResponse: (response, handler) async {
+        if (_shouldExpireSession(response: response)) {
+          await _expireSession();
+          return handler.reject(
+            DioException(
+              requestOptions: response.requestOptions,
+              response: response,
+              type: DioExceptionType.badResponse,
+              error: 'No token provided',
+            ),
+          );
+        }
 
-          // Clear user session to force logout
-          await _userSession?.clearUser();
+        return handler.next(response);
+      },
+      onError: (error, handler) async {
+        if (_shouldExpireSession(error: error)) {
+          await _expireSession();
         }
 
         return handler.next(error);
@@ -184,6 +194,7 @@ class DioClient {
 
   /// Save access token
   Future<void> saveAccessToken(String token) async {
+    _isExpiringSession = false;
     await _storage.write(key: AppConfig.accessTokenKey, value: token);
   }
 
@@ -206,5 +217,46 @@ class DioClient {
   Future<void> clearTokens() async {
     await _storage.delete(key: AppConfig.accessTokenKey);
     await _storage.delete(key: AppConfig.refreshTokenKey);
+  }
+
+  bool _shouldExpireSession({
+    Response<dynamic>? response,
+    DioException? error,
+  }) {
+    final statusCode = response?.statusCode ?? error?.response?.statusCode;
+    if (statusCode == 401) {
+      return true;
+    }
+
+    return _containsNoTokenProvided(response?.data) ||
+        _containsNoTokenProvided(error?.response?.data) ||
+        _containsNoTokenProvided(error?.message) ||
+        _containsNoTokenProvided(error?.error);
+  }
+
+  bool _containsNoTokenProvided(Object? value) {
+    if (value == null) return false;
+
+    if (value is String) {
+      return value.toLowerCase().contains('no token provided');
+    }
+
+    if (value is Map) {
+      return value.values.any(_containsNoTokenProvided);
+    }
+
+    if (value is Iterable) {
+      return value.any(_containsNoTokenProvided);
+    }
+
+    return value.toString().toLowerCase().contains('no token provided');
+  }
+
+  Future<void> _expireSession() async {
+    if (_isExpiringSession) return;
+    _isExpiringSession = true;
+
+    await clearTokens();
+    await _userSession?.expireSession();
   }
 }

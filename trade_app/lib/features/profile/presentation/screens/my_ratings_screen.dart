@@ -29,19 +29,19 @@ class _MyRatingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.dashboardBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.dashboardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
         title: Text(
           'My Reviews',
           style: AppTextStyles.headlineMedium.copyWith(
-            color: AppColors.textPrimary,
+            color: AppColors.textOnDarkPrimary,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -91,9 +91,9 @@ class _MyRatingsView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spacingMd),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.dashboardSurface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        border: Border.all(color: AppColors.dividerColor),
+        border: Border.all(color: AppColors.dashboardBorder),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadow,
@@ -128,7 +128,7 @@ class _MyRatingsView extends StatelessWidget {
           Text(
             review.adPostName,
             style: AppTextStyles.headlineSmall.copyWith(
-              color: AppColors.textPrimary,
+              color: AppColors.textOnDarkPrimary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -170,7 +170,7 @@ class _MyRatingsView extends StatelessWidget {
           Text(
             review.review,
             style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textPrimary,
+              color: AppColors.textOnDarkPrimary,
               fontWeight: FontWeight.w500,
             ),
           ),

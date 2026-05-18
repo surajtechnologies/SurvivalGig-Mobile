@@ -61,7 +61,10 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   @override
   Future<CategoriesResponseModel> getCategories() async {
     try {
-      final response = await dioClient.dio.get(ApiEndpoints.categories);
+      final response = await dioClient.dio.get(
+        ApiEndpoints.categories,
+        options: Options(extra: const {'skipLoading': true}),
+      );
 
       if (response.statusCode == 200) {
         final data = response.data;
@@ -135,6 +138,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       final response = await dioClient.dio.get(
         ApiEndpoints.listings,
         queryParameters: queryParams,
+        options: Options(extra: const {'skipLoading': true}),
       );
 
       if (response.statusCode == 200) {
@@ -189,6 +193,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
           'neLat': neLat,
           'neLng': neLng,
         },
+        options: Options(extra: const {'skipLoading': true}),
       );
 
       if (response.statusCode == 200) {
@@ -224,6 +229,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
           if (urgencyLevel != null && urgencyLevel.isNotEmpty)
             'urgencyLevel': urgencyLevel,
         },
+        options: Options(extra: const {'skipLoading': true}),
       );
 
       if (response.statusCode == 200) {
@@ -254,6 +260,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
               .toList(),
           'limit': limit,
         },
+        options: Options(extra: const {'skipLoading': true}),
       );
 
       if (response.statusCode == 200) {
@@ -348,7 +355,20 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     }
 
     if (data is Map<String, dynamic>) {
-      for (final key in const ['listings', 'pins', 'results', 'items']) {
+      for (final key in const [
+        'listings',
+        'pins',
+        'results',
+        'items',
+        'ads',
+        'adListings',
+        'mapListings',
+        'markers',
+        'nearbyListings',
+        'docs',
+        'rows',
+        'records',
+      ]) {
         final value = data[key];
         if (value is List) {
           return value;
@@ -361,6 +381,18 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       }
       if (wrappedData is Map<String, dynamic>) {
         return _extractListPayload(wrappedData);
+      }
+
+      for (final value in data.values) {
+        if (value is List) {
+          return value;
+        }
+        if (value is Map<String, dynamic>) {
+          final nestedList = _extractListPayload(value);
+          if (nestedList != null) {
+            return nestedList;
+          }
+        }
       }
     }
 
