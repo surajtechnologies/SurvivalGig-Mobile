@@ -138,7 +138,7 @@ class _HomeViewState extends State<_HomeView> {
   }
 
   Future<Uint8List> _createPinBytes(Color color) async {
-    const size = 58.0;
+    const size = 68.0;
     const center = Offset(size / 2, 22);
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
@@ -245,6 +245,9 @@ class _HomeViewState extends State<_HomeView> {
       final neLng = bounds.northeast.longitude;
       if (!_boundsChanged(swLat, swLng, neLat, neLng)) return;
       _recordBounds(swLat, swLng, neLat, neLng);
+      debugPrint(
+        '[HomeMap][Apple] loadMapListings → swLat=$swLat, swLng=$swLng, neLat=$neLat, neLng=$neLng',
+      );
       await context.read<HomeCubit>().loadMapListings(
         swLat: swLat,
         swLng: swLng,
@@ -262,6 +265,9 @@ class _HomeViewState extends State<_HomeView> {
     final neLng = bounds.northeast.longitude;
     if (!_boundsChanged(swLat, swLng, neLat, neLng)) return;
     _recordBounds(swLat, swLng, neLat, neLng);
+    debugPrint(
+      '[HomeMap][Google] loadMapListings → swLat=$swLat, swLng=$swLng, neLat=$neLat, neLng=$neLng',
+    );
     await context.read<HomeCubit>().loadMapListings(
       swLat: swLat,
       swLng: swLng,

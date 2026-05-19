@@ -43,7 +43,7 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.dashboardBackground,
+      backgroundColor: AppColors.white,
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) async {
           if (state is LoginSuccess) {
