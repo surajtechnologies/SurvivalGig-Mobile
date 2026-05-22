@@ -99,9 +99,11 @@ class PostListingRemoteDataSourceImpl implements PostListingRemoteDataSource {
     required CreateListingRequestModel request,
   }) async {
     try {
+      final requestBody = request.toJson();
+      print('📦 CREATE LISTING REQUEST BODY: $requestBody');
       final response = await dioClient.dio.post(
         ApiEndpoints.listings,
-        data: request.toJson(),
+        data: requestBody,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

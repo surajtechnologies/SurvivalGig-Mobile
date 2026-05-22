@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:apple_maps_flutter/apple_maps_flutter.dart' as apple_maps;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -54,8 +53,6 @@ const _kDarkMapStyle = '''
 ]
 ''';
 
-enum _MapProvider { apple, google }
-
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -78,14 +75,9 @@ class _HomeView extends StatefulWidget {
 class _HomeViewState extends State<_HomeView> {
   int _selectedNavIndex = 0;
   GoogleMapController? _googleMapController;
-  apple_maps.AppleMapController? _appleMapController;
   bool _locationPermissionGranted = false;
   Timer? _idleDebounce;
-  Timer? _appleMapFallbackTimer;
-  bool _appleMapRendered = false;
-  late _MapProvider _activeMapProvider;
   Map<String, BitmapDescriptor> _pinIcons = const {};
-  Map<String, apple_maps.BitmapDescriptor> _applePinIcons = const {};
 
   // Last bounds sent to the API — used to skip duplicate requests
   // that occur when marker updates trigger onCameraIdle internally.
@@ -95,21 +87,16 @@ class _HomeViewState extends State<_HomeView> {
   @override
   void initState() {
     super.initState();
-    _activeMapProvider = Platform.isIOS
-        ? _MapProvider.apple
-        : _MapProvider.google;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkLocationPermission();
       _setupFcmToken();
       _preparePinIcons();
-      _scheduleAppleMapFallback();
     });
   }
 
   @override
   void dispose() {
     _idleDebounce?.cancel();
-    _appleMapFallbackTimer?.cancel();
     _googleMapController?.dispose();
     super.dispose();
   }
@@ -125,15 +112,10 @@ class _HomeViewState extends State<_HomeView> {
       for (final entry in pinBytes.entries)
         entry.key: BitmapDescriptor.bytes(entry.value),
     };
-    final appleIcons = <String, apple_maps.BitmapDescriptor>{
-      for (final entry in pinBytes.entries)
-        entry.key: apple_maps.BitmapDescriptor.fromBytes(entry.value),
-    };
 
     if (!mounted) return;
     setState(() {
       _pinIcons = icons;
-      _applePinIcons = appleIcons;
     });
   }
 
@@ -205,13 +187,6 @@ class _HomeViewState extends State<_HomeView> {
     _syncCameraToLoadedTarget();
   }
 
-  void _onAppleMapCreated(apple_maps.AppleMapController controller) {
-    _appleMapController = controller;
-    _appleMapRendered = true;
-    _appleMapFallbackTimer?.cancel();
-    _syncCameraToLoadedTarget();
-  }
-
   void _onCameraIdle() {
     _idleDebounce?.cancel();
     _idleDebounce = Timer(const Duration(milliseconds: 600), () async {
@@ -236,27 +211,6 @@ class _HomeViewState extends State<_HomeView> {
 
   Future<void> _refreshVisibleMapListings() async {
     if (!mounted) return;
-    if (_activeMapProvider == _MapProvider.apple) {
-      final bounds = await _appleMapController?.getVisibleRegion();
-      if (bounds == null || !mounted) return;
-      final swLat = bounds.southwest.latitude;
-      final swLng = bounds.southwest.longitude;
-      final neLat = bounds.northeast.latitude;
-      final neLng = bounds.northeast.longitude;
-      if (!_boundsChanged(swLat, swLng, neLat, neLng)) return;
-      _recordBounds(swLat, swLng, neLat, neLng);
-      debugPrint(
-        '[HomeMap][Apple] loadMapListings → swLat=$swLat, swLng=$swLng, neLat=$neLat, neLng=$neLng',
-      );
-      await context.read<HomeCubit>().loadMapListings(
-        swLat: swLat,
-        swLng: swLng,
-        neLat: neLat,
-        neLng: neLng,
-      );
-      return;
-    }
-
     final bounds = await _googleMapController?.getVisibleRegion();
     if (bounds == null || !mounted) return;
     final swLat = bounds.southwest.latitude;
@@ -276,26 +230,6 @@ class _HomeViewState extends State<_HomeView> {
     );
   }
 
-  void _scheduleAppleMapFallback() {
-    if (!Platform.isIOS) return;
-    _appleMapFallbackTimer?.cancel();
-    _appleMapFallbackTimer = Timer(const Duration(seconds: 4), () {
-      if (!mounted || _activeMapProvider != _MapProvider.apple) return;
-      if (!_appleMapRendered) {
-        _switchToGoogleMapFallback();
-      }
-    });
-  }
-
-  void _switchToGoogleMapFallback() {
-    if (!mounted) return;
-    _appleMapFallbackTimer?.cancel();
-    setState(() {
-      _activeMapProvider = _MapProvider.google;
-      _appleMapController = null;
-    });
-  }
-
   void _syncCameraToLoadedTarget() {
     final state = context.read<HomeCubit>().state;
     if (state is! HomeLoaded) return;
@@ -306,20 +240,6 @@ class _HomeViewState extends State<_HomeView> {
   }
 
   void _moveCameraTo(LatLng target, {double zoom = 14}) {
-    if (_activeMapProvider == _MapProvider.apple) {
-      final controller = _appleMapController;
-      if (controller == null) return;
-      controller.animateCamera(
-        apple_maps.CameraUpdate.newCameraPosition(
-          apple_maps.CameraPosition(
-            target: apple_maps.LatLng(target.latitude, target.longitude),
-            zoom: zoom,
-          ),
-        ),
-      );
-      return;
-    }
-
     final controller = _googleMapController;
     if (controller == null) return;
     controller.animateCamera(
@@ -370,22 +290,11 @@ class _HomeViewState extends State<_HomeView> {
     required double latitude,
     required double longitude,
   }) async {
-    if (_activeMapProvider == _MapProvider.apple) {
-      await _appleMapController?.animateCamera(
-        apple_maps.CameraUpdate.newCameraPosition(
-          apple_maps.CameraPosition(
-            target: apple_maps.LatLng(latitude, longitude),
-            zoom: 15,
-          ),
-        ),
-      );
-    } else {
-      await _googleMapController?.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: LatLng(latitude, longitude), zoom: 15),
-        ),
-      );
-    }
+    await _googleMapController?.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: LatLng(latitude, longitude), zoom: 15),
+      ),
+    );
 
     if (!mounted) return;
     // Reset cached bounds so the post-animation idle always fires a fresh fetch.
@@ -421,10 +330,7 @@ class _HomeViewState extends State<_HomeView> {
 
         if (state is HomeLoaded && state.cameraTarget != null) {
           _moveCameraTo(state.cameraTarget!, zoom: 14);
-          final hasController = _activeMapProvider == _MapProvider.apple
-              ? _appleMapController != null
-              : _googleMapController != null;
-          if (!hasController) return;
+          if (_googleMapController == null) return;
           context.read<HomeCubit>().clearCameraTarget();
           _checkLocationPermission();
         }
@@ -510,30 +416,6 @@ class _HomeViewState extends State<_HomeView> {
         : <MapListing>[];
     final initialCamera = _initialCameraPositionFor(state);
 
-    if (_activeMapProvider == _MapProvider.apple) {
-      return apple_maps.AppleMap(
-        initialCameraPosition: apple_maps.CameraPosition(
-          target: apple_maps.LatLng(
-            initialCamera.target.latitude,
-            initialCamera.target.longitude,
-          ),
-          zoom: initialCamera.zoom,
-        ),
-        onMapCreated: _onAppleMapCreated,
-        onCameraIdle: _onCameraIdle,
-        annotations: _buildAppleMarkers(listings),
-        myLocationEnabled: _locationPermissionGranted,
-        myLocationButtonEnabled: false,
-        compassEnabled: true,
-        mapType: apple_maps.MapType.standard,
-        trafficEnabled: false,
-        rotateGesturesEnabled: true,
-        scrollGesturesEnabled: true,
-        zoomGesturesEnabled: true,
-        pitchGesturesEnabled: true,
-      );
-    }
-
     return GoogleMap(
       initialCameraPosition: initialCamera,
       onMapCreated: _onGoogleMapCreated,
@@ -557,18 +439,6 @@ class _HomeViewState extends State<_HomeView> {
       }
     }
     return _kDefaultCamera;
-  }
-
-  Set<apple_maps.Annotation> _buildAppleMarkers(List<MapListing> listings) {
-    return listings.map((listing) {
-      return apple_maps.Annotation(
-        annotationId: apple_maps.AnnotationId(listing.id),
-        position: apple_maps.LatLng(listing.latitude, listing.longitude),
-        icon: _applePinIconFor(listing),
-        infoWindow: apple_maps.InfoWindow(title: listing.title),
-        onTap: () => _showListingBottomSheet(listing),
-      );
-    }).toSet();
   }
 
   Set<Marker> _buildMarkers(List<MapListing> listings) {
@@ -602,37 +472,6 @@ class _HomeViewState extends State<_HomeView> {
     }
     return _pinIcons['hybrid'] ??
         BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
-  }
-
-  apple_maps.BitmapDescriptor _applePinIconFor(MapListing listing) {
-    if (listing.isHybrid) {
-      return _applePinIcons['hybrid'] ??
-          apple_maps.BitmapDescriptor.defaultAnnotationWithHue(
-            apple_maps.BitmapDescriptor.hueYellow,
-          );
-    }
-    if (listing.isRequest) {
-      return _applePinIcons['request'] ??
-          apple_maps.BitmapDescriptor.defaultAnnotationWithHue(
-            apple_maps.BitmapDescriptor.hueRed,
-          );
-    }
-    if (listing.isOffer) {
-      return _applePinIcons['offer'] ??
-          apple_maps.BitmapDescriptor.defaultAnnotationWithHue(
-            apple_maps.BitmapDescriptor.hueGreen,
-          );
-    }
-    if (listing.isItem) {
-      return _applePinIcons['item'] ??
-          apple_maps.BitmapDescriptor.defaultAnnotationWithHue(
-            apple_maps.BitmapDescriptor.hueViolet,
-          );
-    }
-    return _applePinIcons['hybrid'] ??
-        apple_maps.BitmapDescriptor.defaultAnnotationWithHue(
-          apple_maps.BitmapDescriptor.hueYellow,
-        );
   }
 
   void _showListingBottomSheet(MapListing listing) {
@@ -730,46 +569,53 @@ class _HomeViewState extends State<_HomeView> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: const [MapFilter.all, MapFilter.requests, MapFilter.offers].map((filter) {
-                    final isActive = filter == selectedFilter;
-                    final activeColor = _filterColor(filter);
-                    return Padding(
-                      padding: EdgeInsets.only(right: AppDimensions.spacingSm),
-                      child: GestureDetector(
-                        onTap: () =>
-                            context.read<HomeCubit>().applyFilter(filter),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppDimensions.spacingMd,
-                            vertical: AppDimensions.spacingSm,
+                  children:
+                      const [
+                        MapFilter.all,
+                        MapFilter.requests,
+                        MapFilter.offers,
+                      ].map((filter) {
+                        final isActive = filter == selectedFilter;
+                        final activeColor = _filterColor(filter);
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            right: AppDimensions.spacingSm,
                           ),
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? activeColor
-                                : AppColors.dashboardSearch,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: isActive
-                                  ? activeColor
-                                  : AppColors.dashboardBorder,
+                          child: GestureDetector(
+                            onTap: () =>
+                                context.read<HomeCubit>().applyFilter(filter),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: AppDimensions.spacingMd,
+                                vertical: AppDimensions.spacingSm,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? activeColor
+                                    : AppColors.dashboardSearch,
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                  color: isActive
+                                      ? activeColor
+                                      : AppColors.dashboardBorder,
+                                ),
+                              ),
+                              child: Text(
+                                filter.label,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: isActive
+                                      ? AppColors.black
+                                      : AppColors.textOnDarkSecondary,
+                                  fontWeight: isActive
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
-                          child: Text(
-                            filter.label,
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: isActive
-                                  ? AppColors.black
-                                  : AppColors.textOnDarkSecondary,
-                              fontWeight: isActive
-                                  ? FontWeight.w800
-                                  : FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                        );
+                      }).toList(),
                 ),
               ),
             ],
@@ -1165,10 +1011,6 @@ class _MapListingDetailSheet extends StatelessWidget {
       listing?.type ?? mapListing.type,
       listing?.priceMode ?? mapListing.priceMode,
     );
-    final typeLabel = _typeLabel(listing?.type ?? mapListing.type);
-    final urgency = listing?.urgencyLevel ?? mapListing.urgencyLevel;
-    final categoryName =
-        listing?.category?.name ?? mapListing.categoryName ?? 'General';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1239,37 +1081,6 @@ class _MapListingDetailSheet extends StatelessWidget {
     if (normalized.contains('OFFER')) return AppColors.primary;
     if (normalized.contains('ITEM')) return AppColors.itemPin;
     return AppColors.hybridPin;
-  }
-
-  static String _typeLabel(String type) {
-    final normalized = type.toUpperCase();
-    if (normalized.contains('NEED')) return 'Request';
-    if (normalized.contains('OFFER')) return 'Offer';
-    if (normalized.contains('ITEM')) return 'Item';
-    return type
-        .split('_')
-        .map((word) {
-          final trimmed = word.trim();
-          if (trimmed.isEmpty) return '';
-          return '${trimmed[0].toUpperCase()}${trimmed.substring(1).toLowerCase()}';
-        })
-        .where((word) => word.isNotEmpty)
-        .join(' ');
-  }
-
-  static Color _urgencyColor(String urgency) {
-    switch (urgency.toUpperCase()) {
-      case 'CRITICAL':
-        return AppColors.requestPin;
-      case 'HIGH':
-        return AppColors.spent;
-      case 'MEDIUM':
-        return AppColors.warning;
-      case 'LOW':
-        return AppColors.primary;
-      default:
-        return AppColors.textOnDarkSecondary;
-    }
   }
 }
 
@@ -1485,7 +1296,9 @@ class _LoadedListingDetails extends StatelessWidget {
             _DetailItem(
               icon: Icons.flash_on_rounded,
               label: 'Urgency',
-              value: listing.urgencyLevel != null && listing.urgencyLevel!.trim().isNotEmpty
+              value:
+                  listing.urgencyLevel != null &&
+                      listing.urgencyLevel!.trim().isNotEmpty
                   ? '${listing.urgencyLevel![0].toUpperCase()}${listing.urgencyLevel!.substring(1).toLowerCase()}'
                   : 'Not specified',
             ),
@@ -2013,35 +1826,6 @@ class _PendingOfferBanner extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _Badge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingSm,
-        vertical: AppDimensions.spacingXs,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        label,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: color,
-          fontWeight: FontWeight.w800,
         ),
       ),
     );

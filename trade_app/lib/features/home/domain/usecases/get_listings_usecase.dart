@@ -15,12 +15,10 @@ class GetListingsUseCase {
   call({
     required int page,
     int limit = 20,
-    String? categoryId,
-    String? search,
-    String? location,
-    String? intent,
+    double? latitude,
+    double? longitude,
+    double? radiusKm,
   }) async {
-    // Validate page number
     if (page < 1) {
       return Left(
         ValidationFailure(
@@ -30,7 +28,6 @@ class GetListingsUseCase {
       );
     }
 
-    // Validate limit
     if (limit < 1 || limit > 100) {
       return Left(
         ValidationFailure(
@@ -40,13 +37,21 @@ class GetListingsUseCase {
       );
     }
 
+    if ((latitude == null) != (longitude == null)) {
+      return Left(
+        ValidationFailure(
+          message: 'Latitude and longitude must be provided together',
+          code: 'INVALID_LOCATION_FILTER',
+        ),
+      );
+    }
+
     return await repository.getListings(
       page: page,
       limit: limit,
-      categoryId: categoryId,
-      search: search,
-      location: location,
-      intent: intent,
+      latitude: latitude,
+      longitude: longitude,
+      radiusKm: radiusKm,
     );
   }
 }

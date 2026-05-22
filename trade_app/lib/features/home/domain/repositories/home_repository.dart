@@ -18,10 +18,9 @@ abstract class HomeRepository {
   getListings({
     required int page,
     int limit = 20,
-    String? categoryId,
-    String? search,
-    String? location,
-    String? intent,
+    double? latitude,
+    double? longitude,
+    double? radiusKm,
   });
 
   /// Get lightweight map pins within a bounding box (GET /listings/map)

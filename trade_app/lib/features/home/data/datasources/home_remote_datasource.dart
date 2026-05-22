@@ -18,10 +18,9 @@ abstract class HomeRemoteDataSource {
   Future<ListingsResponseModel> getListings({
     required int page,
     int limit = 20,
-    String? categoryId,
-    String? search,
-    String? location,
-    String? intent,
+    double? latitude,
+    double? longitude,
+    double? radiusKm,
   });
 
   /// Fetch lightweight map pins within a bounding box
@@ -107,32 +106,19 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   Future<ListingsResponseModel> getListings({
     required int page,
     int limit = 20,
-    String? categoryId,
-    String? search,
-    String? location,
-    String? intent,
+    double? latitude,
+    double? longitude,
+    double? radiusKm,
   }) async {
     try {
-      // Build query parameters
       final queryParams = <String, dynamic>{'page': page, 'limit': limit};
 
-      if (categoryId != null) {
-        queryParams['categoryId'] = categoryId;
-      }
-
-      if (search != null && search.isNotEmpty) {
-        queryParams['search'] = search;
-      }
-
-      if (location != null && location.isNotEmpty) {
-        queryParams['location'] = location;
-      }
-
-      // Search requests should not include intent filter.
-      if ((search == null || search.isEmpty) &&
-          intent != null &&
-          intent.isNotEmpty) {
-        queryParams['intent'] = intent;
+      if (latitude != null && longitude != null) {
+        queryParams['lat'] = latitude;
+        queryParams['lng'] = longitude;
+        if (radiusKm != null) {
+          queryParams['radiusKm'] = radiusKm;
+        }
       }
 
       final response = await dioClient.dio.get(

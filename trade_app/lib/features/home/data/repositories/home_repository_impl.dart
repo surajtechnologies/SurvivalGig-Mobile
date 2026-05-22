@@ -65,19 +65,17 @@ class HomeRepositoryImpl implements HomeRepository {
   getListings({
     required int page,
     int limit = 20,
-    String? categoryId,
-    String? search,
-    String? location,
-    String? intent,
+    double? latitude,
+    double? longitude,
+    double? radiusKm,
   }) async {
     try {
       final response = await remoteDataSource.getListings(
         page: page,
         limit: limit,
-        categoryId: categoryId,
-        search: search,
-        location: location,
-        intent: intent,
+        latitude: latitude,
+        longitude: longitude,
+        radiusKm: radiusKm,
       );
 
       // Convert DTOs to domain entities

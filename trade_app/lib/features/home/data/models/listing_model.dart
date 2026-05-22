@@ -65,6 +65,7 @@ class ListingModel {
         DateTime.fromMillisecondsSinceEpoch(0);
     final updatedAt =
         _parseDateTime(json['updatedAt'] ?? json['updated_at']) ?? createdAt;
+    final coordinates = _readCoordinates(json);
 
     return ListingModel(
       id: id,
@@ -75,8 +76,15 @@ class ListingModel {
       condition: _readString(json['condition']),
       categoryId: _readString(json['categoryId']),
       location: _readString(json['location']),
-      latitude: _readDouble(json['latitude']),
-      longitude: _readDouble(json['longitude']),
+      latitude:
+          _readDouble(json['latitude']) ??
+          _readDouble(json['lat']) ??
+          coordinates?.lat,
+      longitude:
+          _readDouble(json['longitude']) ??
+          _readDouble(json['lng']) ??
+          _readDouble(json['lon']) ??
+          coordinates?.lng,
       urgencyLevel: _readString(json['urgencyLevel']),
       expiresAt: _parseDateTime(json['expiresAt']),
       priceMode:
@@ -195,6 +203,80 @@ class ListingModel {
     }
 
     return {'id': categoryId ?? '', 'name': categoryName ?? 'General'};
+  }
+
+  static ({double lat, double lng})? _readCoordinates(
+    Map<String, dynamic> json,
+  ) {
+    final direct = _coordinatesFrom(json['coordinates']);
+    if (direct != null) return direct;
+
+    final geoLocation = json['geoLocation'];
+    if (geoLocation is Map<String, dynamic>) {
+      final coords = _coordinatesFrom(geoLocation['coordinates']);
+      if (coords != null) return coords;
+      final fields = _coordinateFields(geoLocation);
+      if (fields != null) return fields;
+    } else {
+      final coords = _coordinatesFrom(geoLocation);
+      if (coords != null) return coords;
+    }
+
+    final geoLocationSnake = json['geo_location'];
+    if (geoLocationSnake is Map<String, dynamic>) {
+      final coords = _coordinatesFrom(geoLocationSnake['coordinates']);
+      if (coords != null) return coords;
+      final fields = _coordinateFields(geoLocationSnake);
+      if (fields != null) return fields;
+    } else {
+      final coords = _coordinatesFrom(geoLocationSnake);
+      if (coords != null) return coords;
+    }
+
+    final location = json['location'];
+    if (location is Map<String, dynamic>) {
+      final coords =
+          _coordinatesFrom(location['coordinates']) ??
+          _coordinatesFrom(location['geoLocation']) ??
+          _coordinatesFrom(location['geo_location']);
+      if (coords != null) return coords;
+      final fields = _coordinateFields(location);
+      if (fields != null) return fields;
+    }
+
+    return null;
+  }
+
+  static ({double lat, double lng})? _coordinatesFrom(dynamic raw) {
+    if (raw is List && raw.length >= 2) {
+      final lng = _readDouble(raw[0]);
+      final lat = _readDouble(raw[1]);
+      if (lat != null && lng != null) {
+        return (lat: lat, lng: lng);
+      }
+    }
+
+    if (raw is Map<String, dynamic>) {
+      final coords = _coordinatesFrom(raw['coordinates']);
+      if (coords != null) return coords;
+      return _coordinateFields(raw);
+    }
+
+    return null;
+  }
+
+  static ({double lat, double lng})? _coordinateFields(
+    Map<String, dynamic> json,
+  ) {
+    final lat = _readDouble(json['latitude']) ?? _readDouble(json['lat']);
+    final lng =
+        _readDouble(json['longitude']) ??
+        _readDouble(json['lng']) ??
+        _readDouble(json['lon']);
+    if (lat == null || lng == null) {
+      return null;
+    }
+    return (lat: lat, lng: lng);
   }
 
   static DateTime? _parseDateTime(dynamic value) {

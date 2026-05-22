@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:apple_maps_flutter/apple_maps_flutter.dart' as apple_maps;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -1177,7 +1176,6 @@ class _MapLocationPickerScreenState extends State<_MapLocationPickerScreen> {
   late LatLng _selectedLocation;
   late final ValueNotifier<LatLng> _locationNotifier;
   GoogleMapController? _googleMapController;
-  apple_maps.AppleMapController? _appleMapController;
 
   @override
   void initState() {
@@ -1189,7 +1187,6 @@ class _MapLocationPickerScreenState extends State<_MapLocationPickerScreen> {
   @override
   void dispose() {
     _googleMapController?.dispose();
-    _appleMapController = null;
     _locationNotifier.dispose();
     super.dispose();
   }
@@ -1199,27 +1196,8 @@ class _MapLocationPickerScreenState extends State<_MapLocationPickerScreen> {
     _locationNotifier.value = _selectedLocation;
   }
 
-  void _updateAppleCamera(apple_maps.CameraPosition position) {
-    _selectedLocation = LatLng(
-      position.target.latitude,
-      position.target.longitude,
-    );
-    _locationNotifier.value = _selectedLocation;
-  }
-
   Future<void> _onGoogleCameraIdle() async {
     final bounds = await _googleMapController?.getVisibleRegion();
-    if (bounds == null) return;
-    final center = LatLng(
-      (bounds.southwest.latitude + bounds.northeast.latitude) / 2,
-      (bounds.southwest.longitude + bounds.northeast.longitude) / 2,
-    );
-    _selectedLocation = center;
-    _locationNotifier.value = center;
-  }
-
-  Future<void> _onAppleCameraIdle() async {
-    final bounds = await _appleMapController?.getVisibleRegion();
     if (bounds == null) return;
     final center = LatLng(
       (bounds.southwest.latitude + bounds.northeast.latitude) / 2,
@@ -1286,29 +1264,6 @@ class _MapLocationPickerScreenState extends State<_MapLocationPickerScreen> {
   }
 
   Widget _buildMap() {
-    if (Platform.isIOS) {
-      return apple_maps.AppleMap(
-        initialCameraPosition: apple_maps.CameraPosition(
-          target: apple_maps.LatLng(
-            widget.initialTarget.latitude,
-            widget.initialTarget.longitude,
-          ),
-          zoom: 15,
-        ),
-        onMapCreated: (controller) => _appleMapController = controller,
-        onCameraMove: _updateAppleCamera,
-        onCameraIdle: _onAppleCameraIdle,
-        compassEnabled: true,
-        mapType: apple_maps.MapType.standard,
-        myLocationEnabled: false,
-        myLocationButtonEnabled: false,
-        rotateGesturesEnabled: true,
-        scrollGesturesEnabled: true,
-        zoomGesturesEnabled: true,
-        pitchGesturesEnabled: true,
-      );
-    }
-
     return GoogleMap(
       initialCameraPosition: CameraPosition(
         target: widget.initialTarget,

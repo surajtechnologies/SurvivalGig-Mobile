@@ -364,28 +364,6 @@ class _ProfileViewState extends State<_ProfileView> {
     );
   }
 
-  Widget _buildRatingRow(bool isVerified) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (var index = 0; index < 5; index++)
-          Icon(
-            Icons.star_rounded,
-            color: isVerified ? AppColors.hybridPin : _profileBorder(context),
-            size: AppDimensions.iconSizeLg,
-          ),
-        SizedBox(width: AppDimensions.spacingSm),
-        Text(
-          isVerified ? '4.7' : 'New',
-          style: AppTextStyles.headlineSmall.copyWith(
-            color: _profileSecondaryText(context),
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ],
-    );
-  }
-
   void _showLogoutConfirmation() {
     showDialog(
       context: context,
@@ -627,60 +605,6 @@ class _ProfileAvatarButton extends StatelessWidget {
           color: AppColors.black,
           fontWeight: FontWeight.w800,
         ),
-      ),
-    );
-  }
-}
-
-class _ProfileStatCard extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-
-  const _ProfileStatCard({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingSm,
-        vertical: AppDimensions.spacingMd,
-      ),
-      decoration: BoxDecoration(
-        color: _profileSurface(context),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        border: Border.all(color: _profileBorder(context)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: AppDimensions.iconSizeLg),
-          SizedBox(height: AppDimensions.spacingSm),
-          Text(
-            value,
-            style: AppTextStyles.headlineSmall.copyWith(
-              color: _profilePrimaryText(context),
-              fontWeight: FontWeight.w800,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          SizedBox(height: AppDimensions.spacingXs),
-          Text(
-            label,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: _profileSecondaryText(context),
-              fontWeight: FontWeight.w700,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
       ),
     );
   }

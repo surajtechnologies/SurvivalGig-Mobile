@@ -283,6 +283,7 @@ void setupServiceLocator() {
   sl.registerFactory<HomeCubit>(
     () => HomeCubit(
       getCategoriesUseCase: sl(),
+      getListingsUseCase: sl(),
       getMapListingsUseCase: sl(),
       getNearbyListingsUseCase: sl(),
       getPolygonListingsUseCase: sl(),

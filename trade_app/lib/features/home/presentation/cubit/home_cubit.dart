@@ -7,6 +7,9 @@ import '../../../auth/domain/usecases/logout_usecase.dart';
 import '../../domain/entities/map_coordinate.dart';
 import '../../domain/usecases/detect_home_location_usecase.dart';
 import '../../domain/usecases/get_categories_usecase.dart';
+import '../../domain/entities/listing.dart';
+import '../../domain/entities/map_listing.dart';
+import '../../domain/usecases/get_listings_usecase.dart';
 import '../../domain/usecases/get_map_listings_usecase.dart';
 import '../../domain/usecases/get_nearby_listings_usecase.dart';
 import '../../domain/usecases/get_polygon_listings_usecase.dart';
@@ -19,6 +22,7 @@ const _kBBoxDelta = 0.05;
 /// Home cubit — drives the full-screen Google Maps listing discovery view
 class HomeCubit extends Cubit<HomeState> {
   final GetCategoriesUseCase getCategoriesUseCase;
+  final GetListingsUseCase getListingsUseCase;
   final GetMapListingsUseCase getMapListingsUseCase;
   final GetNearbyListingsUseCase getNearbyListingsUseCase;
   final GetPolygonListingsUseCase getPolygonListingsUseCase;
@@ -32,6 +36,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   HomeCubit({
     required this.getCategoriesUseCase,
+    required this.getListingsUseCase,
     required this.getMapListingsUseCase,
     required this.getNearbyListingsUseCase,
     required this.getPolygonListingsUseCase,
@@ -114,7 +119,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   // ── Map data ─────────────────────────────────────────────────────────────────
 
-  /// Called on map camera idle — refresh pins for the visible bounding box.
+  /// Called on map camera idle — refresh pins centred on the visible region.
   Future<void> loadMapListings({
     required double swLat,
     required double swLng,
@@ -125,21 +130,47 @@ class HomeCubit extends Cubit<HomeState> {
     if (currentState is! HomeLoaded) return;
     final requestId = ++_mapListingsRequestId;
 
-    final result = await getMapListingsUseCase(
-      swLat: swLat,
-      swLng: swLng,
-      neLat: neLat,
-      neLng: neLng,
+    final centerLat = (swLat + neLat) / 2;
+    final centerLng = (swLng + neLng) / 2;
+
+    final result = await getListingsUseCase(
+      page: 1,
+      limit: 20,
+      latitude: centerLat,
+      longitude: centerLng,
+      radiusKm: 10,
     );
 
     if (requestId != _mapListingsRequestId) return;
 
-    result.fold((_) {}, (listings) {
+    result.fold((_) {}, (data) {
       final latest = state;
       if (latest is HomeLoaded) {
-        emit(latest.copyWith(mapListings: listings, isLoadingMap: false));
+        emit(latest.copyWith(
+          mapListings: _toMapListings(data.listings),
+          isLoadingMap: false,
+        ));
       }
     });
+  }
+
+  List<MapListing> _toMapListings(List<Listing> listings) {
+    return listings
+        .where((l) => l.latitude != null && l.longitude != null)
+        .map(
+          (l) => MapListing(
+            id: l.id,
+            title: l.title,
+            type: l.type,
+            latitude: l.latitude!,
+            longitude: l.longitude!,
+            urgencyLevel: l.urgencyLevel,
+            categoryIcon: l.category?.icon,
+            categoryName: l.category?.name,
+            priceMode: l.priceMode,
+          ),
+        )
+        .toList();
   }
 
   // ── Filters ──────────────────────────────────────────────────────────────────

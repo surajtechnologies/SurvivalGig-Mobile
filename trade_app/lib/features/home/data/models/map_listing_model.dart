@@ -118,11 +118,23 @@ class MapListingModel {
       if (coords != null) return coords;
     }
 
+    final geoLocationSnake = json['geo_location'];
+    if (geoLocationSnake is Map<String, dynamic>) {
+      final coords = _coordinatesFrom(geoLocationSnake['coordinates']);
+      if (coords != null) return coords;
+      final fields = _coordinateFields(geoLocationSnake);
+      if (fields != null) return fields;
+    } else {
+      final coords = _coordinatesFrom(geoLocationSnake);
+      if (coords != null) return coords;
+    }
+
     final location = json['location'];
     if (location is Map<String, dynamic>) {
       final coords =
           _coordinatesFrom(location['coordinates']) ??
-          _coordinatesFrom(location['geoLocation']);
+          _coordinatesFrom(location['geoLocation']) ??
+          _coordinatesFrom(location['geo_location']);
       if (coords != null) return coords;
       final fields = _coordinateFields(location);
       if (fields != null) return fields;

@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:apple_maps_flutter/apple_maps_flutter.dart' as apple_maps;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
@@ -191,9 +189,9 @@ class _ListingDetailView extends StatelessWidget {
                         ),
                       );
                       if (updated == true && context.mounted) {
-                        context
-                            .read<ListingDetailCubit>()
-                            .loadListing(listingId);
+                        context.read<ListingDetailCubit>().loadListing(
+                          listingId,
+                        );
                       }
                     },
                   );
@@ -974,7 +972,10 @@ class _MakeOfferOptionsSheet extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: AppColors.textOnDarkPrimary),
+                  icon: const Icon(
+                    Icons.close,
+                    color: AppColors.textOnDarkPrimary,
+                  ),
                   iconSize: AppDimensions.iconSizeMd,
                 ),
               ],
@@ -1442,27 +1443,6 @@ class _SmallMapView extends StatefulWidget {
 class _SmallMapViewState extends State<_SmallMapView> {
   @override
   Widget build(BuildContext context) {
-    if (Platform.isIOS) {
-      return apple_maps.AppleMap(
-        initialCameraPosition: apple_maps.CameraPosition(
-          target: apple_maps.LatLng(widget.latitude, widget.longitude),
-          zoom: 14,
-        ),
-        annotations: {
-          apple_maps.Annotation(
-            annotationId: apple_maps.AnnotationId('pin'),
-            position: apple_maps.LatLng(widget.latitude, widget.longitude),
-          ),
-        },
-        myLocationEnabled: false,
-        myLocationButtonEnabled: false,
-        zoomGesturesEnabled: false,
-        rotateGesturesEnabled: false,
-        scrollGesturesEnabled: false,
-        pitchGesturesEnabled: false,
-      );
-    }
-
     return gmap.GoogleMap(
       initialCameraPosition: gmap.CameraPosition(
         target: gmap.LatLng(widget.latitude, widget.longitude),
