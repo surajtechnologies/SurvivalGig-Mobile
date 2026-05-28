@@ -10,7 +10,7 @@ This document describes the network layer implementation for the BarterX Trade A
 #### 1. **ApiEndpoints** (`api_endpoints.dart`)
 - Contains all API endpoint constants
 - Three base URLs: production, staging, and development
-- Currently configured to use: `http://localhost:3000/v1`
+- Currently configured to use: `https://barterx-backend-a7fym27foa-uc.a.run.app/api`
 - Organized by feature: auth, users, listings, trades, etc.
 
 #### 2. **ApiResponse** (`api_response.dart`)

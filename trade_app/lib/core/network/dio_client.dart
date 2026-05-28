@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../config/env/app_config.dart';
 import '../../features/common/presentation/cubit/loading_cubit.dart';
 import '../utils/user_session.dart';
+import 'api_endpoints.dart';
 import 'interceptors/loading_interceptor.dart';
 
 /// Dio client for making HTTP requests
@@ -32,7 +33,7 @@ class DioClient {
   /// Create base Dio options
   BaseOptions _createBaseOptions() {
     return BaseOptions(
-      baseUrl: AppConfig.baseUrl,
+      baseUrl: ApiEndpoints.baseUrl,
       connectTimeout: Duration(seconds: AppConfig.connectTimeout),
       receiveTimeout: Duration(seconds: AppConfig.receiveTimeout),
       sendTimeout: Duration(seconds: AppConfig.sendTimeout),
@@ -223,6 +224,11 @@ class DioClient {
     Response<dynamic>? response,
     DioException? error,
   }) {
+    final path = response?.requestOptions.path ?? error?.requestOptions.path;
+    if (path != null && _isAuthEndpoint(path)) {
+      return false;
+    }
+
     final statusCode = response?.statusCode ?? error?.response?.statusCode;
     if (statusCode == 401) {
       return true;
@@ -232,6 +238,16 @@ class DioClient {
         _containsNoTokenProvided(error?.response?.data) ||
         _containsNoTokenProvided(error?.message) ||
         _containsNoTokenProvided(error?.error);
+  }
+
+  bool _isAuthEndpoint(String path) {
+    return path.contains('/auth/login') ||
+        path.contains('/auth/register') ||
+        path.contains('/auth/mobile') ||
+        path.contains('/auth/forgot-password') ||
+        path.contains('/auth/reset-password') ||
+        path.contains('/auth/verify-email') ||
+        path.contains('/auth/resend-verification');
   }
 
   bool _containsNoTokenProvided(Object? value) {
@@ -256,7 +272,12 @@ class DioClient {
     if (_isExpiringSession) return;
     _isExpiringSession = true;
 
+    final userSession = _userSession;
+    if (userSession != null) {
+      await userSession.expireSession();
+      return;
+    }
+
     await clearTokens();
-    await _userSession?.expireSession();
   }
 }

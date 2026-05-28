@@ -153,13 +153,16 @@ class _TradesViewState extends State<_TradesView> {
           final trade = state.trades[index];
           return TradeListItem(
             trade: trade,
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              final didUpdateTrade = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
                   builder: (_) => TradeDetailScreen(tradeId: trade.id),
                 ),
               );
+              if (didUpdateTrade == true && context.mounted) {
+                context.read<TradesCubit>().refresh();
+              }
             },
           );
         },

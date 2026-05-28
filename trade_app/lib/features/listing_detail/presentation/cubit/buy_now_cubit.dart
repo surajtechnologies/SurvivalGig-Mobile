@@ -15,11 +15,9 @@ class BuyNowCubit extends Cubit<BuyNowState> {
     final result = await buyNowUseCase(listingId: listingId);
 
     result.fold(
-      (failure) => emit(BuyNowError(
-        listingId: listingId,
-        message: failure.message,
-      )),
-      (_) => emit(BuyNowSuccess(listingId: listingId)),
+      (failure) =>
+          emit(BuyNowError(listingId: listingId, message: failure.message)),
+      (tradeId) => emit(BuyNowSuccess(listingId: listingId, tradeId: tradeId)),
     );
   }
 

@@ -15,7 +15,7 @@ abstract class ListingDetailRepository {
   getMyListings({required int page, int limit = 20});
 
   /// Buy now (direct purchase) for a listing
-  Future<Either<Failure, bool>> buyNow({required String listingId});
+  Future<Either<Failure, String?>> buyNow({required String listingId});
 
   /// Get a user's ratings and reviews summary.
   Future<Either<Failure, UserReviewSummary>> getUserReviews({

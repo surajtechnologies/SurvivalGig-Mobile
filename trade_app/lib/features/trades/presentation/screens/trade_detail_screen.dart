@@ -15,13 +15,20 @@ import '../cubit/trade_detail_state.dart';
 /// Trade detail screen
 class TradeDetailScreen extends StatelessWidget {
   final String tradeId;
+  final String? openingMessage;
 
-  const TradeDetailScreen({super.key, required this.tradeId});
+  const TradeDetailScreen({
+    super.key,
+    required this.tradeId,
+    this.openingMessage,
+  });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<TradeDetailCubit>()..initialize(tradeId),
+      create: (_) =>
+          sl<TradeDetailCubit>()
+            ..initialize(tradeId, openingMessage: openingMessage),
       child: _TradeDetailView(tradeId: tradeId),
     );
   }
@@ -38,16 +45,13 @@ class _TradeDetailView extends StatefulWidget {
 
 class _TradeDetailViewState extends State<_TradeDetailView> {
   final TextEditingController _messageController = TextEditingController();
-  final TextEditingController _reviewController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   int _messageCount = 0;
-  int _selectedReviewRating = 0;
-  bool _showInlineReviewForm = false;
+  bool _didUpdateTrade = false;
 
   @override
   void dispose() {
     _messageController.dispose();
-    _reviewController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -68,14 +72,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
           }
 
           if (state.actionMessage != null) {
-            if (state.actionMessage == 'Review submitted successfully' &&
-                _showInlineReviewForm) {
-              setState(() {
-                _showInlineReviewForm = false;
-                _selectedReviewRating = 0;
-              });
-              _reviewController.clear();
-            }
+            _didUpdateTrade = true;
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -103,25 +100,40 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
         }
       },
       builder: (context, state) {
-        return Scaffold(
-          backgroundColor: AppColors.dashboardBackground,
-          appBar: _buildAppBar(context, state),
-          body: _buildBody(context, state),
+        return PopScope<bool>(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            Navigator.pop(context, _didUpdateTrade);
+          },
+          child: Scaffold(
+            backgroundColor: AppColors.dashboardBackground,
+            resizeToAvoidBottomInset: true,
+            appBar: _buildAppBar(context, state),
+            body: _buildBody(context, state),
+          ),
         );
       },
     );
   }
 
   void _scrollToBottom() {
-    if (!_scrollController.hasClients) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
+      _animateMessagesToBottom();
+      Future<void>.delayed(
+        const Duration(milliseconds: 120),
+        _animateMessagesToBottom,
       );
     });
+  }
+
+  void _animateMessagesToBottom() {
+    if (!_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
   }
 
   PreferredSizeWidget _buildAppBar(
@@ -138,7 +150,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => Navigator.pop(context, _didUpdateTrade),
       ),
       title: Text(
         title,
@@ -188,7 +200,6 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
     final detail = state.detail;
     final status = detail.status.toUpperCase();
     final isListingOwner = _isListingOwner(detail);
-    final isCustomerSide = _isCustomerSide(detail);
 
     return Column(
       children: [
@@ -203,10 +214,6 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
                 _buildPendingActions(context, state)
               else if (status == 'ACCEPTED' && isListingOwner)
                 _buildConfirmAction(context, state)
-              else if (status == 'ACCEPTED' && isCustomerSide)
-                _showInlineReviewForm
-                    ? _buildInlineReviewForm(context, state)
-                    : _buildRateUserAction(context, state)
               else
                 const SizedBox.shrink(),
             ],
@@ -391,200 +398,6 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
     );
   }
 
-  Widget _buildRateUserAction(BuildContext context, TradeDetailLoaded state) {
-    final isLoading = state.isActionLoading;
-
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: isLoading
-            ? null
-            : () {
-                setState(() {
-                  _showInlineReviewForm = true;
-                });
-              },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.white,
-          padding: EdgeInsets.symmetric(vertical: AppDimensions.spacingSm),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-          ),
-          elevation: 0,
-        ),
-        child: isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.white,
-                ),
-              )
-            : Text(
-                'Rate This User',
-                style: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-      ),
-    );
-  }
-
-  Widget _buildInlineReviewForm(BuildContext context, TradeDetailLoaded state) {
-    final isLoading = state.isActionLoading;
-    final canSubmit =
-        _selectedReviewRating > 0 &&
-        _reviewController.text.trim().isNotEmpty &&
-        !isLoading;
-
-    return Container(
-      padding: EdgeInsets.all(AppDimensions.spacingMd),
-      decoration: BoxDecoration(
-        color: AppColors.dashboardSurface,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        border: Border.all(color: AppColors.dashboardBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Rate This User',
-            style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textOnDarkPrimary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          SizedBox(height: AppDimensions.spacingSm),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: List.generate(5, (index) {
-              final star = index + 1;
-              return IconButton(
-                onPressed: isLoading
-                    ? null
-                    : () {
-                        setState(() {
-                          _selectedReviewRating = star;
-                        });
-                      },
-                icon: Icon(
-                  star <= _selectedReviewRating
-                      ? Icons.star
-                      : Icons.star_border,
-                  color: AppColors.warning,
-                ),
-              );
-            }),
-          ),
-          SizedBox(height: AppDimensions.spacingSm),
-          TextField(
-            controller: _reviewController,
-            maxLines: 3,
-            enabled: !isLoading,
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              hintText: 'Write your review',
-              hintStyle: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textOnDarkSecondary,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                borderSide: const BorderSide(color: AppColors.dashboardBorder),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                borderSide: const BorderSide(color: AppColors.dashboardBorder),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                borderSide: const BorderSide(color: AppColors.primary),
-              ),
-            ),
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDarkPrimary,
-            ),
-          ),
-          SizedBox(height: AppDimensions.spacingMd),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: isLoading
-                      ? null
-                      : () {
-                          setState(() {
-                            _showInlineReviewForm = false;
-                            _selectedReviewRating = 0;
-                          });
-                          _reviewController.clear();
-                        },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textOnDarkPrimary,
-                    side: const BorderSide(color: AppColors.dashboardBorder),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.radiusSm,
-                      ),
-                    ),
-                  ),
-                  child: Text(
-                    'Cancel',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textOnDarkPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: AppDimensions.spacingSm),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: !canSubmit
-                      ? null
-                      : () =>
-                            context.read<TradeDetailCubit>().submitTradeReview(
-                              tradeId: widget.tradeId,
-                              rating: _selectedReviewRating,
-                              comment: _reviewController.text.trim(),
-                            ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.radiusSm,
-                      ),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.white,
-                          ),
-                        )
-                      : Text(
-                          'Submit',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMessagesSection(BuildContext context, TradeDetailLoaded state) {
     if (state.messages.isEmpty) {
       return Center(
@@ -605,7 +418,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
         AppDimensions.spacingLg,
         AppDimensions.spacingMd,
         AppDimensions.spacingLg,
-        AppDimensions.spacingMd,
+        AppDimensions.spacingLg,
       ),
       itemCount: state.messages.length,
       separatorBuilder: (context, index) =>
@@ -786,19 +599,6 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
     }
 
     return false;
-  }
-
-  bool _isCustomerSide(TradeDetail detail) {
-    final currentUserId = sl<UserSession>().currentUser?.id;
-    if (currentUserId == null || currentUserId.isEmpty) {
-      return false;
-    }
-
-    if (detail.buyerId.isNotEmpty) {
-      return detail.buyerId == currentUserId;
-    }
-
-    return !_isListingOwner(detail);
   }
 
   String _formatMessageTime(BuildContext context, DateTime? timestamp) {

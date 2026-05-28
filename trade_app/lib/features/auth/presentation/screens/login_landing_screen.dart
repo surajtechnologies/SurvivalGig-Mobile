@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:trade_app/config/di/service_locator.dart';
@@ -7,6 +6,7 @@ import 'package:trade_app/core/theme/app_text_styles.dart';
 import 'package:trade_app/core/constants/app_assets.dart';
 import 'package:trade_app/shared/widgets/primary_button.dart';
 import 'package:trade_app/shared/widgets/secondary_button.dart';
+import 'package:trade_app/features/app_update/presentation/widgets/update_guard.dart';
 import 'package:trade_app/features/home/presentation/screens/home_screen.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
@@ -33,6 +33,14 @@ class _LoginLandingContent extends StatefulWidget {
 }
 
 class _LoginLandingContentState extends State<_LoginLandingContent> {
+  void _openHomeRoot() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const UpdateGuard(child: HomeScreen())),
+      (_) => false,
+    );
+  }
+
   void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(
@@ -48,10 +56,7 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
         listener: (context, state) async {
           if (state is LoginSuccess) {
             if (!context.mounted) return;
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
+            _openHomeRoot();
           } else if (state is AuthFailure) {
             _showError(state.message);
           }
@@ -82,7 +87,7 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                   style: AppTextStyles.displayLarge.copyWith(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textOnDarkPrimary,
+                    color: AppColors.textPrimary,
                   ),
                 ),
 
@@ -182,19 +187,6 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                   ],
                 ),
 
-                if (Platform.isIOS) ...[
-                  const SizedBox(height: 12),
-                  _SocialLoginButton(
-                    label: 'Apple',
-                    icon: const Icon(
-                      Icons.apple,
-                      color: Colors.black,
-                      size: 24,
-                    ),
-                    onTap: () => context.read<AuthCubit>().signInWithApple(),
-                  ),
-                ],
-
                 const SizedBox(height: 16),
 
                 // Terms and Privacy
@@ -269,8 +261,9 @@ class _SocialLoginButton extends StatelessWidget {
       child: Container(
         height: 58,
         decoration: BoxDecoration(
-          color: AppColors.dashboardSurfaceElevated,
+          color: AppColors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.dividerColor),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
@@ -282,7 +275,7 @@ class _SocialLoginButton extends StatelessWidget {
               label,
               style: AppTextStyles.headlineMedium.copyWith(
                 fontSize: 16,
-                color: AppColors.textOnDarkPrimary,
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.w700,
               ),
             ),

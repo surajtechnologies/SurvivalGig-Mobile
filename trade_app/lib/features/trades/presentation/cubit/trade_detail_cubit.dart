@@ -37,10 +37,14 @@ class TradeDetailCubit extends Cubit<TradeDetailState> {
   }) : super(const TradeDetailInitial());
 
   /// Initialize trade detail and messages with polling
-  Future<void> initialize(String tradeId) async {
+  Future<void> initialize(String tradeId, {String? openingMessage}) async {
     stopPolling();
     await loadTradeDetail(tradeId, showLoading: true);
     await loadMessages(tradeId, showLoading: true);
+    final message = openingMessage?.trim();
+    if (message != null && message.isNotEmpty && state is TradeDetailLoaded) {
+      await sendMessage(tradeId, message);
+    }
     if (state is TradeDetailLoaded) {
       startPolling(tradeId);
     }
@@ -194,11 +198,14 @@ class TradeDetailCubit extends Cubit<TradeDetailState> {
 
   /// Accept trade
   Future<void> acceptTrade(String tradeId) async {
-    await _performAction(
+    final didAccept = await _performAction(
       tradeId: tradeId,
       action: () => acceptTradeUseCase(tradeId: tradeId),
       successMessage: 'Trade accepted successfully',
     );
+    if (didAccept) {
+      await sendMessage(tradeId, 'Hi, I accept your offer');
+    }
   }
 
   /// Reject trade
@@ -274,14 +281,14 @@ class TradeDetailCubit extends Cubit<TradeDetailState> {
     return super.close();
   }
 
-  Future<void> _performAction({
+  Future<bool> _performAction({
     required String tradeId,
     required Future<Either<Failure, bool>> Function() action,
     required String successMessage,
     bool shouldRefreshTradeDetail = true,
   }) async {
     final currentState = state;
-    if (currentState is! TradeDetailLoaded) return;
+    if (currentState is! TradeDetailLoaded) return false;
 
     emit(
       currentState.copyWith(
@@ -293,7 +300,7 @@ class TradeDetailCubit extends Cubit<TradeDetailState> {
 
     final result = await action();
 
-    result.fold(
+    return result.fold(
       (failure) {
         final latestState = state;
         if (latestState is TradeDetailLoaded) {
@@ -304,6 +311,7 @@ class TradeDetailCubit extends Cubit<TradeDetailState> {
             ),
           );
         }
+        return false;
       },
       (_) async {
         final latestState = state;
@@ -318,6 +326,7 @@ class TradeDetailCubit extends Cubit<TradeDetailState> {
         if (shouldRefreshTradeDetail) {
           await loadTradeDetail(tradeId, showLoading: false);
         }
+        return true;
       },
     );
   }

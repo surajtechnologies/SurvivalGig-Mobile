@@ -73,10 +73,10 @@ class ListingDetailRepositoryImpl implements ListingDetailRepository {
   }
 
   @override
-  Future<Either<Failure, bool>> buyNow({required String listingId}) async {
+  Future<Either<Failure, String?>> buyNow({required String listingId}) async {
     try {
-      await remoteDataSource.buyNow(listingId: listingId);
-      return Right(true);
+      final tradeId = await remoteDataSource.buyNow(listingId: listingId);
+      return Right(tradeId);
     } on ServerException catch (e) {
       return Left(
         ServerFailure(

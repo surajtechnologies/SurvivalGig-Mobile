@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -12,8 +10,7 @@ import '../../../../config/di/service_locator.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/utils/fcm_notifications.dart';
-import '../../../auth/domain/usecases/register_device_token_usecase.dart';
+import '../../../../core/utils/user_session.dart';
 import '../../../auth/presentation/screens/login_landing_screen.dart';
 import '../../domain/entities/listing.dart';
 import '../../../listing_detail/presentation/cubit/buy_now_cubit.dart';
@@ -23,6 +20,7 @@ import '../../../listing_detail/presentation/cubit/listing_detail_state.dart';
 import '../../../make_offer/presentation/screens/make_offer_screen.dart';
 import '../../../post_listing/presentation/screens/post_listing_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../trades/presentation/screens/trade_detail_screen.dart';
 import '../../../trades/presentation/screens/trades_screen.dart';
 import '../../../wallet/presentation/screens/wallet_screen.dart';
 import '../../domain/entities/map_listing.dart';
@@ -89,7 +87,6 @@ class _HomeViewState extends State<_HomeView> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkLocationPermission();
-      _setupFcmToken();
       _preparePinIcons();
     });
   }
@@ -157,31 +154,6 @@ class _HomeViewState extends State<_HomeView> {
     });
   }
 
-  Future<void> _setupFcmToken() async {
-    try {
-      final messaging = FirebaseMessaging.instance;
-      if (Platform.isAndroid) {
-        await FcmNotifications.initializeLocalNotifications();
-        await messaging.requestPermission();
-      } else if (Platform.isIOS) {
-        await messaging.requestPermission(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-      }
-
-      final token = await messaging.getToken();
-      if (token != null && mounted) {
-        final platform = Platform.isIOS ? 'ios' : 'android';
-        await sl<RegisterDeviceTokenUseCase>().call(
-          token: token,
-          platform: platform,
-        );
-      }
-    } catch (_) {}
-  }
-
   void _onGoogleMapCreated(GoogleMapController controller) {
     _googleMapController = controller;
     _syncCameraToLoadedTarget();
@@ -227,6 +199,34 @@ class _HomeViewState extends State<_HomeView> {
       swLng: swLng,
       neLat: neLat,
       neLng: neLng,
+    );
+  }
+
+  Future<void> _forceRefreshVisibleMapListings() async {
+    _lastSwLat = null;
+    await _refreshVisibleMapListings();
+  }
+
+  Future<void> _refreshAfterListingAction({
+    required String listingId,
+    bool removeListing = false,
+  }) async {
+    if (!mounted) return;
+    if (removeListing) {
+      context.read<HomeCubit>().removeMapListing(listingId);
+    }
+    await _forceRefreshVisibleMapListings();
+  }
+
+  Future<void> _openTradeChat(String tradeId, {String? openingMessage}) async {
+    if (tradeId.isEmpty || !mounted) return;
+    setState(() => _selectedNavIndex = 1);
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            TradeDetailScreen(tradeId: tradeId, openingMessage: openingMessage),
+      ),
     );
   }
 
@@ -321,9 +321,10 @@ class _HomeViewState extends State<_HomeView> {
     return BlocListener<HomeCubit, HomeState>(
       listener: (context, state) {
         if (state is HomeLoggedOut) {
-          Navigator.pushReplacement(
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const LoginLandingScreen()),
+            (_) => false,
           );
           return;
         }
@@ -489,9 +490,14 @@ class _HomeViewState extends State<_HomeView> {
         ],
         child: _MapListingDetailSheet(
           mapListing: listing,
-          onChatTap: () {
+          onListingChanged: ({required listingId, required removeListing}) =>
+              _refreshAfterListingAction(
+                listingId: listingId,
+                removeListing: removeListing,
+              ),
+          onOpenTradeChat: (tradeId, {openingMessage}) async {
             Navigator.pop(context);
-            setState(() => _selectedNavIndex = 1);
+            await _openTradeChat(tradeId, openingMessage: openingMessage);
           },
         ),
       ),
@@ -896,11 +902,18 @@ class _MapStatusChip extends StatelessWidget {
 
 class _MapListingDetailSheet extends StatelessWidget {
   final MapListing mapListing;
-  final VoidCallback onChatTap;
+  final Future<void> Function({
+    required String listingId,
+    required bool removeListing,
+  })
+  onListingChanged;
+  final Future<void> Function(String tradeId, {String? openingMessage})
+  onOpenTradeChat;
 
   const _MapListingDetailSheet({
     required this.mapListing,
-    required this.onChatTap,
+    required this.onListingChanged,
+    required this.onOpenTradeChat,
   });
 
   @override
@@ -929,10 +942,20 @@ class _MapListingDetailSheet extends StatelessWidget {
                       backgroundColor: AppColors.success,
                     ),
                   );
-                  context.read<BuyNowCubit>().reset();
-                  context.read<ListingDetailCubit>().refresh(
-                    state.listingId ?? mapListing.id,
+                  final listingId = state.listingId ?? mapListing.id;
+                  context.read<ListingDetailCubit>().refresh(listingId);
+                  unawaited(
+                    onListingChanged(listingId: listingId, removeListing: true),
                   );
+                  final tradeId = state.tradeId;
+                  if (tradeId != null && tradeId.isNotEmpty) {
+                    unawaited(
+                      onOpenTradeChat(
+                        tradeId,
+                        openingMessage: 'Hi, I accept your offer',
+                      ),
+                    );
+                  }
                 } else if (state is BuyNowError) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -950,6 +973,11 @@ class _MapListingDetailSheet extends StatelessWidget {
                         ? detailState
                         : null;
                     final listing = loadedState?.listing;
+                    final isOwnListing =
+                        listing != null && _isOwnListing(listing);
+                    final chatTradeId = buyNowState is BuyNowSuccess
+                        ? buyNowState.tradeId
+                        : loadedState?.pendingTradeOffer?.id;
                     return Column(
                       children: [
                         Expanded(
@@ -974,21 +1002,26 @@ class _MapListingDetailSheet extends StatelessWidget {
                             ],
                           ),
                         ),
-                        _MapSheetActionBar(
-                          listing: listing,
-                          hasPendingTrade:
-                              loadedState?.pendingTradeOffer != null,
-                          isAccepting: buyNowState is BuyNowLoading,
-                          onAcceptOffer: listing == null
-                              ? null
-                              : () => context.read<BuyNowCubit>().buyNow(
-                                  listingId: listing.id,
-                                ),
-                          onMakeOffer: listing == null
-                              ? null
-                              : () => _openMakeOffer(context, listing),
-                          onChatTap: onChatTap,
-                        ),
+                        if (!isOwnListing)
+                          _MapSheetActionBar(
+                            listing: listing,
+                            hasPendingTrade:
+                                loadedState?.pendingTradeOffer != null ||
+                                buyNowState is BuyNowSuccess,
+                            isAccepting: buyNowState is BuyNowLoading,
+                            onAcceptOffer: listing == null
+                                ? null
+                                : () => context.read<BuyNowCubit>().buyNow(
+                                    listingId: listing.id,
+                                  ),
+                            onMakeOffer: listing == null
+                                ? null
+                                : () => _openMakeOffer(context, listing),
+                            onChatTap:
+                                chatTradeId == null || chatTradeId.isEmpty
+                                ? null
+                                : () => onOpenTradeChat(chatTradeId),
+                          ),
                       ],
                     );
                   },
@@ -1070,8 +1103,15 @@ class _MapListingDetailSheet extends StatelessWidget {
       MaterialPageRoute(builder: (_) => MakeOfferScreen(listing: listing)),
     );
     if (didMakeOffer == true && context.mounted) {
-      context.read<ListingDetailCubit>().refresh(listing.id);
+      await context.read<ListingDetailCubit>().refresh(listing.id);
+      await onListingChanged(listingId: listing.id, removeListing: false);
     }
+  }
+
+  bool _isOwnListing(Listing listing) {
+    final currentUserId = sl<UserSession>().currentUser?.id;
+    if (currentUserId == null || currentUserId.isEmpty) return false;
+    return listing.userId == currentUserId || listing.user.id == currentUserId;
   }
 
   static Color _typeColor(String type, String? priceMode) {
@@ -1371,7 +1411,7 @@ class _MapSheetActionBar extends StatelessWidget {
   final bool isAccepting;
   final VoidCallback? onAcceptOffer;
   final VoidCallback? onMakeOffer;
-  final VoidCallback onChatTap;
+  final VoidCallback? onChatTap;
 
   const _MapSheetActionBar({
     required this.listing,
@@ -1385,6 +1425,7 @@ class _MapSheetActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final actionsEnabled = listing != null && !hasPendingTrade && !isAccepting;
+    final canChat = onChatTap != null && !isAccepting;
 
     return DecoratedBox(
       decoration: const BoxDecoration(
@@ -1416,16 +1457,22 @@ class _MapSheetActionBar extends StatelessWidget {
                       onPressed: onChatTap,
                       style: OutlinedButton.styleFrom(
                         padding: EdgeInsets.zero,
-                        side: const BorderSide(color: AppColors.primary),
+                        side: BorderSide(
+                          color: canChat
+                              ? AppColors.primary
+                              : AppColors.dashboardBorder,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             AppDimensions.radiusMd,
                           ),
                         ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.chat_bubble_rounded,
-                        color: AppColors.primary,
+                        color: canChat
+                            ? AppColors.primary
+                            : AppColors.textOnDarkTertiary,
                         size: AppDimensions.iconSizeMd,
                       ),
                     ),

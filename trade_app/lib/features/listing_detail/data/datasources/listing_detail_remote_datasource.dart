@@ -26,7 +26,7 @@ abstract class ListingDetailRemoteDataSource {
   });
 
   /// Buy now (direct purchase) for a listing
-  Future<void> buyNow({required String listingId});
+  Future<String?> buyNow({required String listingId});
 
   /// Delete listing by ID.
   Future<void> deleteListing({required String listingId});
@@ -190,7 +190,7 @@ class ListingDetailRemoteDataSourceImpl
   }
 
   @override
-  Future<void> buyNow({required String listingId}) async {
+  Future<String?> buyNow({required String listingId}) async {
     try {
       final response = await dioClient.dio.post(
         ApiEndpoints.buyNow(listingId),
@@ -198,7 +198,7 @@ class ListingDetailRemoteDataSourceImpl
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return;
+        return _extractTradeId(response.data);
       }
 
       throw ServerException(
@@ -210,6 +210,28 @@ class ListingDetailRemoteDataSourceImpl
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
+  }
+
+  String? _extractTradeId(dynamic data) {
+    if (data is! Map<String, dynamic>) return null;
+
+    final payload = data['data'] is Map<String, dynamic>
+        ? data['data'] as Map<String, dynamic>
+        : data;
+    final trade = payload['trade'] is Map<String, dynamic>
+        ? payload['trade'] as Map<String, dynamic>
+        : payload;
+
+    return _readString(trade['id']) ??
+        _readString(trade['tradeId']) ??
+        _readString(payload['tradeId']);
+  }
+
+  String? _readString(dynamic value) {
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+    return null;
   }
 
   @override
@@ -318,8 +340,7 @@ class ListingDetailRemoteDataSourceImpl
       }
 
       throw ServerException(
-        message:
-            _extractErrorMessage(response.data) ?? 'Failed to load trades',
+        message: _extractErrorMessage(response.data) ?? 'Failed to load trades',
         code: 'GET_LISTING_TRADES_FAILED',
         statusCode: response.statusCode,
       );

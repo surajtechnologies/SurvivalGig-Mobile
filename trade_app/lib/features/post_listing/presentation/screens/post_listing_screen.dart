@@ -519,6 +519,9 @@ class _PostListingViewState extends State<_PostListingView> {
 
   /// Build Category Dropdown
   Widget _buildCategoryDropdown(PostListingFormState formState) {
+    final categories = _flattenCategories(formState.categories);
+    final selectedCategory = _categoryById(categories, formState.categoryId);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -546,42 +549,48 @@ class _PostListingViewState extends State<_PostListingView> {
                     ),
                   ),
                 )
-              : DropdownButtonFormField<String>(
-                  initialValue: formState.categoryId,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.dashboardSurfaceElevated,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    hintText: 'Select a category',
-                    hintStyle: AppTextStyles.bodyLarge.copyWith(
-                      color: AppColors.textOnDarkSecondary,
-                    ),
-                  ),
-                  icon: const Icon(
-                    Icons.keyboard_arrow_down,
-                    color: AppColors.textOnDarkSecondary,
-                  ),
-                  items: formState.categories.map((Category category) {
-                    return DropdownMenuItem(
-                      value: category.id,
-                      child: Text(
-                        category.name,
-                        style: AppTextStyles.bodyLarge.copyWith(
-                          color: AppColors.textOnDarkPrimary,
+              : InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: categories.isEmpty
+                      ? null
+                      : () => _showCategoryPicker(
+                          categories: categories,
+                          selectedCategoryId: formState.categoryId,
                         ),
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    context.read<PostListingCubit>().updateCategory(value);
-                  },
+                      filled: true,
+                      fillColor: AppColors.dashboardSurfaceElevated,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            selectedCategory?.name ?? 'Select a category',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              color: selectedCategory == null
+                                  ? AppColors.textOnDarkSecondary
+                                  : AppColors.textOnDarkPrimary,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.keyboard_arrow_down,
+                          color: AppColors.textOnDarkSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
         ),
         if (formState.categoriesError != null)
@@ -611,6 +620,128 @@ class _PostListingViewState extends State<_PostListingView> {
           ),
       ],
     );
+  }
+
+  List<_CategoryPickerItem> _flattenCategories(List<Category> categories) {
+    final items = <_CategoryPickerItem>[];
+
+    void addCategory(Category category, int depth) {
+      if (!category.isActive) return;
+      items.add(_CategoryPickerItem(category: category, depth: depth));
+
+      for (final child in category.children ?? const <Category>[]) {
+        addCategory(child, depth + 1);
+      }
+    }
+
+    for (final category in categories) {
+      addCategory(category, 0);
+    }
+
+    return items;
+  }
+
+  Category? _categoryById(List<_CategoryPickerItem> categories, String? id) {
+    if (id == null || id.isEmpty) return null;
+
+    for (final item in categories) {
+      if (item.category.id == id) {
+        return item.category;
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _showCategoryPicker({
+    required List<_CategoryPickerItem> categories,
+    required String? selectedCategoryId,
+  }) async {
+    final selectedCategory = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.dashboardSurface,
+      barrierColor: AppColors.dashboardOverlay,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.72,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Category',
+                          style: AppTextStyles.headlineSmall.copyWith(
+                            color: AppColors.textOnDarkPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppColors.textOnDarkSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, color: AppColors.dashboardBorder),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: categories.length,
+                    separatorBuilder: (_, _) => const Divider(
+                      height: 1,
+                      color: AppColors.dashboardBorder,
+                    ),
+                    itemBuilder: (context, index) {
+                      final item = categories[index];
+                      final category = item.category;
+                      final isSelected = category.id == selectedCategoryId;
+
+                      return ListTile(
+                        contentPadding: EdgeInsets.only(
+                          left: 20 + (item.depth * 18),
+                          right: 16,
+                        ),
+                        title: Text(
+                          category.name,
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            color: AppColors.textOnDarkPrimary,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check, color: AppColors.primary)
+                            : null,
+                        onTap: () => Navigator.pop(sheetContext, category.id),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || selectedCategory == null) return;
+    context.read<PostListingCubit>().updateCategory(selectedCategory);
   }
 
   /// Build Exchange Section (Points/Service)
@@ -1153,6 +1284,13 @@ class _PostListingViewState extends State<_PostListingView> {
       ],
     );
   }
+}
+
+class _CategoryPickerItem {
+  final Category category;
+  final int depth;
+
+  const _CategoryPickerItem({required this.category, required this.depth});
 }
 
 class _PickedMapLocation {

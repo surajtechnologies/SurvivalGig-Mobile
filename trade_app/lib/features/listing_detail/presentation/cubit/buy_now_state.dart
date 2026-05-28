@@ -12,15 +12,18 @@ class BuyNowInitial extends BuyNowState {
 
 /// Loading state
 class BuyNowLoading extends BuyNowState {
-  const BuyNowLoading({required String listingId}) : super(listingId: listingId);
+  const BuyNowLoading({required String listingId})
+    : super(listingId: listingId);
 }
 
 /// Success state
 class BuyNowSuccess extends BuyNowState {
+  final String? tradeId;
   final String message;
 
   const BuyNowSuccess({
     required String listingId,
+    this.tradeId,
     this.message = 'Offer accepted successfully!',
   }) : super(listingId: listingId);
 }
@@ -29,8 +32,6 @@ class BuyNowSuccess extends BuyNowState {
 class BuyNowError extends BuyNowState {
   final String message;
 
-  const BuyNowError({
-    required String listingId,
-    required this.message,
-  }) : super(listingId: listingId);
+  const BuyNowError({required String listingId, required this.message})
+    : super(listingId: listingId);
 }

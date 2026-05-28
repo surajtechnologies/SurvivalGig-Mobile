@@ -9,7 +9,7 @@ class BuyNowUseCase {
   BuyNowUseCase({required this.repository});
 
   /// Execute buy now for a listing
-  Future<Either<Failure, bool>> call({required String listingId}) async {
+  Future<Either<Failure, String?>> call({required String listingId}) async {
     return repository.buyNow(listingId: listingId);
   }
 }

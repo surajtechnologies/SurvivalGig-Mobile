@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/apple_sign_in_usecase.dart';
 import '../../domain/usecases/facebook_sign_in_usecase.dart';
@@ -37,11 +40,13 @@ class AuthCubit extends Cubit<AuthState> {
 
     final result = await loginUseCase(email: email, password: password);
 
-    result.fold(
-      (failure) =>
+    await result.fold<Future<void>>(
+      (failure) async =>
           emit(AuthFailure(message: failure.message, code: failure.code)),
-      (data) =>
-          emit(LoginSuccess(userId: data.user.id, userName: data.user.name)),
+      (data) async => _emitLoginSuccessAfterDeviceToken(
+        userId: data.user.id,
+        userName: data.user.name,
+      ),
     );
   }
 
@@ -51,16 +56,18 @@ class AuthCubit extends Cubit<AuthState> {
 
     final result = await googleSignInUseCase();
 
-    result.fold(
-      (failure) {
+    await result.fold<Future<void>>(
+      (failure) async {
         if (failure.code == 'GOOGLE_SIGN_IN_CANCELLED') {
           emit(const AuthInitial());
           return;
         }
         emit(AuthFailure(message: failure.message, code: failure.code));
       },
-      (data) =>
-          emit(LoginSuccess(userId: data.user.id, userName: data.user.name)),
+      (data) async => _emitLoginSuccessAfterDeviceToken(
+        userId: data.user.id,
+        userName: data.user.name,
+      ),
     );
   }
 
@@ -70,16 +77,18 @@ class AuthCubit extends Cubit<AuthState> {
 
     final result = await facebookSignInUseCase();
 
-    result.fold(
-      (failure) {
+    await result.fold<Future<void>>(
+      (failure) async {
         if (failure.code == 'FACEBOOK_SIGN_IN_CANCELLED') {
           emit(const AuthInitial());
           return;
         }
         emit(AuthFailure(message: failure.message, code: failure.code));
       },
-      (data) =>
-          emit(LoginSuccess(userId: data.user.id, userName: data.user.name)),
+      (data) async => _emitLoginSuccessAfterDeviceToken(
+        userId: data.user.id,
+        userName: data.user.name,
+      ),
     );
   }
 
@@ -100,6 +109,48 @@ class AuthCubit extends Cubit<AuthState> {
       (data) =>
           emit(LoginSuccess(userId: data.user.id, userName: data.user.name)),
     );
+  }
+
+  Future<void> _emitLoginSuccessAfterDeviceToken({
+    required String userId,
+    required String userName,
+  }) async {
+    await _registerDeviceTokenForCurrentPlatform();
+    emit(LoginSuccess(userId: userId, userName: userName));
+  }
+
+  Future<void> _registerDeviceTokenForCurrentPlatform() async {
+    try {
+      if (!Platform.isAndroid && !Platform.isIOS) return;
+
+      final messaging = FirebaseMessaging.instance;
+      if (Platform.isIOS) {
+        final settings = await messaging.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        final isAuthorized =
+            settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional;
+        if (!isAuthorized) return;
+        await messaging.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+      } else {
+        await messaging.requestPermission();
+      }
+
+      final token = await messaging.getToken();
+      if (token == null || token.isEmpty) return;
+
+      final platform = Platform.isIOS ? 'ios' : 'android';
+      await registerDeviceTokenUseCase(token: token, platform: platform);
+    } catch (_) {
+      // Device token registration should not block a successful login.
+    }
   }
 
   /// Upload profile image independently

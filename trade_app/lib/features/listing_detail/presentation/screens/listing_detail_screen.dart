@@ -5,9 +5,11 @@ import '../../../../config/di/service_locator.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/user_session.dart';
 import '../../../home/domain/entities/listing.dart';
 import '../../../make_offer/presentation/screens/make_offer_screen.dart';
 import '../../../post_listing/presentation/screens/edit_listing_screen.dart';
+import '../../../trades/presentation/screens/trade_detail_screen.dart';
 import '../../domain/entities/listing_pending_trade_offer.dart';
 import '../../domain/entities/user_review_summary.dart';
 import 'submit_report_screen.dart';
@@ -89,6 +91,25 @@ class _ListingDetailView extends StatelessWidget {
     return BlocListener<BuyNowCubit, BuyNowState>(
       listener: (context, state) {
         if (state is BuyNowSuccess) {
+          if (state.tradeId != null && state.tradeId!.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: AppColors.success,
+              ),
+            );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TradeDetailScreen(
+                  tradeId: state.tradeId!,
+                  openingMessage: 'Hi, I accept your offer',
+                ),
+              ),
+            );
+            return;
+          }
+
           _showBuyNowResultDialog(
             context,
             listingId: state.listingId ?? listingId,
@@ -615,6 +636,10 @@ class _ListingDetailView extends StatelessWidget {
       );
     }
 
+    if (_isOwnListing(listing)) {
+      return const SizedBox.shrink();
+    }
+
     final hasPendingTrade = pendingTradeOffer != null;
     final buttonLabel = hasPendingTrade ? 'Offer already made' : 'Make Offer';
 
@@ -666,6 +691,12 @@ class _ListingDetailView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  bool _isOwnListing(Listing listing) {
+    final currentUserId = sl<UserSession>().currentUser?.id;
+    if (currentUserId == null || currentUserId.isEmpty) return false;
+    return listing.userId == currentUserId || listing.user.id == currentUserId;
   }
 
   void _showDeleteConfirmationDialog(BuildContext context, Listing listing) {

@@ -356,8 +356,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> logout() async {
     try {
-      await dioClient.clearTokens();
-      await userSession.clearUser();
+      await userSession.clearLocalStorage();
       await googleSignInLocalDataSource.signOut();
       await facebookSignInLocalDataSource.signOut();
       return const Right(null);
@@ -429,10 +428,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String platform,
   }) async {
     try {
-      final request = DeviceTokenRequestModel(
-        token: token,
-        platform: platform,
-      );
+      final request = DeviceTokenRequestModel(token: token, platform: platform);
 
       final response = await remoteDataSource.registerDeviceToken(request);
 

@@ -146,10 +146,12 @@ class HomeCubit extends Cubit<HomeState> {
     result.fold((_) {}, (data) {
       final latest = state;
       if (latest is HomeLoaded) {
-        emit(latest.copyWith(
-          mapListings: _toMapListings(data.listings),
-          isLoadingMap: false,
-        ));
+        emit(
+          latest.copyWith(
+            mapListings: _toMapListings(data.listings),
+            isLoadingMap: false,
+          ),
+        );
       }
     });
   }
@@ -179,6 +181,19 @@ class HomeCubit extends Cubit<HomeState> {
     final currentState = state;
     if (currentState is! HomeLoaded) return;
     emit(currentState.copyWith(selectedFilter: filter));
+  }
+
+  void removeMapListing(String listingId) {
+    final currentState = state;
+    if (currentState is! HomeLoaded) return;
+
+    emit(
+      currentState.copyWith(
+        mapListings: currentState.mapListings
+            .where((listing) => listing.id != listingId)
+            .toList(),
+      ),
+    );
   }
 
   // ── Location ─────────────────────────────────────────────────────────────────

@@ -81,6 +81,8 @@ class _ResetPasswordScreenContentState
 
   // Handle password reset request
   void _handleResetPassword() {
+    FocusScope.of(context).unfocus();
+
     if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthCubit>().forgotPassword(
         email: _emailController.text.trim(),
@@ -122,18 +124,18 @@ class _ResetPasswordScreenContentState
 
   Widget _buildSuccessScreen() {
     return Scaffold(
-      backgroundColor: AppColors.dashboardBackground,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: AppColors.dashboardBackground,
+        backgroundColor: AppColors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Reset password',
           style: AppTextStyles.headlineSmall.copyWith(
-            color: AppColors.textOnDarkPrimary,
+            color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -178,7 +180,7 @@ class _ResetPasswordScreenContentState
                 'A reset password link has been sent to your email address.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textOnDarkPrimary,
+                  color: AppColors.textPrimary,
                   fontSize: 16,
                   height: 1.6,
                 ),
@@ -202,18 +204,18 @@ class _ResetPasswordScreenContentState
 
   Widget _buildFormScreen(bool isLoading) {
     return Scaffold(
-      backgroundColor: AppColors.dashboardBackground,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: AppColors.dashboardBackground,
+        backgroundColor: AppColors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Reset password',
           style: AppTextStyles.headlineSmall.copyWith(
-            color: AppColors.textOnDarkPrimary,
+            color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -243,19 +245,21 @@ class _ResetPasswordScreenContentState
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.done,
                   enabled: !isLoading,
                   style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.textOnDarkPrimary,
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.w500,
                   ),
+                  onFieldSubmitted: (_) => _handleResetPassword(),
                   validator: _validateEmail,
                   decoration: InputDecoration(
                     hintText: 'Enter Email Address',
                     hintStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textDisabled,
+                      color: AppColors.textSecondary,
                     ),
                     filled: true,
-                    fillColor: AppColors.dashboardSurfaceElevated,
+                    fillColor: AppColors.white,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16.0,
                       vertical: 16.0,
@@ -267,7 +271,7 @@ class _ResetPasswordScreenContentState
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.0),
                       borderSide: const BorderSide(
-                        color: AppColors.dashboardBorder,
+                        color: AppColors.dividerColor,
                         width: 1.0,
                       ),
                     ),

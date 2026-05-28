@@ -4,6 +4,7 @@ import '../../../../config/di/service_locator.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../app_update/presentation/widgets/update_guard.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
@@ -34,17 +35,31 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
   bool _showPassword = false;
   String? _apiErrorMessage;
+
+  void _openHomeRoot() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const UpdateGuard(child: HomeScreen())),
+      (_) => false,
+    );
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
   void _handleLogin() {
+    FocusScope.of(context).unfocus();
+
     // Clear previous API error
     setState(() => _apiErrorMessage = null);
 
@@ -64,13 +79,13 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
         backgroundColor: AppColors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Log In to SurvivalGig',
           style: AppTextStyles.headlineSmall.copyWith(
-            color: AppColors.textOnDarkPrimary,
+            color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -80,11 +95,8 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is LoginSuccess) {
-            // Navigate to home on success (pushReplacement per navigation rules)
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
+            // Login flow is complete; home becomes the root route.
+            _openHomeRoot();
           } else if (state is AuthFailure) {
             // Show error message below form fields
             setState(() {
@@ -109,12 +121,16 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                     // Email Field
                     TextFormField(
                       controller: _emailController,
+                      focusNode: _emailFocusNode,
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
                       enabled: !isLoading,
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.textOnDarkPrimary,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
+                      onFieldSubmitted: (_) =>
+                          _passwordFocusNode.requestFocus(),
                       onChanged: (_) => setState(() {}),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -131,10 +147,10 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                       decoration: InputDecoration(
                         hintText: 'Enter Email Address',
                         hintStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textDisabled,
+                          color: AppColors.textSecondary,
                         ),
                         filled: true,
-                        fillColor: AppColors.dashboardSurfaceElevated,
+                        fillColor: AppColors.white,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16.0,
                           vertical: 16.0,
@@ -146,7 +162,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.0),
                           borderSide: const BorderSide(
-                            color: AppColors.dashboardBorder,
+                            color: AppColors.dividerColor,
                             width: 1.0,
                           ),
                         ),
@@ -197,12 +213,15 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                     // Password Field
                     TextFormField(
                       controller: _passwordController,
+                      focusNode: _passwordFocusNode,
                       obscureText: !_showPassword,
+                      textInputAction: TextInputAction.done,
                       enabled: !isLoading,
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.textOnDarkPrimary,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
+                      onFieldSubmitted: (_) => _handleLogin(),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Password is required';
@@ -215,10 +234,10 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                       decoration: InputDecoration(
                         hintText: 'Enter Password',
                         hintStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textDisabled,
+                          color: AppColors.textSecondary,
                         ),
                         filled: true,
-                        fillColor: AppColors.dashboardSurfaceElevated,
+                        fillColor: AppColors.white,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16.0,
                           vertical: 16.0,
@@ -230,7 +249,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.0),
                           borderSide: const BorderSide(
-                            color: AppColors.dashboardBorder,
+                            color: AppColors.dividerColor,
                             width: 1.0,
                           ),
                         ),

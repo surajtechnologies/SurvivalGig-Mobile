@@ -2,17 +2,16 @@
 class ApiEndpoints {
   // Base URLs
   static const String productionBaseUrl =
-      'https://barterx-backend-u4wpmwmtkq-uc.a.run.app/api';
+      'https://barterx-backend-a7fym27foa-uc.a.run.app/api';
   static const String cloudRunBaseUrl =
-      'https://barterx-backend-u4wpmwmtkq-uc.a.run.app/api';
+      'https://barterx-backend-a7fym27foa-uc.a.run.app/api';
   static const String stagingBaseUrl =
-      'https://barterx-backend-u4wpmwmtkq-uc.a.run.app/api';
+      'https://barterx-backend-a7fym27foa-uc.a.run.app/api';
   static const String developmentBaseUrl =
-      'https://barterx-backend-u4wpmwmtkq-uc.a.run.app/api';
+      'https://barterx-backend-a7fym27foa-uc.a.run.app/api';
 
-  // Current base URL - change this based on environment
-  // Set to Cloud Run deployment by default (provided)
-  static const String baseUrl = cloudRunBaseUrl;
+  // Current base URL for every in-app API request.
+  static const String baseUrl = productionBaseUrl;
 
   // Authentication endpoints
   static const String register = '/auth/register';

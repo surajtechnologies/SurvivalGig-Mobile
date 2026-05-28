@@ -1,10 +1,12 @@
 /// Pending trade offer summary for a listing (current user).
 class ListingPendingTradeOffer {
+  final String id;
   final int? buyerOfferPoints;
   final String? buyerOfferItemDescription;
   final String? buyerOfferServiceDescription;
 
   const ListingPendingTradeOffer({
+    required this.id,
     required this.buyerOfferPoints,
     required this.buyerOfferItemDescription,
     required this.buyerOfferServiceDescription,
@@ -18,4 +20,3 @@ class ListingPendingTradeOffer {
       buyerOfferServiceDescription != null &&
       buyerOfferServiceDescription!.trim().isNotEmpty;
 }
-

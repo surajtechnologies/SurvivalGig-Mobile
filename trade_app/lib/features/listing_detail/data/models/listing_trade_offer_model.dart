@@ -26,11 +26,13 @@ class ListingTradeOfferServiceModel {
 
 /// DTO for a trade row returned from `/listings/{id}/trades`.
 class ListingTradeOfferModel {
+  final String id;
   final int? buyerOfferPoints;
   final List<ListingTradeOfferItemModel> buyerOfferItems;
   final List<ListingTradeOfferServiceModel> buyerOfferServices;
 
   const ListingTradeOfferModel({
+    required this.id,
     required this.buyerOfferPoints,
     required this.buyerOfferItems,
     required this.buyerOfferServices,
@@ -67,6 +69,7 @@ class ListingTradeOfferModel {
     }
 
     return ListingTradeOfferModel(
+      id: _readString(json['id']) ?? _readString(json['tradeId']) ?? '',
       buyerOfferPoints: points,
       buyerOfferItems: items,
       buyerOfferServices: services,
@@ -74,17 +77,25 @@ class ListingTradeOfferModel {
   }
 
   ListingPendingTradeOffer toEntity() {
-    final itemDescription =
-        buyerOfferItems.isEmpty ? null : buyerOfferItems.first.description;
+    final itemDescription = buyerOfferItems.isEmpty
+        ? null
+        : buyerOfferItems.first.description;
     final serviceDescription = buyerOfferServices.isEmpty
         ? null
         : buyerOfferServices.first.description;
 
     return ListingPendingTradeOffer(
+      id: id,
       buyerOfferPoints: buyerOfferPoints,
       buyerOfferItemDescription: itemDescription,
       buyerOfferServiceDescription: serviceDescription,
     );
   }
-}
 
+  static String? _readString(dynamic value) {
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+    return null;
+  }
+}

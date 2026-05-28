@@ -1,4 +1,4 @@
-import '../../../../config/env/app_config.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../domain/entities/trade_summary.dart';
 
 /// Trade summary model (DTO)
@@ -24,11 +24,13 @@ class TradeSummaryModel {
         ? json['listing'] as Map<String, dynamic>
         : null;
 
-    final title = _readString(listing?['title']) ??
+    final title =
+        _readString(listing?['title']) ??
         _readString(json['title']) ??
         'Untitled Listing';
 
-    final description = _readString(listing?['description']) ??
+    final description =
+        _readString(listing?['description']) ??
         _readString(json['description']) ??
         'No description provided';
 
@@ -40,14 +42,16 @@ class TradeSummaryModel {
 
     final username = _extractUsername(json, listing) ?? 'User';
 
-    final points = _readInt(listing?['pricePoints']) ??
+    final points =
+        _readInt(listing?['pricePoints']) ??
         _readInt(json['pricePoints']) ??
         _readInt(json['buyerOfferPoints']) ??
         _readInt(json['sellerOfferPoints']) ??
         _readInt(json['points']);
 
     return TradeSummaryModel(
-      id: _readString(json['id']) ??
+      id:
+          _readString(json['id']) ??
           _readString(json['tradeId']) ??
           _readString(json['listingId']) ??
           _readString(listing?['id']) ??
@@ -158,7 +162,7 @@ class TradeSummaryModel {
       return url;
     }
 
-    final baseUrl = AppConfig.baseUrl;
+    final baseUrl = ApiEndpoints.baseUrl;
     if (url.startsWith('/api/')) {
       final trimmedBase = baseUrl.endsWith('/api')
           ? baseUrl.substring(0, baseUrl.length - 4)

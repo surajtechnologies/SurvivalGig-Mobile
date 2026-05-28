@@ -34,6 +34,9 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _nameFocusNode = FocusNode();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
   bool _showPassword = false;
   String? _apiErrorMessage;
 
@@ -42,10 +45,15 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _nameFocusNode.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
   void _handleSignup() {
+    FocusScope.of(context).unfocus();
+
     // Clear previous API error
     setState(() => _apiErrorMessage = null);
 
@@ -69,7 +77,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
         fontWeight: FontWeight.w400,
       ),
       filled: true,
-      fillColor: AppColors.dashboardSurfaceElevated,
+      fillColor: AppColors.white,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 16.0,
         vertical: 16.0,
@@ -80,7 +88,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14.0),
-        borderSide: BorderSide.none,
+        borderSide: const BorderSide(color: AppColors.dividerColor, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14.0),
@@ -106,13 +114,13 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.dashboardBackground,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: AppColors.dashboardBackground,
+        backgroundColor: AppColors.white,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -120,7 +128,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
           style: AppTextStyles.headlineMedium.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: AppColors.textOnDarkPrimary,
+            color: AppColors.textPrimary,
           ),
         ),
       ),
@@ -177,12 +185,15 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                     // Name Field
                     TextFormField(
                       controller: _nameController,
+                      focusNode: _nameFocusNode,
                       keyboardType: TextInputType.name,
+                      textInputAction: TextInputAction.next,
                       enabled: !isLoading,
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.textOnDarkPrimary,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
+                      onFieldSubmitted: (_) => _emailFocusNode.requestFocus(),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Full Name is required';
@@ -200,12 +211,16 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                     // Email Field
                     TextFormField(
                       controller: _emailController,
+                      focusNode: _emailFocusNode,
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
                       enabled: !isLoading,
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.textOnDarkPrimary,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
+                      onFieldSubmitted: (_) =>
+                          _passwordFocusNode.requestFocus(),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Email address is required';
@@ -228,12 +243,15 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                     // Password Field
                     TextFormField(
                       controller: _passwordController,
+                      focusNode: _passwordFocusNode,
                       obscureText: !_showPassword,
+                      textInputAction: TextInputAction.done,
                       enabled: !isLoading,
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.textOnDarkPrimary,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
+                      onFieldSubmitted: (_) => _handleSignup(),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Password is required';

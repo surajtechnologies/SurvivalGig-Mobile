@@ -15,11 +15,11 @@ import 'package:trade_app/core/utils/user_session.dart';
 import 'package:trade_app/features/auth/presentation/screens/login_landing_screen.dart';
 import 'package:trade_app/features/common/presentation/cubit/loading_cubit.dart';
 import 'package:trade_app/features/home/presentation/screens/home_screen.dart';
-import 'package:trade_app/features/startup_screen/presentation/screens/startup_screen.dart';
 import 'package:trade_app/features/app_update/presentation/cubit/app_update_cubit.dart';
 import 'package:trade_app/features/app_update/presentation/widgets/update_guard.dart';
 import 'package:trade_app/features/app_update/domain/usecases/perform_native_update_usecase.dart';
 import 'package:trade_app/shared/widgets/loading_overlay.dart';
+import 'package:trade_app/shared/widgets/keyboard_dismiss_scope.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Apple Signin state manage
@@ -35,37 +35,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   );
 }
 
-Future<void> _initializeIosFcmTokenFlow() async {
-  final settings = await FirebaseMessaging.instance.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-
-  final isAuthorized =
-      settings.authorizationStatus == AuthorizationStatus.authorized ||
-      settings.authorizationStatus == AuthorizationStatus.provisional;
-  if (!isAuthorized) {
-    return;
+Future<void> _deleteFcmTokenIfPossible() async {
+  try {
+    await FirebaseMessaging.instance.deleteToken();
+  } catch (e) {
+    debugPrint('Unable to delete FCM token during local reset: $e');
   }
-
-  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-
-  final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-  final token = await FirebaseMessaging.instance.getToken();
-  if (token == null || apnsToken == null) {
-    return;
-  }
-
-  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-    if (newToken.isEmpty) {
-      return;
-    }
-  });
 }
 
 Future<void> main() async {
@@ -103,18 +78,22 @@ Future<void> main() async {
       // Initialize dependency injection
       setupServiceLocator();
 
-      // Load user session from secure storage
-      await sl<UserSession>().loadUser();
+      final userSession = sl<UserSession>();
+      final didResetLocalState = await userSession
+          .prepareLocalStorageForCurrentInstall();
+
+      if (shouldEnableFirebase && didResetLocalState) {
+        await _deleteFcmTokenIfPossible();
+      }
+
+      // Load user session only after reinstall/version reset checks.
+      await userSession.loadUser();
 
       if (shouldEnableFirebase) {
         await FirebaseAnalytics.instance.logAppOpen();
 
         await FcmNotifications.initializeLocalNotifications();
         FcmNotifications.attachDebugListeners();
-
-        if (defaultTargetPlatform == TargetPlatform.iOS) {
-          await _initializeIosFcmTokenFlow();
-        }
 
         // Attempt Android native Play Store in-app update
         if (defaultTargetPlatform == TargetPlatform.android) {
@@ -199,23 +178,21 @@ class _MyAppState extends State<MyApp> {
         themeMode: ThemeMode.dark,
         debugShowCheckedModeBanner: false,
         builder: (context, child) {
-          return LoadingOverlay(child: child ?? const SizedBox.shrink());
+          return KeyboardDismissScope(
+            child: LoadingOverlay(child: child ?? const SizedBox.shrink()),
+          );
         },
-        // Determine root screen based on first launch and login status:
-        // - First launch: StartupScreen
-        // - Subsequent launches: HomeScreen if logged in, LoginLandingScreen if not
+        // Open authenticated routes only when both user and token are present.
         home: _getHomeScreen(userSession),
       ),
     );
   }
 
   Widget _getHomeScreen(UserSession userSession) {
-    if (userSession.isFirstLaunch) {
-      return const StartupScreen();
-    } else if (userSession.isLoggedIn) {
+    if (userSession.isLoggedIn) {
       return const UpdateGuard(child: HomeScreen());
-    } else {
-      return const LoginLandingScreen();
     }
+
+    return const LoginLandingScreen();
   }
 }

@@ -1,4 +1,4 @@
-import '../../../../config/env/app_config.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../domain/entities/trade_detail.dart';
 
 /// Trade detail model (DTO)
@@ -228,7 +228,7 @@ class TradeDetailModel {
       return url;
     }
 
-    final baseUrl = AppConfig.baseUrl;
+    final baseUrl = ApiEndpoints.baseUrl;
     if (url.startsWith('/api/')) {
       final trimmedBase = baseUrl.endsWith('/api')
           ? baseUrl.substring(0, baseUrl.length - 4)

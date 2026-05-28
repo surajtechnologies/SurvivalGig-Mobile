@@ -7,7 +7,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:3000/api"
+      "value": "https://barterx-backend-a7fym27foa-uc.a.run.app/api"
     },
     {
       "key": "accessToken",
