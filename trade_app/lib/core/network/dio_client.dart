@@ -127,6 +127,7 @@ class DioClient {
       },
       onResponse: (response, handler) {
         final responseLog = StringBuffer()
+          ..writeln('Status: ${response.statusCode}')
           ..writeln('Response: ${_formatForLog(response.data)}');
 
         _logChunked(responseLog.toString());
@@ -138,6 +139,7 @@ class DioClient {
             {'errorType': error.type.name, 'message': error.message};
 
         final errorLog = StringBuffer()
+          ..writeln('Status: ${error.response?.statusCode}')
           ..writeln('Response: ${_formatForLog(errorResponse)}');
 
         _logChunked(errorLog.toString());

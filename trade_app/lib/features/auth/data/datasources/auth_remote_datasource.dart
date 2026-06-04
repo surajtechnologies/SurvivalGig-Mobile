@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/utils/upload_response_parser.dart';
 import '../models/device_token_dto.dart';
 import '../models/apple_auth_dto.dart';
 import '../models/facebook_auth_dto.dart';
@@ -205,28 +206,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
 
-        // Parse response similar to post_listing_remote_datasource.dart
         if (data is Map<String, dynamic>) {
-          // Check for "data" wrapper with "images" list
-          final responseData = data['data'];
-          if (responseData != null && responseData is Map<String, dynamic>) {
-            final images = responseData['images'];
-            if (images != null && images is List) {
-              final urls = images
-                  .map((img) => img['url'] as String?)
-                  .where((url) => url != null)
-                  .cast<String>()
-                  .toList();
-
-              if (urls.isNotEmpty) {
-                return urls;
-              }
-            }
-          }
-
-          // Fallback/Legacy parsing if structure is different
-          if (data['urls'] is List) {
-            return (data['urls'] as List).map((e) => e.toString()).toList();
+          final urls = extractUploadedImageUrls(data);
+          if (urls.isNotEmpty) {
+            return urls;
           }
         }
 
@@ -271,7 +254,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         );
       } else {
         throw ServerException(
-          message: response.data['message'] ?? 'Device token registration failed',
+          message:
+              response.data['message'] ?? 'Device token registration failed',
           code: response.data['code'] ?? 'DEVICE_TOKEN_FAILED',
           statusCode: response.statusCode,
         );

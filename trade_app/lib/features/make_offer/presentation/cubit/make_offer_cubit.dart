@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/utils/image_data_url.dart';
 import '../../domain/entities/trade_offer.dart';
 import '../../domain/usecases/create_trade_offer_usecase.dart';
 import '../../domain/usecases/upload_item_images_usecase.dart';
@@ -29,35 +29,32 @@ class MakeOfferCubit extends Cubit<MakeOfferState> {
 
   /// Update selected offer type
   void updateOfferType(OfferType type) {
-    emit(_formState.copyWith(
-      selectedOfferType: type,
-      validationError: null,
-      submitError: null,
-    ));
+    emit(
+      _formState.copyWith(
+        selectedOfferType: type,
+        validationError: null,
+        submitError: null,
+      ),
+    );
   }
 
   /// Update points amount
   void updatePoints(int? points) {
-    emit(_formState.copyWith(
-      points: points,
-      validationError: null,
-    ));
+    emit(_formState.copyWith(points: points, validationError: null));
   }
 
   /// Update item description
   void updateItemDescription(String description) {
-    emit(_formState.copyWith(
-      itemDescription: description,
-      validationError: null,
-    ));
+    emit(
+      _formState.copyWith(itemDescription: description, validationError: null),
+    );
   }
 
   /// Update skill description
   void updateSkillDescription(String description) {
-    emit(_formState.copyWith(
-      skillDescription: description,
-      validationError: null,
-    ));
+    emit(
+      _formState.copyWith(skillDescription: description, validationError: null),
+    );
   }
 
   /// Add image from file path
@@ -78,42 +75,49 @@ class MakeOfferCubit extends Cubit<MakeOfferState> {
     final newLocalPaths = [...currentForm.localImagePaths, filePath];
     final uploadingIndex = newLocalPaths.length - 1;
 
-    emit(currentForm.copyWith(
-      localImagePaths: newLocalPaths,
-      isUploadingImage: true,
-      uploadingImageIndex: uploadingIndex,
-      imageError: null,
-    ));
+    emit(
+      currentForm.copyWith(
+        localImagePaths: newLocalPaths,
+        isUploadingImage: true,
+        uploadingImageIndex: uploadingIndex,
+        imageError: null,
+      ),
+    );
 
     try {
       // Read file and convert to base64 with MIME type prefix
       final bytes = await file.readAsBytes();
-      final base64String = base64Encode(bytes);
-      final base64Image = 'data:image/jpeg;base64,$base64String';
+      final base64Image = imageBytesToDataUrl(bytes);
 
       final result = await uploadItemImagesUseCase(base64Images: [base64Image]);
 
       result.fold(
         (failure) {
-          final updatedLocalPaths = List<String>.from(_formState.localImagePaths);
+          final updatedLocalPaths = List<String>.from(
+            _formState.localImagePaths,
+          );
           if (uploadingIndex < updatedLocalPaths.length) {
             updatedLocalPaths.removeAt(uploadingIndex);
           }
 
-          emit(_formState.copyWith(
-            localImagePaths: updatedLocalPaths,
-            isUploadingImage: false,
-            imageError: failure.message,
-          ));
+          emit(
+            _formState.copyWith(
+              localImagePaths: updatedLocalPaths,
+              isUploadingImage: false,
+              imageError: failure.message,
+            ),
+          );
         },
         (urls) {
           final newUploadedUrls = [..._formState.uploadedImageUrls, ...urls];
 
-          emit(_formState.copyWith(
-            uploadedImageUrls: newUploadedUrls,
-            isUploadingImage: false,
-            imageError: null,
-          ));
+          emit(
+            _formState.copyWith(
+              uploadedImageUrls: newUploadedUrls,
+              isUploadingImage: false,
+              imageError: null,
+            ),
+          );
         },
       );
     } catch (e) {
@@ -122,11 +126,13 @@ class MakeOfferCubit extends Cubit<MakeOfferState> {
         updatedLocalPaths.removeAt(uploadingIndex);
       }
 
-      emit(_formState.copyWith(
-        localImagePaths: updatedLocalPaths,
-        isUploadingImage: false,
-        imageError: 'Failed to upload image: ${e.toString()}',
-      ));
+      emit(
+        _formState.copyWith(
+          localImagePaths: updatedLocalPaths,
+          isUploadingImage: false,
+          imageError: 'Failed to upload image: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -144,11 +150,13 @@ class MakeOfferCubit extends Cubit<MakeOfferState> {
       updatedUrls.removeAt(index);
     }
 
-    emit(currentForm.copyWith(
-      localImagePaths: updatedLocalPaths,
-      uploadedImageUrls: updatedUrls,
-      imageError: null,
-    ));
+    emit(
+      currentForm.copyWith(
+        localImagePaths: updatedLocalPaths,
+        uploadedImageUrls: updatedUrls,
+        imageError: null,
+      ),
+    );
   }
 
   /// Submit the offer
@@ -156,9 +164,9 @@ class MakeOfferCubit extends Cubit<MakeOfferState> {
     final currentForm = _formState;
 
     if (!currentForm.isFormValid) {
-      emit(currentForm.copyWith(
-        validationError: _getValidationError(currentForm),
-      ));
+      emit(
+        currentForm.copyWith(validationError: _getValidationError(currentForm)),
+      );
       return;
     }
 
@@ -198,10 +206,12 @@ class MakeOfferCubit extends Cubit<MakeOfferState> {
 
     result.fold(
       (failure) {
-        emit(_formState.copyWith(
-          isSubmitting: false,
-          submitError: failure.message,
-        ));
+        emit(
+          _formState.copyWith(
+            isSubmitting: false,
+            submitError: failure.message,
+          ),
+        );
       },
       (trade) {
         emit(MakeOfferSuccess(tradeId: trade.id));

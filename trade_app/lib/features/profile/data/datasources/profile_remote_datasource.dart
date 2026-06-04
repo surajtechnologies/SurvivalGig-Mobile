@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/utils/upload_response_parser.dart';
 import '../models/profile_model.dart';
 import '../models/profile_review_model.dart';
 
@@ -285,9 +286,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   @override
   Future<String> deleteAccount() async {
     try {
-      final response = await dioClient.dio.delete(
-        ApiEndpoints.deleteAccount,
-      );
+      final response = await dioClient.dio.delete(ApiEndpoints.deleteAccount);
 
       if (response.statusCode == 200) {
         return _extractSuccessMessage(response.data) ??
@@ -296,8 +295,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
 
       throw ServerException(
         message:
-            _extractErrorMessage(response.data) ??
-            'Failed to delete account',
+            _extractErrorMessage(response.data) ?? 'Failed to delete account',
         code: 'DELETE_ACCOUNT_FAILED',
         statusCode: response.statusCode,
       );
@@ -328,43 +326,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   }
 
   String? _extractImageUrl(dynamic data) {
-    if (data is! Map<String, dynamic>) {
-      return null;
-    }
-
-    final responseData = data['data'];
-    if (responseData is Map<String, dynamic>) {
-      final images = responseData['images'];
-      if (images is List && images.isNotEmpty) {
-        final first = images.first;
-        if (first is Map<String, dynamic>) {
-          final url = first['url'];
-          if (url is String && url.trim().isNotEmpty) {
-            return url.trim();
-          }
-        }
-      }
-
-      final url = responseData['url'];
-      if (url is String && url.trim().isNotEmpty) {
-        return url.trim();
-      }
-    }
-
-    final urls = data['urls'];
-    if (urls is List && urls.isNotEmpty) {
-      final first = urls.first;
-      if (first is String && first.trim().isNotEmpty) {
-        return first.trim();
-      }
-    }
-
-    final url = data['url'];
-    if (url is String && url.trim().isNotEmpty) {
-      return url.trim();
-    }
-
-    return null;
+    return extractUploadedImageUrls(data).firstOrNull;
   }
 
   String? _extractErrorMessage(dynamic data) {

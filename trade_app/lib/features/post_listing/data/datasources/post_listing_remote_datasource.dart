@@ -54,21 +54,9 @@ class PostListingRemoteDataSourceImpl implements PostListingRemoteDataSource {
         final data = response.data;
 
         if (data is Map<String, dynamic>) {
-          // Extract URLs from response: {"data": {"images": [{"url": "..."}]}}
-          final responseData = data['data'];
-          if (responseData != null && responseData is Map<String, dynamic>) {
-            final images = responseData['images'];
-            if (images != null && images is List) {
-              final urls = images
-                  .map((img) => img['url'] as String?)
-                  .where((url) => url != null)
-                  .cast<String>()
-                  .toList();
-
-              if (urls.isNotEmpty) {
-                return UploadImagesResponseModel(success: true, urls: urls);
-              }
-            }
+          final uploadResponse = UploadImagesResponseModel.fromJson(data);
+          if (uploadResponse.urls.isNotEmpty) {
+            return uploadResponse;
           }
 
           throw ServerException(

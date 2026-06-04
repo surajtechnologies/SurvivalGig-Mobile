@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/utils/upload_response_parser.dart';
 import '../models/trade_offer_model.dart';
 
 /// Make offer remote datasource
@@ -13,9 +14,7 @@ abstract class MakeOfferRemoteDataSource {
   });
 
   /// Upload images for item offer
-  Future<List<String>> uploadImages({
-    required List<String> base64Images,
-  });
+  Future<List<String>> uploadImages({required List<String> base64Images});
 }
 
 class MakeOfferRemoteDataSourceImpl implements MakeOfferRemoteDataSource {
@@ -39,7 +38,9 @@ class MakeOfferRemoteDataSourceImpl implements MakeOfferRemoteDataSource {
         if (data is Map<String, dynamic>) {
           // Handle response format: { success: true, trade: {...} }
           if (data['success'] == true && data['trade'] != null) {
-            return CreatedTradeModel.fromJson(data['trade'] as Map<String, dynamic>);
+            return CreatedTradeModel.fromJson(
+              data['trade'] as Map<String, dynamic>,
+            );
           }
 
           // Fallback: direct trade object
@@ -48,7 +49,8 @@ class MakeOfferRemoteDataSourceImpl implements MakeOfferRemoteDataSource {
           }
 
           throw ServerException(
-            message: _extractErrorMessage(data) ?? 'Failed to create trade offer',
+            message:
+                _extractErrorMessage(data) ?? 'Failed to create trade offer',
             code: 'CREATE_TRADE_FAILED',
             statusCode: response.statusCode,
           );
@@ -85,21 +87,9 @@ class MakeOfferRemoteDataSourceImpl implements MakeOfferRemoteDataSource {
         final data = response.data;
 
         if (data is Map<String, dynamic>) {
-          // Extract URLs from response: {"data": {"images": [{"url": "..."}]}}
-          final responseData = data['data'];
-          if (responseData != null && responseData is Map<String, dynamic>) {
-            final images = responseData['images'];
-            if (images != null && images is List) {
-              final urls = images
-                  .map((img) => img['url'] as String?)
-                  .where((url) => url != null)
-                  .cast<String>()
-                  .toList();
-              
-              if (urls.isNotEmpty) {
-                return urls;
-              }
-            }
+          final urls = extractUploadedImageUrls(data);
+          if (urls.isNotEmpty) {
+            return urls;
           }
 
           throw ServerException(

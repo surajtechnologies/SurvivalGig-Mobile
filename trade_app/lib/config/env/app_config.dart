@@ -19,7 +19,7 @@ class AppConfig {
 
   // App Configuration
   static const String appName = 'Survival Gig';
-  static const String appVersion = '1.0.0';
+  static const String appVersion = '1.1.0';
 
   // Google Sign-In
   static String get googleIosClientId =>
