@@ -7,15 +7,22 @@ import '../../domain/entities/trade_summary.dart';
 /// Trade list item widget
 class TradeListItem extends StatelessWidget {
   final TradeSummary trade;
+  final String? currentUserId;
   final VoidCallback? onTap;
 
-  const TradeListItem({super.key, required this.trade, this.onTap});
+  const TradeListItem({
+    super.key,
+    required this.trade,
+    this.currentUserId,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final initial = trade.username.trim().isEmpty
+    final displayName = trade.displayNameFor(currentUserId);
+    final initial = displayName.trim().isEmpty
         ? '?'
-        : trade.username.trim()[0].toUpperCase();
+        : displayName.trim()[0].toUpperCase();
 
     return InkWell(
       onTap: onTap,
@@ -56,7 +63,7 @@ class TradeListItem extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          trade.username,
+                          displayName,
                           style: AppTextStyles.headlineSmall.copyWith(
                             color: AppColors.textOnDarkPrimary,
                             fontWeight: FontWeight.w800,

@@ -1,14 +1,13 @@
-import 'dart:io';
+import 'dart:async';
 
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/utils/fcm_notifications.dart';
 import '../../domain/usecases/apple_sign_in_usecase.dart';
 import '../../domain/usecases/facebook_sign_in_usecase.dart';
 import '../../domain/usecases/forgot_password_usecase.dart';
 import '../../domain/usecases/google_sign_in_usecase.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
-import '../../domain/usecases/register_device_token_usecase.dart';
 import '../../domain/usecases/upload_profile_image_usecase.dart';
 import 'auth_state.dart';
 
@@ -21,7 +20,7 @@ class AuthCubit extends Cubit<AuthState> {
   final RegisterUseCase registerUseCase;
   final ForgotPasswordUseCase forgotPasswordUseCase;
   final UploadProfileImageUseCase uploadProfileImageUseCase;
-  final RegisterDeviceTokenUseCase registerDeviceTokenUseCase;
+  final PushNotificationService pushNotificationService;
 
   AuthCubit({
     required this.loginUseCase,
@@ -31,7 +30,7 @@ class AuthCubit extends Cubit<AuthState> {
     required this.registerUseCase,
     required this.forgotPasswordUseCase,
     required this.uploadProfileImageUseCase,
-    required this.registerDeviceTokenUseCase,
+    required this.pushNotificationService,
   }) : super(const AuthInitial());
 
   /// Login with email and password
@@ -98,16 +97,19 @@ class AuthCubit extends Cubit<AuthState> {
 
     final result = await appleSignInUseCase();
 
-    result.fold(
+    await result.fold<Future<void>>(
       (failure) {
         if (failure.code == 'APPLE_SIGN_IN_CANCELLED') {
           emit(const AuthInitial());
-          return;
+          return Future<void>.value();
         }
         emit(AuthFailure(message: failure.message, code: failure.code));
+        return Future<void>.value();
       },
-      (data) =>
-          emit(LoginSuccess(userId: data.user.id, userName: data.user.name)),
+      (data) => _emitLoginSuccessAfterDeviceToken(
+        userId: data.user.id,
+        userName: data.user.name,
+      ),
     );
   }
 
@@ -115,42 +117,8 @@ class AuthCubit extends Cubit<AuthState> {
     required String userId,
     required String userName,
   }) async {
-    await _registerDeviceTokenForCurrentPlatform();
     emit(LoginSuccess(userId: userId, userName: userName));
-  }
-
-  Future<void> _registerDeviceTokenForCurrentPlatform() async {
-    try {
-      if (!Platform.isAndroid && !Platform.isIOS) return;
-
-      final messaging = FirebaseMessaging.instance;
-      if (Platform.isIOS) {
-        final settings = await messaging.requestPermission(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-        final isAuthorized =
-            settings.authorizationStatus == AuthorizationStatus.authorized ||
-            settings.authorizationStatus == AuthorizationStatus.provisional;
-        if (!isAuthorized) return;
-        await messaging.setForegroundNotificationPresentationOptions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-      } else {
-        await messaging.requestPermission();
-      }
-
-      final token = await messaging.getToken();
-      if (token == null || token.isEmpty) return;
-
-      final platform = Platform.isIOS ? 'ios' : 'android';
-      await registerDeviceTokenUseCase(token: token, platform: platform);
-    } catch (_) {
-      // Device token registration should not block a successful login.
-    }
+    unawaited(pushNotificationService.syncTokenForAuthenticatedUser());
   }
 
   /// Upload profile image independently
@@ -212,28 +180,6 @@ class AuthCubit extends Cubit<AuthState> {
       (failure) =>
           emit(AuthFailure(message: failure.message, code: failure.code)),
       (message) => emit(ForgotPasswordSuccess(message: message)),
-    );
-  }
-
-  /// Register FCM device token for push notifications
-  /// This is a fire-and-forget operation that does NOT emit loading state
-  /// to avoid interfering with login/navigation flow
-  Future<void> registerDeviceToken({
-    required String token,
-    required String platform,
-  }) async {
-    final result = await registerDeviceTokenUseCase(
-      token: token,
-      platform: platform,
-    );
-
-    result.fold(
-      (failure) {
-        // Silent failure - device token registration should not block user
-      },
-      (deviceToken) {
-        // Token registered successfully - no state emission needed
-      },
     );
   }
 

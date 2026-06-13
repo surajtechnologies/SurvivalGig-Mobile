@@ -55,19 +55,16 @@ class ListingDetailRemoteDataSourceImpl
         final data = response.data;
 
         if (data is Map<String, dynamic>) {
-          // Handle response format: { status: 'success', data: { listing: {...} } }
-          final responseData = data['data'] ?? data;
-          final listingJson = responseData['listing'] ?? responseData;
+          final responseData = data['data'];
+          final payload = responseData is Map<String, dynamic>
+              ? responseData
+              : data;
+          final listingData = payload['listing'];
+          final listingJson = listingData is Map<String, dynamic>
+              ? {...payload, ...listingData}
+              : payload;
 
-          if (listingJson != null && listingJson is Map<String, dynamic>) {
-            return ListingModel.fromJson(listingJson);
-          }
-
-          throw ServerException(
-            message: 'Invalid listing data format',
-            code: 'INVALID_RESPONSE',
-            statusCode: response.statusCode,
-          );
+          return ListingModel.fromJson(listingJson);
         }
 
         throw ServerException(
@@ -307,7 +304,7 @@ class ListingDetailRemoteDataSourceImpl
     try {
       final response = await dioClient.dio.get(
         ApiEndpoints.listingTrades(listingId),
-        queryParameters: {'status': 'PENDING'},
+        queryParameters: {'page': 1, 'limit': 100},
       );
 
       if (response.statusCode == 200) {
@@ -320,10 +317,13 @@ class ListingDetailRemoteDataSourceImpl
           );
         }
 
+        final responseData = data['data'];
         final tradesRaw =
             data['trades'] ??
-            (data['data'] is Map<String, dynamic>
-                ? (data['data'] as Map<String, dynamic>)['trades']
+            (responseData is Map<String, dynamic>
+                ? responseData['trades']
+                : responseData is List
+                ? responseData
                 : null);
 
         if (tradesRaw is! List) {
@@ -333,7 +333,10 @@ class ListingDetailRemoteDataSourceImpl
         final trades = <ListingTradeOfferModel>[];
         for (final row in tradesRaw) {
           if (row is Map<String, dynamic>) {
-            trades.add(ListingTradeOfferModel.fromJson(row));
+            final trade = ListingTradeOfferModel.fromJson(row);
+            if (trade.status == 'PENDING') {
+              trades.add(trade);
+            }
           }
         }
         return trades;

@@ -654,25 +654,13 @@ class _HomeViewState extends State<_HomeView> {
         mainAxisSize: MainAxisSize.min,
         children: [
           FloatingActionButton.small(
-            heroTag: 'post_listing_fab',
-            backgroundColor: AppColors.dashboardSurface,
-            elevation: 4,
-            onPressed: _openPostListing,
-            child: Icon(
-              Icons.edit_rounded,
-              color: AppColors.textOnDarkPrimary,
-              size: AppDimensions.iconSizeMd,
-            ),
-          ),
-          SizedBox(height: AppDimensions.spacingSm),
-          FloatingActionButton.small(
             heroTag: 'location_fab',
-            backgroundColor: const Color(0xFF1A73E8),
+            backgroundColor: AppColors.primary,
             elevation: 4,
             onPressed: () => context.read<HomeCubit>().moveToUserLocation(),
             child: Icon(
               Icons.my_location_rounded,
-              color: AppColors.white,
+              color: AppColors.black,
               size: AppDimensions.iconSizeMd,
             ),
           ),

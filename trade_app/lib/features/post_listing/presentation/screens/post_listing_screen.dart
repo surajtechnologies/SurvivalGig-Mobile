@@ -12,24 +12,7 @@ import '../../../../shared/models/category.dart';
 import '../../domain/entities/create_listing.dart';
 import '../cubit/post_listing_cubit.dart';
 import '../cubit/post_listing_state.dart';
-
-const _kPostListingDefaultTarget = LatLng(37.7749, -122.4194);
-
-const _kPostListingDarkMapStyle = '''
-[
-  {"elementType":"geometry","stylers":[{"color":"#17231d"}]},
-  {"elementType":"labels.text.fill","stylers":[{"color":"#8fa19a"}]},
-  {"elementType":"labels.text.stroke","stylers":[{"color":"#07100d"}]},
-  {"featureType":"administrative","elementType":"geometry","stylers":[{"color":"#2b3a33"}]},
-  {"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#7c8f86"}]},
-  {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#0f3a2c"}]},
-  {"featureType":"road","elementType":"geometry","stylers":[{"color":"#293832"}]},
-  {"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#111b16"}]},
-  {"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#344a40"}]},
-  {"featureType":"transit","elementType":"geometry","stylers":[{"color":"#213129"}]},
-  {"featureType":"water","elementType":"geometry","stylers":[{"color":"#0b1a20"}]}
-]
-''';
+import 'listing_location_picker_screen.dart';
 
 class PostListingResult {
   final bool didCreate;
@@ -1018,15 +1001,14 @@ class _PostListingViewState extends State<_PostListingView> {
   }
 
   Future<void> _openMapLocationPicker(PostListingFormState formState) async {
-    final initialTarget =
-        formState.latitude != null && formState.longitude != null
-        ? LatLng(formState.latitude!, formState.longitude!)
-        : _kPostListingDefaultTarget;
+    final initialTarget = await _resolveMapInitialTarget(formState);
+    if (!mounted) return;
 
-    final selected = await Navigator.push<_PickedMapLocation>(
+    final selected = await Navigator.push<PickedListingLocation>(
       context,
       MaterialPageRoute(
-        builder: (_) => _MapLocationPickerScreen(initialTarget: initialTarget),
+        builder: (_) =>
+            ListingLocationPickerScreen(initialTarget: initialTarget),
       ),
     );
 
@@ -1035,6 +1017,35 @@ class _PostListingViewState extends State<_PostListingView> {
       latitude: selected.latitude,
       longitude: selected.longitude,
     );
+  }
+
+  Future<LatLng> _resolveMapInitialTarget(
+    PostListingFormState formState,
+  ) async {
+    if (formState.latitude != null && formState.longitude != null) {
+      return LatLng(formState.latitude!, formState.longitude!);
+    }
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return defaultListingLocation;
+
+      final permission = await Geolocator.checkPermission();
+      final hasPermission =
+          permission == LocationPermission.always ||
+          permission == LocationPermission.whileInUse;
+      if (!hasPermission) return defaultListingLocation;
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      return LatLng(position.latitude, position.longitude);
+    } catch (_) {
+      return defaultListingLocation;
+    }
   }
 
   Future<void> _useCurrentLocation() async {
@@ -1291,195 +1302,4 @@ class _CategoryPickerItem {
   final int depth;
 
   const _CategoryPickerItem({required this.category, required this.depth});
-}
-
-class _PickedMapLocation {
-  final double latitude;
-  final double longitude;
-
-  const _PickedMapLocation({required this.latitude, required this.longitude});
-}
-
-class _MapLocationPickerScreen extends StatefulWidget {
-  final LatLng initialTarget;
-
-  const _MapLocationPickerScreen({required this.initialTarget});
-
-  @override
-  State<_MapLocationPickerScreen> createState() =>
-      _MapLocationPickerScreenState();
-}
-
-class _MapLocationPickerScreenState extends State<_MapLocationPickerScreen> {
-  late LatLng _selectedLocation;
-  late final ValueNotifier<LatLng> _locationNotifier;
-  GoogleMapController? _googleMapController;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedLocation = widget.initialTarget;
-    _locationNotifier = ValueNotifier<LatLng>(_selectedLocation);
-  }
-
-  @override
-  void dispose() {
-    _googleMapController?.dispose();
-    _locationNotifier.dispose();
-    super.dispose();
-  }
-
-  void _updateGoogleCamera(CameraPosition position) {
-    _selectedLocation = position.target;
-    _locationNotifier.value = _selectedLocation;
-  }
-
-  Future<void> _onGoogleCameraIdle() async {
-    final bounds = await _googleMapController?.getVisibleRegion();
-    if (bounds == null) return;
-    final center = LatLng(
-      (bounds.southwest.latitude + bounds.northeast.latitude) / 2,
-      (bounds.southwest.longitude + bounds.northeast.longitude) / 2,
-    );
-    _selectedLocation = center;
-    _locationNotifier.value = center;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.dashboardBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.dashboardBackground,
-        surfaceTintColor: AppColors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: AppColors.textOnDarkPrimary,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Select Location',
-          style: AppTextStyles.headlineSmall.copyWith(
-            color: AppColors.textOnDarkPrimary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-      body: Stack(
-        children: [
-          Positioned.fill(child: _buildMap()),
-          IgnorePointer(
-            child: Center(
-              child: Transform.translate(
-                offset: const Offset(0, -18),
-                child: Icon(
-                  Icons.location_pin,
-                  color: AppColors.primary,
-                  size: 52,
-                  shadows: [
-                    Shadow(
-                      color: AppColors.black.withValues(alpha: 0.45),
-                      blurRadius: 12,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            child: _buildBottomPanel(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMap() {
-    return GoogleMap(
-      initialCameraPosition: CameraPosition(
-        target: widget.initialTarget,
-        zoom: 15,
-      ),
-      onMapCreated: (controller) => _googleMapController = controller,
-      onCameraMove: _updateGoogleCamera,
-      onCameraIdle: _onGoogleCameraIdle,
-      myLocationEnabled: false,
-      myLocationButtonEnabled: false,
-      zoomControlsEnabled: false,
-      compassEnabled: true,
-      mapToolbarEnabled: false,
-      mapType: MapType.normal,
-      style: _kPostListingDarkMapStyle,
-    );
-  }
-
-  Widget _buildBottomPanel() {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.dashboardSurface.withValues(alpha: 0.96),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.dashboardBorder),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ValueListenableBuilder<LatLng>(
-                valueListenable: _locationNotifier,
-                builder: (context, location, child) {
-                  return Text(
-                    '${location.latitude.toStringAsFixed(6)}, ${location.longitude.toStringAsFixed(6)}',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textOnDarkPrimary,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(
-                    context,
-                    _PickedMapLocation(
-                      latitude: _selectedLocation.latitude,
-                      longitude: _selectedLocation.longitude,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.black,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Confirm Location',
-                    style: AppTextStyles.buttonMedium.copyWith(
-                      color: AppColors.black,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

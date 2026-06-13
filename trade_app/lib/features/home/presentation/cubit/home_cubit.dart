@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/network/connectivity_service.dart';
+import '../../../../core/utils/fcm_notifications.dart';
 import '../../../../shared/models/category.dart';
 import '../../../auth/domain/usecases/logout_usecase.dart';
 import '../../domain/entities/map_coordinate.dart';
@@ -29,6 +30,7 @@ class HomeCubit extends Cubit<HomeState> {
   final DetectHomeLocationUseCase detectHomeLocationUseCase;
   final SearchAddressLocationUseCase searchAddressLocationUseCase;
   final LogoutUseCase logoutUseCase;
+  final PushNotificationService pushNotificationService;
   final ConnectivityService connectivityService;
 
   StreamSubscription<bool>? _connectivitySubscription;
@@ -43,6 +45,7 @@ class HomeCubit extends Cubit<HomeState> {
     required this.detectHomeLocationUseCase,
     required this.searchAddressLocationUseCase,
     required this.logoutUseCase,
+    required this.pushNotificationService,
     required this.connectivityService,
   }) : super(const HomeInitial()) {
     _initConnectivity();
@@ -312,6 +315,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> logout() async {
     await logoutUseCase();
+    await pushNotificationService.deleteToken();
     emit(const HomeLoggedOut());
   }
 

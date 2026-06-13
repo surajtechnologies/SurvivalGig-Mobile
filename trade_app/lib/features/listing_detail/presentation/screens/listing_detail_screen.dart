@@ -164,6 +164,7 @@ class _ListingDetailView extends StatelessWidget {
               context,
               state.listing,
               pendingTradeOffer: state.pendingTradeOffer,
+              canMakeOffer: state.canMakeOffer,
             );
           }
           return const SizedBox.shrink();
@@ -576,6 +577,7 @@ class _ListingDetailView extends StatelessWidget {
     BuildContext context,
     Listing listing, {
     required ListingPendingTradeOffer? pendingTradeOffer,
+    required bool canMakeOffer,
   }) {
     if (isOwnerView) {
       return Container(
@@ -640,8 +642,9 @@ class _ListingDetailView extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final hasPendingTrade = pendingTradeOffer != null;
-    final buttonLabel = hasPendingTrade ? 'Offer already made' : 'Make Offer';
+    if (pendingTradeOffer == null && !canMakeOffer) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -661,32 +664,31 @@ class _ListingDetailView extends StatelessWidget {
           children: [
             if (pendingTradeOffer != null) ...[
               _OfferedTradeSummaryCard(offer: pendingTradeOffer),
-              SizedBox(height: AppDimensions.spacingSm),
             ],
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: hasPendingTrade
-                    ? null
-                    : () => _showMakeOfferOptionsDialog(context, listing),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+            if (pendingTradeOffer == null && canMakeOffer)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () =>
+                      _showMakeOfferOptionsDialog(context, listing),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  buttonLabel,
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.white,
+                  child: Text(
+                    'Make Offer',
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.white,
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),

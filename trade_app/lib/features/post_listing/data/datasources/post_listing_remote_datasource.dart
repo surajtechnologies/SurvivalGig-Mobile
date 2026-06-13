@@ -5,6 +5,7 @@ import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
 import '../models/categories_response_model.dart';
 import '../models/create_listing_model.dart';
+import '../models/update_listing_model.dart';
 import '../models/upload_image_model.dart';
 
 /// Post listing remote datasource
@@ -20,13 +21,8 @@ abstract class PostListingRemoteDataSource {
     required CreateListingRequestModel request,
   });
 
-  /// Update an existing listing (title, pricePoints, description)
-  Future<void> updateListing({
-    required String listingId,
-    required String title,
-    required int pricePoints,
-    required String description,
-  });
+  /// Update an existing listing.
+  Future<void> updateListing({required UpdateListingRequestModel request});
 
   /// Get all categories
   Future<CategoriesResponseModel> getCategories();
@@ -133,19 +129,12 @@ class PostListingRemoteDataSourceImpl implements PostListingRemoteDataSource {
 
   @override
   Future<void> updateListing({
-    required String listingId,
-    required String title,
-    required int pricePoints,
-    required String description,
+    required UpdateListingRequestModel request,
   }) async {
     try {
       final response = await dioClient.dio.patch(
-        ApiEndpoints.updateListing(listingId),
-        data: {
-          'title': title,
-          'pricePoints': pricePoints,
-          'description': description,
-        },
+        ApiEndpoints.updateListing(request.listingId),
+        data: request.toJson(),
       );
 
       if (response.statusCode != null &&

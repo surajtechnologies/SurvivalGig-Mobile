@@ -10,6 +10,8 @@ class TradeDetail {
   final String listingOwnerId;
   final String buyerId;
   final String sellerId;
+  final bool buyerConfirmed;
+  final bool sellerConfirmed;
 
   const TradeDetail({
     required this.id,
@@ -22,5 +24,20 @@ class TradeDetail {
     required this.listingOwnerId,
     required this.buyerId,
     required this.sellerId,
+    required this.buyerConfirmed,
+    required this.sellerConfirmed,
   });
+
+  bool isParticipant(String? userId) {
+    final id = userId?.trim() ?? '';
+    return id.isNotEmpty && (id == buyerId || id == sellerId);
+  }
+
+  bool hasConfirmed(String? userId) {
+    final id = userId?.trim() ?? '';
+    if (id.isEmpty) return false;
+    if (id == buyerId) return buyerConfirmed;
+    if (id == sellerId) return sellerConfirmed;
+    return false;
+  }
 }

@@ -3,6 +3,7 @@ import '../../../../core/errors/failures.dart';
 import '../../../../shared/models/category.dart';
 import '../entities/create_listing.dart';
 import '../entities/detected_location.dart';
+import '../entities/update_listing.dart';
 
 /// Post listing repository interface
 abstract class PostListingRepository {
@@ -16,12 +17,9 @@ abstract class PostListingRepository {
     required CreateListingRequest request,
   });
 
-  /// Update an existing listing (title, pricePoints, description only)
+  /// Update an existing listing.
   Future<Either<Failure, void>> updateListing({
-    required String listingId,
-    required String title,
-    required int pricePoints,
-    required String description,
+    required UpdateListingRequest request,
   });
 
   /// Get all categories

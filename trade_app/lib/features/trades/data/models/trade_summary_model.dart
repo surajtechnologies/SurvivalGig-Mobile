@@ -5,6 +5,10 @@ import '../../domain/entities/trade_summary.dart';
 class TradeSummaryModel {
   final String id;
   final String username;
+  final String buyerId;
+  final String buyerName;
+  final String sellerId;
+  final String sellerName;
   final String title;
   final String description;
   final String? imageUrl;
@@ -13,6 +17,10 @@ class TradeSummaryModel {
   const TradeSummaryModel({
     required this.id,
     required this.username,
+    required this.buyerId,
+    required this.buyerName,
+    required this.sellerId,
+    required this.sellerName,
     required this.title,
     required this.description,
     this.imageUrl,
@@ -40,6 +48,33 @@ class TradeSummaryModel {
           _readString(json['image']),
     );
 
+    final buyer = _readMap(json['buyer']);
+    final seller = _readMap(json['seller']);
+    final listingUser = _readMap(listing?['user']);
+
+    final buyerId =
+        _readString(buyer?['id']) ??
+        _readString(json['buyerId']) ??
+        _readString(json['responderId']) ??
+        '';
+    final buyerName =
+        _readString(buyer?['name']) ??
+        _readString(json['buyerName']) ??
+        _readString(json['responderName']) ??
+        '';
+    final sellerId =
+        _readString(seller?['id']) ??
+        _readString(json['sellerId']) ??
+        _readString(json['listingOwnerId']) ??
+        _readString(listing?['userId']) ??
+        _readString(listingUser?['id']) ??
+        '';
+    final sellerName =
+        _readString(seller?['name']) ??
+        _readString(json['sellerName']) ??
+        _readString(listingUser?['name']) ??
+        '';
+
     final username = _extractUsername(json, listing) ?? 'User';
 
     final points =
@@ -57,6 +92,10 @@ class TradeSummaryModel {
           _readString(listing?['id']) ??
           '',
       username: username,
+      buyerId: buyerId,
+      buyerName: buyerName,
+      sellerId: sellerId,
+      sellerName: sellerName,
       title: title,
       description: description,
       imageUrl: imageUrl,
@@ -68,6 +107,10 @@ class TradeSummaryModel {
     return TradeSummary(
       id: id,
       username: username,
+      buyerId: buyerId,
+      buyerName: buyerName,
+      sellerId: sellerId,
+      sellerName: sellerName,
       title: title,
       description: description,
       imageUrl: imageUrl,
@@ -87,6 +130,10 @@ class TradeSummaryModel {
     if (value is num) return value.toInt();
     if (value is String) return int.tryParse(value);
     return null;
+  }
+
+  static Map<String, dynamic>? _readMap(dynamic value) {
+    return value is Map<String, dynamic> ? value : null;
   }
 
   static String? _extractImageUrl(Map<String, dynamic>? listing) {

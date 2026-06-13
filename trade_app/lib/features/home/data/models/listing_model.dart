@@ -79,11 +79,25 @@ class ListingModel {
       latitude:
           _readDouble(json['latitude']) ??
           _readDouble(json['lat']) ??
+          _readDouble(json['locationLat']) ??
+          _readDouble(json['locationLatitude']) ??
+          _readDouble(json['location_lat']) ??
+          _readDouble(json['location_latitude']) ??
+          _readDouble(json['geoLatitude']) ??
+          _readDouble(json['geo_latitude']) ??
           coordinates?.lat,
       longitude:
           _readDouble(json['longitude']) ??
           _readDouble(json['lng']) ??
           _readDouble(json['lon']) ??
+          _readDouble(json['locationLng']) ??
+          _readDouble(json['locationLon']) ??
+          _readDouble(json['locationLongitude']) ??
+          _readDouble(json['location_lng']) ??
+          _readDouble(json['location_lon']) ??
+          _readDouble(json['location_longitude']) ??
+          _readDouble(json['geoLongitude']) ??
+          _readDouble(json['geo_longitude']) ??
           coordinates?.lng,
       urgencyLevel: _readString(json['urgencyLevel']),
       expiresAt: _parseDateTime(json['expiresAt']),
@@ -268,11 +282,27 @@ class ListingModel {
   static ({double lat, double lng})? _coordinateFields(
     Map<String, dynamic> json,
   ) {
-    final lat = _readDouble(json['latitude']) ?? _readDouble(json['lat']);
+    final lat =
+        _readDouble(json['latitude']) ??
+        _readDouble(json['lat']) ??
+        _readDouble(json['locationLat']) ??
+        _readDouble(json['locationLatitude']) ??
+        _readDouble(json['location_lat']) ??
+        _readDouble(json['location_latitude']) ??
+        _readDouble(json['geoLatitude']) ??
+        _readDouble(json['geo_latitude']);
     final lng =
         _readDouble(json['longitude']) ??
         _readDouble(json['lng']) ??
-        _readDouble(json['lon']);
+        _readDouble(json['lon']) ??
+        _readDouble(json['locationLng']) ??
+        _readDouble(json['locationLon']) ??
+        _readDouble(json['locationLongitude']) ??
+        _readDouble(json['location_lng']) ??
+        _readDouble(json['location_lon']) ??
+        _readDouble(json['location_longitude']) ??
+        _readDouble(json['geoLongitude']) ??
+        _readDouble(json['geo_longitude']);
     if (lat == null || lng == null) {
       return null;
     }

@@ -22,17 +22,20 @@ class ListingDetailLoaded extends ListingDetailState {
   final Listing listing;
   final UserReviewSummary userReviewSummary;
   final ListingPendingTradeOffer? pendingTradeOffer;
+  final bool canMakeOffer;
 
   const ListingDetailLoaded({
     required this.listing,
     required this.userReviewSummary,
     this.pendingTradeOffer,
+    required this.canMakeOffer,
   });
 
   ListingDetailLoaded copyWith({
     Listing? listing,
     UserReviewSummary? userReviewSummary,
     Object? pendingTradeOffer,
+    bool? canMakeOffer,
   }) {
     return ListingDetailLoaded(
       listing: listing ?? this.listing,
@@ -40,6 +43,7 @@ class ListingDetailLoaded extends ListingDetailState {
       pendingTradeOffer: pendingTradeOffer == null
           ? this.pendingTradeOffer
           : pendingTradeOffer as ListingPendingTradeOffer?,
+      canMakeOffer: canMakeOffer ?? this.canMakeOffer,
     );
   }
 }

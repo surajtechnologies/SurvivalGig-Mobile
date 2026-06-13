@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../config/di/service_locator.dart';
@@ -44,8 +45,11 @@ class _TradeDetailView extends StatefulWidget {
 }
 
 class _TradeDetailViewState extends State<_TradeDetailView> {
+  static const double _iosKeyboardToolbarHeight = 44;
+
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _messageFocusNode = FocusNode();
   int _messageCount = 0;
   bool _didUpdateTrade = false;
 
@@ -53,6 +57,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _messageFocusNode.dispose();
     super.dispose();
   }
 
@@ -108,9 +113,12 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
           },
           child: Scaffold(
             backgroundColor: AppColors.dashboardBackground,
-            resizeToAvoidBottomInset: true,
+            resizeToAvoidBottomInset: false,
             appBar: _buildAppBar(context, state),
             body: _buildBody(context, state),
+            bottomNavigationBar: state is TradeDetailLoaded
+                ? _buildKeyboardAwareComposer(context, state)
+                : null,
           ),
         );
       },
@@ -200,6 +208,11 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
     final detail = state.detail;
     final status = detail.status.toUpperCase();
     final isListingOwner = _isListingOwner(detail);
+    final currentUserId = sl<UserSession>().currentUser?.id;
+    final shouldShowConfirm =
+        status == 'ACCEPTED' &&
+        detail.isParticipant(currentUserId) &&
+        !detail.hasConfirmed(currentUserId);
 
     return Column(
       children: [
@@ -209,13 +222,13 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildTradeCard(detail),
-              SizedBox(height: AppDimensions.spacingLg),
-              if (status == 'PENDING' && isListingOwner)
-                _buildPendingActions(context, state)
-              else if (status == 'ACCEPTED' && isListingOwner)
-                _buildConfirmAction(context, state)
-              else
-                const SizedBox.shrink(),
+              if (status == 'PENDING' && isListingOwner) ...[
+                SizedBox(height: AppDimensions.spacingLg),
+                _buildPendingActions(context, state),
+              ] else if (shouldShowConfirm) ...[
+                SizedBox(height: AppDimensions.spacingLg),
+                _buildConfirmAction(context, state),
+              ],
             ],
           ),
         ),
@@ -225,7 +238,6 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
           color: AppColors.dashboardBorder,
         ),
         Expanded(child: _buildMessagesSection(context, state)),
-        _buildMessageComposer(context, state),
       ],
     );
   }
@@ -414,6 +426,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
 
     return ListView.separated(
       controller: _scrollController,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: EdgeInsets.fromLTRB(
         AppDimensions.spacingLg,
         AppDimensions.spacingMd,
@@ -491,15 +504,17 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
   Widget _buildMessageComposer(BuildContext context, TradeDetailLoaded state) {
     final canSend =
         _messageController.text.trim().isNotEmpty && !state.isSendingMessage;
+    final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return SafeArea(
       top: false,
+      bottom: !isKeyboardVisible,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           AppDimensions.spacingLg,
           AppDimensions.spacingSm,
           AppDimensions.spacingLg,
-          AppDimensions.spacingMd,
+          isKeyboardVisible ? AppDimensions.spacingSm : AppDimensions.spacingMd,
         ),
         child: Row(
           children: [
@@ -515,8 +530,10 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
                 ),
                 child: TextField(
                   controller: _messageController,
+                  focusNode: _messageFocusNode,
                   minLines: 1,
                   maxLines: 3,
+                  textInputAction: TextInputAction.newline,
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
@@ -529,6 +546,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textOnDarkPrimary,
                   ),
+                  onTap: _scrollToBottomForKeyboard,
                   onChanged: (_) => setState(() {}),
                 ),
               ),
@@ -582,6 +600,32 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
         ),
       ),
     );
+  }
+
+  Widget _buildKeyboardAwareComposer(
+    BuildContext context,
+    TradeDetailLoaded state,
+  ) {
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final hasIosToolbar =
+        keyboardInset > 0 &&
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.iOS;
+    final bottomInset =
+        keyboardInset + (hasIosToolbar ? _iosKeyboardToolbarHeight : 0);
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: Material(
+        color: AppColors.dashboardBackground,
+        child: _buildMessageComposer(context, state),
+      ),
+    );
+  }
+
+  void _scrollToBottomForKeyboard() {
+    _scrollToBottom();
+    Future<void>.delayed(const Duration(milliseconds: 300), _scrollToBottom);
   }
 
   bool _isListingOwner(TradeDetail detail) {

@@ -13,6 +13,8 @@ class TradeDetailModel {
   final String listingOwnerId;
   final String buyerId;
   final String sellerId;
+  final bool buyerConfirmed;
+  final bool sellerConfirmed;
 
   const TradeDetailModel({
     required this.id,
@@ -25,6 +27,8 @@ class TradeDetailModel {
     required this.listingOwnerId,
     required this.buyerId,
     required this.sellerId,
+    required this.buyerConfirmed,
+    required this.sellerConfirmed,
   });
 
   factory TradeDetailModel.fromResponse(dynamic data) {
@@ -77,6 +81,30 @@ class TradeDetailModel {
         _readString(trade['owner_id']) ??
         _extractUserId(listing?['user']) ??
         sellerId;
+    final responderId =
+        _readString(trade['responderId']) ??
+        _readString(trade['responder_id']) ??
+        buyerId;
+    final ownerConfirmed = _readBool(trade['ownerConfirmed']);
+    final responderConfirmed = _readBool(trade['responderConfirmed']);
+    final buyerConfirmed =
+        _readBool(trade['buyerConfirmed']) ??
+        _confirmationForRole(
+          userId: buyerId,
+          listingOwnerId: listingOwnerId,
+          responderId: responderId,
+          ownerConfirmed: ownerConfirmed,
+          responderConfirmed: responderConfirmed,
+        );
+    final sellerConfirmed =
+        _readBool(trade['sellerConfirmed']) ??
+        _confirmationForRole(
+          userId: sellerId,
+          listingOwnerId: listingOwnerId,
+          responderId: responderId,
+          ownerConfirmed: ownerConfirmed,
+          responderConfirmed: responderConfirmed,
+        );
 
     return TradeDetailModel(
       id:
@@ -94,6 +122,8 @@ class TradeDetailModel {
       listingOwnerId: listingOwnerId,
       buyerId: buyerId,
       sellerId: sellerId,
+      buyerConfirmed: buyerConfirmed,
+      sellerConfirmed: sellerConfirmed,
     );
   }
 
@@ -109,6 +139,8 @@ class TradeDetailModel {
       listingOwnerId: listingOwnerId,
       buyerId: buyerId,
       sellerId: sellerId,
+      buyerConfirmed: buyerConfirmed,
+      sellerConfirmed: sellerConfirmed,
     );
   }
 
@@ -142,6 +174,31 @@ class TradeDetailModel {
     if (value is num) return value.toInt();
     if (value is String) return int.tryParse(value);
     return null;
+  }
+
+  static bool? _readBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is String) {
+      if (value.toLowerCase() == 'true') return true;
+      if (value.toLowerCase() == 'false') return false;
+    }
+    return null;
+  }
+
+  static bool _confirmationForRole({
+    required String userId,
+    required String listingOwnerId,
+    required String responderId,
+    required bool? ownerConfirmed,
+    required bool? responderConfirmed,
+  }) {
+    if (userId.isNotEmpty && userId == listingOwnerId) {
+      return ownerConfirmed ?? false;
+    }
+    if (userId.isNotEmpty && userId == responderId) {
+      return responderConfirmed ?? false;
+    }
+    return false;
   }
 
   static String? _extractImageUrl(Map<String, dynamic>? listing) {

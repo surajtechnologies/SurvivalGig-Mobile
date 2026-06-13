@@ -4,6 +4,7 @@ import '../../../../config/di/service_locator.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/user_session.dart';
 import '../cubit/trades_cubit.dart';
 import '../cubit/trades_state.dart';
 import 'trade_detail_screen.dart';
@@ -153,6 +154,7 @@ class _TradesViewState extends State<_TradesView> {
           final trade = state.trades[index];
           return TradeListItem(
             trade: trade,
+            currentUserId: sl<UserSession>().currentUser?.id,
             onTap: () async {
               final didUpdateTrade = await Navigator.push<bool>(
                 context,

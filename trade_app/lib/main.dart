@@ -35,14 +35,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   );
 }
 
-Future<void> _deleteFcmTokenIfPossible() async {
-  try {
-    await FirebaseMessaging.instance.deleteToken();
-  } catch (e) {
-    debugPrint('Unable to delete FCM token during local reset: $e');
-  }
-}
-
 Future<void> main() async {
   await runZonedGuarded(
     () async {
@@ -83,7 +75,7 @@ Future<void> main() async {
           .prepareLocalStorageForCurrentInstall();
 
       if (shouldEnableFirebase && didResetLocalState) {
-        await _deleteFcmTokenIfPossible();
+        await sl<PushNotificationService>().deleteToken();
       }
 
       // Load user session only after reinstall/version reset checks.
@@ -92,8 +84,7 @@ Future<void> main() async {
       if (shouldEnableFirebase) {
         await FirebaseAnalytics.instance.logAppOpen();
 
-        await FcmNotifications.initializeLocalNotifications();
-        FcmNotifications.attachDebugListeners();
+        await sl<PushNotificationService>().initialize();
 
         // Attempt Android native Play Store in-app update
         if (defaultTargetPlatform == TargetPlatform.android) {
@@ -132,12 +123,13 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   StreamSubscription<void>? _sessionExpiredSubscription;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _sessionExpiredSubscription = sl<UserSession>().sessionExpiredStream.listen(
       (_) => _resetToLoginRoot(),
     );
@@ -145,8 +137,18 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sessionExpiredSubscription?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        sl<UserSession>().isLoggedIn &&
+        _isFirebaseSupportedPlatform()) {
+      unawaited(sl<PushNotificationService>().syncTokenForAuthenticatedUser());
+    }
   }
 
   void _resetToLoginRoot() {

@@ -4,10 +4,12 @@ import '../../../../core/errors/failures.dart';
 import '../../../../shared/models/category.dart';
 import '../../domain/entities/create_listing.dart';
 import '../../domain/entities/detected_location.dart';
+import '../../domain/entities/update_listing.dart';
 import '../../domain/repositories/post_listing_repository.dart';
 import '../datasources/post_listing_location_datasource.dart';
 import '../datasources/post_listing_remote_datasource.dart';
 import '../models/create_listing_model.dart';
+import '../models/update_listing_model.dart';
 
 /// Post listing repository implementation
 /// Converts DTOs to entities and maps exceptions to failures
@@ -77,17 +79,11 @@ class PostListingRepositoryImpl implements PostListingRepository {
 
   @override
   Future<Either<Failure, void>> updateListing({
-    required String listingId,
-    required String title,
-    required int pricePoints,
-    required String description,
+    required UpdateListingRequest request,
   }) async {
     try {
       await remoteDataSource.updateListing(
-        listingId: listingId,
-        title: title,
-        pricePoints: pricePoints,
-        description: description,
+        request: UpdateListingRequestModel.fromEntity(request),
       );
       return const Right(null);
     } on ServerException catch (e) {

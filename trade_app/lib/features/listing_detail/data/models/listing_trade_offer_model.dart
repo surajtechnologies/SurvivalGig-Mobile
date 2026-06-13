@@ -27,12 +27,14 @@ class ListingTradeOfferServiceModel {
 /// DTO for a trade row returned from `/listings/{id}/trades`.
 class ListingTradeOfferModel {
   final String id;
+  final String status;
   final int? buyerOfferPoints;
   final List<ListingTradeOfferItemModel> buyerOfferItems;
   final List<ListingTradeOfferServiceModel> buyerOfferServices;
 
   const ListingTradeOfferModel({
     required this.id,
+    required this.status,
     required this.buyerOfferPoints,
     required this.buyerOfferItems,
     required this.buyerOfferServices,
@@ -70,6 +72,7 @@ class ListingTradeOfferModel {
 
     return ListingTradeOfferModel(
       id: _readString(json['id']) ?? _readString(json['tradeId']) ?? '',
+      status: _readString(json['status'])?.toUpperCase() ?? '',
       buyerOfferPoints: points,
       buyerOfferItems: items,
       buyerOfferServices: services,

@@ -37,9 +37,9 @@ class ListingDetailCubit extends Cubit<ListingDetailState> {
         final pendingTradeResult = await getListingPendingTradeUseCase(
           listingId: listing.id,
         );
-        final pendingTradeOffer = pendingTradeResult.fold(
-          (_) => null,
-          (offer) => offer,
+        final offerEligibility = pendingTradeResult.fold(
+          (_) => (pendingTradeOffer: null, canMakeOffer: false),
+          (offer) => (pendingTradeOffer: offer, canMakeOffer: offer == null),
         );
 
         final userId = listing.user.id.isNotEmpty
@@ -50,7 +50,8 @@ class ListingDetailCubit extends Cubit<ListingDetailState> {
             ListingDetailLoaded(
               listing: listing,
               userReviewSummary: fallbackSummary,
-              pendingTradeOffer: pendingTradeOffer,
+              pendingTradeOffer: offerEligibility.pendingTradeOffer,
+              canMakeOffer: offerEligibility.canMakeOffer,
             ),
           );
           return;
@@ -67,14 +68,16 @@ class ListingDetailCubit extends Cubit<ListingDetailState> {
             ListingDetailLoaded(
               listing: listing,
               userReviewSummary: fallbackSummary,
-              pendingTradeOffer: pendingTradeOffer,
+              pendingTradeOffer: offerEligibility.pendingTradeOffer,
+              canMakeOffer: offerEligibility.canMakeOffer,
             ),
           ),
           (reviewSummary) => emit(
             ListingDetailLoaded(
               listing: listing,
               userReviewSummary: reviewSummary,
-              pendingTradeOffer: pendingTradeOffer,
+              pendingTradeOffer: offerEligibility.pendingTradeOffer,
+              canMakeOffer: offerEligibility.canMakeOffer,
             ),
           ),
         );

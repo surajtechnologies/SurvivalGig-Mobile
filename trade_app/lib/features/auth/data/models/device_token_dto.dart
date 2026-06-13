@@ -4,16 +4,10 @@ class DeviceTokenRequestModel {
   final String token;
   final String platform;
 
-  const DeviceTokenRequestModel({
-    required this.token,
-    required this.platform,
-  });
+  const DeviceTokenRequestModel({required this.token, required this.platform});
 
   Map<String, dynamic> toJson() {
-    return {
-      'token': token,
-      'platform': platform,
-    };
+    return {'token': token, 'platform': platform};
   }
 }
 
@@ -31,14 +25,18 @@ class DeviceTokenResponseModel {
   });
 
   factory DeviceTokenResponseModel.fromJson(Map<String, dynamic> json) {
+    final data = json['data'];
+    final deviceTokenJson =
+        json['deviceToken'] ??
+        (data is Map<String, dynamic> ? data['deviceToken'] ?? data : null);
+    final deviceToken = deviceTokenJson is Map<String, dynamic>
+        ? DeviceTokenDataModel.fromJson(deviceTokenJson)
+        : null;
+
     return DeviceTokenResponseModel(
-      success: json['success'] as bool? ?? false,
+      success: json['success'] as bool? ?? deviceToken != null,
       message: json['message'] as String? ?? '',
-      deviceToken: json['deviceToken'] != null
-          ? DeviceTokenDataModel.fromJson(
-              json['deviceToken'] as Map<String, dynamic>,
-            )
-          : null,
+      deviceToken: deviceToken,
     );
   }
 }

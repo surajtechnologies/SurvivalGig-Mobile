@@ -7,6 +7,7 @@ import '../../core/network/dio_client.dart';
 import '../../core/network/connectivity_service.dart';
 import '../../core/theme/theme_mode_cubit.dart';
 import '../../core/utils/user_session.dart';
+import '../../core/utils/fcm_notifications.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/datasources/apple_sign_in_local_datasource.dart';
 import '../../features/auth/data/datasources/facebook_sign_in_local_datasource.dart';
@@ -209,6 +210,10 @@ void setupServiceLocator() {
     () => RegisterDeviceTokenUseCase(sl()),
   );
 
+  sl.registerLazySingleton<PushNotificationService>(
+    () => FcmNotifications(registerDeviceTokenUseCase: sl(), userSession: sl()),
+  );
+
   // Auth - Presentation Layer (Factory - new instance each time)
   sl.registerFactory<AuthCubit>(
     () => AuthCubit(
@@ -219,7 +224,7 @@ void setupServiceLocator() {
       registerUseCase: sl(),
       forgotPasswordUseCase: sl(),
       uploadProfileImageUseCase: sl(),
-      registerDeviceTokenUseCase: sl(),
+      pushNotificationService: sl(),
     ),
   );
 
@@ -290,6 +295,7 @@ void setupServiceLocator() {
       detectHomeLocationUseCase: sl(),
       searchAddressLocationUseCase: sl(),
       logoutUseCase: sl(),
+      pushNotificationService: sl(),
       connectivityService: sl(),
     ),
   );
