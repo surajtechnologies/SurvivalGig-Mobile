@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/image_data_url.dart';
 import '../../domain/entities/trade_offer.dart';
@@ -87,7 +88,7 @@ class MakeOfferCubit extends Cubit<MakeOfferState> {
     try {
       // Read file and convert to base64 with MIME type prefix
       final bytes = await file.readAsBytes();
-      final base64Image = imageBytesToDataUrl(bytes);
+      final base64Image = await compute(imageBytesToDataUrl, bytes);
 
       final result = await uploadItemImagesUseCase(base64Images: [base64Image]);
 

@@ -6,6 +6,8 @@ class TradeDetailModel {
   final String id;
   final String status;
   final String offeredByName;
+  final String buyerName;
+  final String sellerName;
   final String title;
   final String description;
   final String? imageUrl;
@@ -20,6 +22,8 @@ class TradeDetailModel {
     required this.id,
     required this.status,
     required this.offeredByName,
+    this.buyerName = '',
+    this.sellerName = '',
     required this.title,
     required this.description,
     this.imageUrl,
@@ -64,27 +68,30 @@ class TradeDetailModel {
     );
 
     final offeredByName = _extractOfferedByName(trade, listing) ?? 'User';
-    final buyerId =
-        _extractUserId(trade['buyer']) ??
-        _readString(trade['buyerId']) ??
-        _readString(trade['buyer_id']) ??
+    final buyerName = _extractBuyerName(trade) ?? '';
+    final sellerName = _extractSellerName(trade, listing) ?? offeredByName;
+    final responderId =
+        _readString(trade['responderId']) ??
+        _readString(trade['responder_id']) ??
         '';
-    final sellerId =
-        _extractUserId(trade['seller']) ??
-        _readString(trade['sellerId']) ??
-        _readString(trade['seller_id']) ??
-        '';
-    final listingOwnerId =
+    final listingOwnerIdCandidate =
         _readString(trade['listingOwnerId']) ??
         _readString(trade['listing_owner_id']) ??
         _readString(trade['ownerId']) ??
         _readString(trade['owner_id']) ??
-        _extractUserId(listing?['user']) ??
-        sellerId;
-    final responderId =
-        _readString(trade['responderId']) ??
-        _readString(trade['responder_id']) ??
-        buyerId;
+        _extractUserId(listing?['user']);
+    final buyerId =
+        _extractUserId(trade['buyer']) ??
+        _readString(trade['buyerId']) ??
+        _readString(trade['buyer_id']) ??
+        responderId;
+    final sellerId =
+        _extractUserId(trade['seller']) ??
+        _readString(trade['sellerId']) ??
+        _readString(trade['seller_id']) ??
+        listingOwnerIdCandidate ??
+        '';
+    final listingOwnerId = listingOwnerIdCandidate ?? sellerId;
     final ownerConfirmed = _readBool(trade['ownerConfirmed']);
     final responderConfirmed = _readBool(trade['responderConfirmed']);
     final buyerConfirmed =
@@ -115,6 +122,8 @@ class TradeDetailModel {
           '',
       status: status,
       offeredByName: offeredByName,
+      buyerName: buyerName,
+      sellerName: sellerName,
       title: title,
       description: description,
       imageUrl: imageUrl,
@@ -132,6 +141,8 @@ class TradeDetailModel {
       id: id,
       status: status,
       offeredByName: offeredByName,
+      buyerName: buyerName,
+      sellerName: sellerName,
       title: title,
       description: description,
       imageUrl: imageUrl,
@@ -266,6 +277,67 @@ class TradeDetailModel {
     }
 
     return _readString(trade['userName']) ?? _readString(trade['username']);
+  }
+
+  static String? _extractBuyerName(Map<String, dynamic> trade) {
+    final buyer = trade['buyer'];
+    if (buyer is Map<String, dynamic>) {
+      final name = _extractUserName(buyer);
+      if (name != null) return name;
+    }
+
+    final responder = trade['responder'];
+    if (responder is Map<String, dynamic>) {
+      final responderId = _extractUserId(responder);
+      final buyerId =
+          _readString(trade['buyerId']) ?? _readString(trade['buyer_id']);
+      if (buyerId == null || responderId == buyerId) {
+        final name = _extractUserName(responder);
+        if (name != null) return name;
+      }
+    }
+
+    return _readString(trade['buyerName']) ??
+        _readString(trade['buyer_name']) ??
+        _readString(trade['buyerUsername']) ??
+        _readString(trade['buyer_username']);
+  }
+
+  static String? _extractSellerName(
+    Map<String, dynamic> trade,
+    Map<String, dynamic>? listing,
+  ) {
+    final seller = trade['seller'];
+    if (seller is Map<String, dynamic>) {
+      final name = _extractUserName(seller);
+      if (name != null) return name;
+    }
+
+    final listingUser = listing?['user'];
+    if (listingUser is Map<String, dynamic>) {
+      final name = _extractUserName(listingUser);
+      if (name != null) return name;
+    }
+
+    final owner = trade['owner'];
+    if (owner is Map<String, dynamic>) {
+      final name = _extractUserName(owner);
+      if (name != null) return name;
+    }
+
+    return _readString(trade['sellerName']) ??
+        _readString(trade['seller_name']) ??
+        _readString(trade['sellerUsername']) ??
+        _readString(trade['seller_username']) ??
+        _readString(trade['ownerName']) ??
+        _readString(trade['owner_name']);
+  }
+
+  static String? _extractUserName(Map<String, dynamic> user) {
+    return _readString(user['name']) ??
+        _readString(user['fullName']) ??
+        _readString(user['full_name']) ??
+        _readString(user['username']);
   }
 
   static String? _extractUserId(dynamic user) {

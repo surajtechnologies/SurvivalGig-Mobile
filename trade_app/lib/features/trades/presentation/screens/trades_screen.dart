@@ -152,14 +152,18 @@ class _TradesViewState extends State<_TradesView> {
           }
 
           final trade = state.trades[index];
+          final currentUserId = sl<UserSession>().currentUser?.id;
           return TradeListItem(
             trade: trade,
-            currentUserId: sl<UserSession>().currentUser?.id,
+            currentUserId: currentUserId,
             onTap: () async {
               final didUpdateTrade = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => TradeDetailScreen(tradeId: trade.id),
+                  builder: (_) => TradeDetailScreen(
+                    tradeId: trade.id,
+                    counterpartyName: trade.displayNameFor(currentUserId),
+                  ),
                 ),
               );
               if (didUpdateTrade == true && context.mounted) {

@@ -244,7 +244,9 @@ class FcmNotifications implements PushNotificationService {
       if (uploaded) {
         _lastUploadedToken = token;
         _lastUploadedUserId = userId;
-        debugPrint('FCM token uploaded successfully for $platform.');
+        if (kDebugMode) {
+          debugPrint('FCM token uploaded successfully for $platform.');
+        }
         return;
       }
 
@@ -282,10 +284,9 @@ class FcmNotifications implements PushNotificationService {
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    debugPrint(
-      'FCM onMessage: id=${message.messageId} data=${message.data} '
-      'notificationTitle=${message.notification?.title}',
-    );
+    if (kDebugMode) {
+      debugPrint('FCM onMessage: id=${message.messageId}');
+    }
 
     final notification = message.notification;
     if (notification == null) return;
@@ -313,10 +314,9 @@ class FcmNotifications implements PushNotificationService {
   }
 
   void _logOpenedMessage(RemoteMessage message) {
-    debugPrint(
-      'FCM notification opened: id=${message.messageId} data=${message.data} '
-      'notificationTitle=${message.notification?.title}',
-    );
+    if (kDebugMode) {
+      debugPrint('FCM notification opened: id=${message.messageId}');
+    }
   }
 
   @override

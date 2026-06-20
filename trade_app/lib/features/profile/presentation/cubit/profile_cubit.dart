@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/image_data_url.dart';
 import '../../domain/usecases/get_profile_usecase.dart';
@@ -76,7 +77,7 @@ class ProfileCubit extends Cubit<ProfileState> {
 
     try {
       final bytes = await file.readAsBytes();
-      final base64Image = imageBytesToDataUrl(bytes);
+      final base64Image = await compute(imageBytesToDataUrl, bytes);
       final result = await uploadProfileImageUseCase(base64Image: base64Image);
 
       result.fold(

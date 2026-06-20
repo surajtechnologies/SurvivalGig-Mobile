@@ -17,11 +17,13 @@ import '../cubit/trade_detail_state.dart';
 class TradeDetailScreen extends StatelessWidget {
   final String tradeId;
   final String? openingMessage;
+  final String? counterpartyName;
 
   const TradeDetailScreen({
     super.key,
     required this.tradeId,
     this.openingMessage,
+    this.counterpartyName,
   });
 
   @override
@@ -30,15 +32,19 @@ class TradeDetailScreen extends StatelessWidget {
       create: (_) =>
           sl<TradeDetailCubit>()
             ..initialize(tradeId, openingMessage: openingMessage),
-      child: _TradeDetailView(tradeId: tradeId),
+      child: _TradeDetailView(
+        tradeId: tradeId,
+        counterpartyName: counterpartyName,
+      ),
     );
   }
 }
 
 class _TradeDetailView extends StatefulWidget {
   final String tradeId;
+  final String? counterpartyName;
 
-  const _TradeDetailView({required this.tradeId});
+  const _TradeDetailView({required this.tradeId, this.counterpartyName});
 
   @override
   State<_TradeDetailView> createState() => _TradeDetailViewState();
@@ -148,9 +154,16 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
     BuildContext context,
     TradeDetailState state,
   ) {
-    final title = state is TradeDetailLoaded
-        ? state.detail.offeredByName
+    final fallbackTitle = widget.counterpartyName?.trim().isNotEmpty == true
+        ? widget.counterpartyName!.trim()
         : 'Details';
+    final currentUserId = sl<UserSession>().currentUser?.id;
+    final title = state is TradeDetailLoaded
+        ? state.detail.displayNameFor(
+            currentUserId,
+            fallbackName: widget.counterpartyName,
+          )
+        : fallbackTitle;
 
     return AppBar(
       backgroundColor: AppColors.dashboardBackground,
@@ -211,7 +224,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
     final currentUserId = sl<UserSession>().currentUser?.id;
     final shouldShowConfirm =
         status == 'ACCEPTED' &&
-        detail.isParticipant(currentUserId) &&
+        isListingOwner &&
         !detail.hasConfirmed(currentUserId);
 
     return Column(
@@ -423,6 +436,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
     }
 
     final currentUserId = sl<UserSession>().currentUser?.id;
+    final messages = _messagesOldestToNewest(state.messages);
 
     return ListView.separated(
       controller: _scrollController,
@@ -433,11 +447,11 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
         AppDimensions.spacingLg,
         AppDimensions.spacingLg,
       ),
-      itemCount: state.messages.length,
+      itemCount: messages.length,
       separatorBuilder: (context, index) =>
           SizedBox(height: AppDimensions.spacingSm),
       itemBuilder: (context, index) {
-        final message = state.messages[index];
+        final message = messages[index];
         final isMine =
             currentUserId != null && message.senderId == currentUserId;
         return _buildMessageBubble(context, message, isMine);
@@ -626,6 +640,27 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
   void _scrollToBottomForKeyboard() {
     _scrollToBottom();
     Future<void>.delayed(const Duration(milliseconds: 300), _scrollToBottom);
+  }
+
+  List<TradeMessage> _messagesOldestToNewest(List<TradeMessage> messages) {
+    final sorted = List<MapEntry<int, TradeMessage>>.generate(
+      messages.length,
+      (index) => MapEntry(index, messages[index]),
+    );
+
+    sorted.sort((a, b) {
+      final aTime = a.value.createdAt;
+      final bTime = b.value.createdAt;
+
+      if (aTime != null && bTime != null) {
+        final timestampComparison = aTime.compareTo(bTime);
+        if (timestampComparison != 0) return timestampComparison;
+      }
+
+      return a.key.compareTo(b.key);
+    });
+
+    return sorted.map((entry) => entry.value).toList();
   }
 
   bool _isListingOwner(TradeDetail detail) {

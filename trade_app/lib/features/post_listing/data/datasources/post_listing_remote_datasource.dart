@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
@@ -85,7 +84,6 @@ class PostListingRemoteDataSourceImpl implements PostListingRemoteDataSource {
   }) async {
     try {
       final requestBody = request.toJson();
-      debugPrint('CREATE LISTING REQUEST BODY: $requestBody');
       final response = await dioClient.dio.post(
         ApiEndpoints.listings,
         data: requestBody,

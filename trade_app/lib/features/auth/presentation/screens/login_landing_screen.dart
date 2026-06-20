@@ -4,6 +4,7 @@ import 'package:trade_app/config/di/service_locator.dart';
 import 'package:trade_app/core/theme/app_colors.dart';
 import 'package:trade_app/core/theme/app_text_styles.dart';
 import 'package:trade_app/core/constants/app_assets.dart';
+import 'package:trade_app/features/app_update/presentation/cubit/app_update_cubit.dart';
 import 'package:trade_app/shared/widgets/primary_button.dart';
 import 'package:trade_app/shared/widgets/secondary_button.dart';
 import 'package:trade_app/features/app_update/presentation/widgets/update_guard.dart';
@@ -36,7 +37,12 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
   void _openHomeRoot() {
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const UpdateGuard(child: HomeScreen())),
+      MaterialPageRoute(
+        builder: (_) => BlocProvider<AppUpdateCubit>(
+          create: (_) => sl<AppUpdateCubit>(),
+          child: const UpdateGuard(child: HomeScreen()),
+        ),
+      ),
       (_) => false,
     );
   }

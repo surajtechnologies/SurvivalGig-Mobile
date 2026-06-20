@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -376,10 +377,10 @@ class _EditListingViewState extends State<_EditListingView> {
                       Positioned.fill(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            photo.url,
+                          child: CachedNetworkImage(
+                            imageUrl: photo.url,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => Container(
+                            errorWidget: (_, _, _) => Container(
                               color: AppColors.dashboardSurfaceElevated,
                               alignment: Alignment.center,
                               child: const Icon(

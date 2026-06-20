@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/update_check_result.dart';
@@ -17,13 +19,23 @@ class UpdateGuard extends StatefulWidget {
 
 class _UpdateGuardState extends State<UpdateGuard> {
   bool _dialogShown = false;
+  Timer? _updateCheckTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppUpdateCubit>().initializeAndCheck();
+      _updateCheckTimer = Timer(const Duration(milliseconds: 800), () {
+        if (!mounted) return;
+        context.read<AppUpdateCubit>().initializeAndCheck();
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    _updateCheckTimer?.cancel();
+    super.dispose();
   }
 
   @override

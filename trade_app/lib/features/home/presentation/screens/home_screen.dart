@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -72,10 +73,15 @@ class _HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<_HomeView> {
   int _selectedNavIndex = 0;
+  final Set<int> _visitedNavIndices = {0};
   GoogleMapController? _googleMapController;
   bool _locationPermissionGranted = false;
   Timer? _idleDebounce;
   Map<String, BitmapDescriptor> _pinIcons = const {};
+  int _pinIconVersion = 0;
+  String? _markerCacheKey;
+  Set<Marker> _markerCache = const {};
+  String? _openListingSheetId;
 
   // Last bounds sent to the API — used to skip duplicate requests
   // that occur when marker updates trigger onCameraIdle internally.
@@ -113,6 +119,8 @@ class _HomeViewState extends State<_HomeView> {
     if (!mounted) return;
     setState(() {
       _pinIcons = icons;
+      _pinIconVersion++;
+      _markerCacheKey = null;
     });
   }
 
@@ -191,9 +199,6 @@ class _HomeViewState extends State<_HomeView> {
     final neLng = bounds.northeast.longitude;
     if (!_boundsChanged(swLat, swLng, neLat, neLng)) return;
     _recordBounds(swLat, swLng, neLat, neLng);
-    debugPrint(
-      '[HomeMap][Google] loadMapListings → swLat=$swLat, swLng=$swLng, neLat=$neLat, neLng=$neLng',
-    );
     await context.read<HomeCubit>().loadMapListings(
       swLat: swLat,
       swLng: swLng,
@@ -220,7 +225,10 @@ class _HomeViewState extends State<_HomeView> {
 
   Future<void> _openTradeChat(String tradeId, {String? openingMessage}) async {
     if (tradeId.isEmpty || !mounted) return;
-    setState(() => _selectedNavIndex = 1);
+    setState(() {
+      _selectedNavIndex = 1;
+      _visitedNavIndices.add(1);
+    });
     await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -313,7 +321,10 @@ class _HomeViewState extends State<_HomeView> {
       return;
     }
 
-    setState(() => _selectedNavIndex = index);
+    setState(() {
+      _selectedNavIndex = index;
+      _visitedNavIndices.add(index);
+    });
   }
 
   @override
@@ -347,12 +358,21 @@ class _HomeViewState extends State<_HomeView> {
                   index: _selectedNavIndex,
                   children: [
                     _buildMapTab(),
-                    const _TabSurface(child: TradesScreen()),
+                    _buildVisitedTab(
+                      index: 1,
+                      child: const _TabSurface(child: TradesScreen()),
+                    ),
                     const SizedBox.shrink(),
-                    const _TabSurface(child: WalletScreen()),
-                    _TabSurface(
-                      child: ProfileScreen(
-                        onLogoutTap: () => context.read<HomeCubit>().logout(),
+                    _buildVisitedTab(
+                      index: 3,
+                      child: const _TabSurface(child: WalletScreen()),
+                    ),
+                    _buildVisitedTab(
+                      index: 4,
+                      child: _TabSurface(
+                        child: ProfileScreen(
+                          onLogoutTap: () => context.read<HomeCubit>().logout(),
+                        ),
                       ),
                     ),
                   ],
@@ -369,6 +389,10 @@ class _HomeViewState extends State<_HomeView> {
         ),
       ),
     );
+  }
+
+  Widget _buildVisitedTab({required int index, required Widget child}) {
+    return _visitedNavIndices.contains(index) ? child : const SizedBox.shrink();
   }
 
   Widget _buildMapTab() {
@@ -443,15 +467,44 @@ class _HomeViewState extends State<_HomeView> {
   }
 
   Set<Marker> _buildMarkers(List<MapListing> listings) {
-    return listings.map((listing) {
+    final cacheKey = _markerKeyFor(listings);
+    if (_markerCacheKey == cacheKey) {
+      return _markerCache;
+    }
+
+    final markers = listings.map((listing) {
       return Marker(
         markerId: MarkerId(listing.id),
         position: LatLng(listing.latitude, listing.longitude),
         icon: _pinIconFor(listing),
         infoWindow: InfoWindow(title: listing.title),
-        onTap: () => _showListingBottomSheet(listing),
+        onTap: () => unawaited(_showListingBottomSheet(listing)),
       );
     }).toSet();
+
+    _markerCacheKey = cacheKey;
+    _markerCache = markers;
+    return markers;
+  }
+
+  String _markerKeyFor(List<MapListing> listings) {
+    final buffer = StringBuffer('$_pinIconVersion:${listings.length}');
+    for (final listing in listings) {
+      buffer
+        ..write('|')
+        ..write(listing.id)
+        ..write(':')
+        ..write(listing.latitude)
+        ..write(',')
+        ..write(listing.longitude)
+        ..write(':')
+        ..write(listing.type)
+        ..write(':')
+        ..write(listing.priceMode ?? '')
+        ..write(':')
+        ..write(listing.title);
+    }
+    return buffer.toString();
   }
 
   BitmapDescriptor _pinIconFor(MapListing listing) {
@@ -475,33 +528,42 @@ class _HomeViewState extends State<_HomeView> {
         BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
   }
 
-  void _showListingBottomSheet(MapListing listing) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: AppColors.transparent,
-      builder: (_) => MultiBlocProvider(
-        providers: [
-          BlocProvider<ListingDetailCubit>(
-            create: (_) => sl<ListingDetailCubit>()..loadListing(listing.id),
+  Future<void> _showListingBottomSheet(MapListing listing) async {
+    if (_openListingSheetId != null) return;
+
+    _openListingSheetId = listing.id;
+    try {
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        backgroundColor: AppColors.transparent,
+        builder: (_) => MultiBlocProvider(
+          providers: [
+            BlocProvider<ListingDetailCubit>(
+              create: (_) => sl<ListingDetailCubit>()..loadListing(listing.id),
+            ),
+            BlocProvider<BuyNowCubit>(create: (_) => sl<BuyNowCubit>()),
+          ],
+          child: _MapListingDetailSheet(
+            mapListing: listing,
+            onListingChanged: ({required listingId, required removeListing}) =>
+                _refreshAfterListingAction(
+                  listingId: listingId,
+                  removeListing: removeListing,
+                ),
+            onOpenTradeChat: (tradeId, {openingMessage}) async {
+              Navigator.pop(context);
+              await _openTradeChat(tradeId, openingMessage: openingMessage);
+            },
           ),
-          BlocProvider<BuyNowCubit>(create: (_) => sl<BuyNowCubit>()),
-        ],
-        child: _MapListingDetailSheet(
-          mapListing: listing,
-          onListingChanged: ({required listingId, required removeListing}) =>
-              _refreshAfterListingAction(
-                listingId: listingId,
-                removeListing: removeListing,
-              ),
-          onOpenTradeChat: (tradeId, {openingMessage}) async {
-            Navigator.pop(context);
-            await _openTradeChat(tradeId, openingMessage: openingMessage);
-          },
         ),
-      ),
-    );
+      );
+    } finally {
+      if (mounted) {
+        _openListingSheetId = null;
+      }
+    }
   }
 
   Widget _buildTopOverlay(BuildContext context, HomeState state) {
@@ -908,11 +970,11 @@ class _MapListingDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
       expand: false,
-      initialChildSize: 0.42,
-      minChildSize: 0.28,
+      initialChildSize: 0.86,
+      minChildSize: 0.42,
       maxChildSize: 0.92,
       snap: true,
-      snapSizes: const [0.42, 0.92],
+      snapSizes: const [0.42, 0.86, 0.92],
       builder: (context, scrollController) {
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
@@ -1188,18 +1250,17 @@ class _ListingPhotoStrip extends StatelessWidget {
                 decoration: const BoxDecoration(
                   color: AppColors.dashboardSurfaceElevated,
                 ),
-                child: Image.network(
-                  photos[index].url,
+                child: CachedNetworkImage(
+                  imageUrl: photos[index].url,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Center(
+                  errorWidget: (context, url, error) => Center(
                     child: Icon(
                       Icons.broken_image_rounded,
                       color: accentColor.withValues(alpha: 0.72),
                       size: AppDimensions.iconSizeLg,
                     ),
                   ),
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
+                  progressIndicatorBuilder: (context, url, progress) {
                     return const Center(
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
@@ -1726,11 +1787,10 @@ class _SellerAvatar extends StatelessWidget {
         height: 44,
         child: avatarUrl == null || avatarUrl.isEmpty
             ? _avatarFallback(initial)
-            : Image.network(
-                avatarUrl,
+            : CachedNetworkImage(
+                imageUrl: avatarUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    _avatarFallback(initial),
+                errorWidget: (context, url, error) => _avatarFallback(initial),
               ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/widgets.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/trade_message.dart';
 import '../../domain/usecases/accept_trade_usecase.dart';
@@ -13,7 +14,8 @@ import '../../domain/usecases/submit_trade_review_usecase.dart';
 import 'trade_detail_state.dart';
 
 /// Trade detail cubit
-class TradeDetailCubit extends Cubit<TradeDetailState> {
+class TradeDetailCubit extends Cubit<TradeDetailState>
+    with WidgetsBindingObserver {
   final GetTradeDetailUseCase getTradeDetailUseCase;
   final AcceptTradeUseCase acceptTradeUseCase;
   final RejectTradeUseCase rejectTradeUseCase;
@@ -25,6 +27,9 @@ class TradeDetailCubit extends Cubit<TradeDetailState> {
   Timer? _pollingTimer;
   DateTime? _lastMessageTimestamp;
   bool _isPollingRequest = false;
+  String? _activeTradeId;
+
+  static const Duration _pollingInterval = Duration(seconds: 15);
 
   TradeDetailCubit({
     required this.getTradeDetailUseCase,
@@ -34,7 +39,9 @@ class TradeDetailCubit extends Cubit<TradeDetailState> {
     required this.getTradeMessagesUseCase,
     required this.sendTradeMessageUseCase,
     required this.submitTradeReviewUseCase,
-  }) : super(const TradeDetailInitial());
+  }) : super(const TradeDetailInitial()) {
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   /// Initialize trade detail and messages with polling
   Future<void> initialize(String tradeId, {String? openingMessage}) async {
@@ -246,17 +253,21 @@ class TradeDetailCubit extends Cubit<TradeDetailState> {
 
   /// Start polling for new messages
   void startPolling(String tradeId) {
+    _activeTradeId = tradeId;
     _pollingTimer?.cancel();
-    _pollingTimer = Timer.periodic(
-      const Duration(seconds: 15),
-      (_) => _pollMessages(tradeId),
-    );
+    if (!_isAppResumed) return;
+    _pollingTimer = Timer.periodic(_pollingInterval, (_) {
+      unawaited(_pollMessages(tradeId));
+    });
   }
 
   /// Stop polling for new messages
-  void stopPolling() {
+  void stopPolling({bool clearActiveTrade = true}) {
     _pollingTimer?.cancel();
     _pollingTimer = null;
+    if (clearActiveTrade) {
+      _activeTradeId = null;
+    }
   }
 
   /// Clear action feedback
@@ -277,8 +288,24 @@ class TradeDetailCubit extends Cubit<TradeDetailState> {
 
   @override
   Future<void> close() {
+    WidgetsBinding.instance.removeObserver(this);
     stopPolling();
     return super.close();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final tradeId = _activeTradeId;
+    if (tradeId == null) return;
+
+    if (state == AppLifecycleState.resumed) {
+      startPolling(tradeId);
+      unawaited(_pollMessages(tradeId));
+      return;
+    }
+
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
   }
 
   Future<bool> _performAction({
@@ -332,6 +359,7 @@ class TradeDetailCubit extends Cubit<TradeDetailState> {
   }
 
   Future<void> _pollMessages(String tradeId) async {
+    if (!_isAppResumed) return;
     if (_isPollingRequest) return;
     _isPollingRequest = true;
     try {
@@ -343,6 +371,12 @@ class TradeDetailCubit extends Cubit<TradeDetailState> {
     } finally {
       _isPollingRequest = false;
     }
+  }
+
+  bool get _isAppResumed {
+    final lifecycleState = WidgetsBinding.instance.lifecycleState;
+    return lifecycleState == null ||
+        lifecycleState == AppLifecycleState.resumed;
   }
 
   void _updateLastMessageTimestamp(List<TradeMessage> messages) {
@@ -386,12 +420,21 @@ class TradeDetailCubit extends Cubit<TradeDetailState> {
   }
 
   List<TradeMessage> _sortMessages(List<TradeMessage> messages) {
-    final sorted = List<TradeMessage>.from(messages);
+    final sorted = List<MapEntry<int, TradeMessage>>.generate(
+      messages.length,
+      (index) => MapEntry(index, messages[index]),
+    );
     sorted.sort((a, b) {
-      final aTime = a.createdAt?.millisecondsSinceEpoch ?? 0;
-      final bTime = b.createdAt?.millisecondsSinceEpoch ?? 0;
-      return aTime.compareTo(bTime);
+      final aTime = a.value.createdAt;
+      final bTime = b.value.createdAt;
+
+      if (aTime != null && bTime != null) {
+        final timestampComparison = aTime.compareTo(bTime);
+        if (timestampComparison != 0) return timestampComparison;
+      }
+
+      return a.key.compareTo(b.key);
     });
-    return sorted;
+    return sorted.map((entry) => entry.value).toList();
   }
 }

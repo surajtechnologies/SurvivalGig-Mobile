@@ -13,7 +13,7 @@ void main() {
   });
 
   testWidgets('starts at login landing when unauthenticated', (tester) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(bootstrapFuture: Future<void>.value()));
     await tester.pump();
 
     expect(find.text('Sign Up'), findsOneWidget);

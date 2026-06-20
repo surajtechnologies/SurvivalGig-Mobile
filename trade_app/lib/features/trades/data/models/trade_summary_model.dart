@@ -13,6 +13,7 @@ class TradeSummaryModel {
   final String description;
   final String? imageUrl;
   final int? points;
+  final int unreadCount;
 
   const TradeSummaryModel({
     required this.id,
@@ -25,6 +26,7 @@ class TradeSummaryModel {
     required this.description,
     this.imageUrl,
     this.points,
+    this.unreadCount = 0,
   });
 
   factory TradeSummaryModel.fromJson(Map<String, dynamic> json) {
@@ -100,6 +102,7 @@ class TradeSummaryModel {
       description: description,
       imageUrl: imageUrl,
       points: points,
+      unreadCount: _readInt(json['unreadCount']) ?? 0,
     );
   }
 
@@ -115,6 +118,7 @@ class TradeSummaryModel {
       description: description,
       imageUrl: imageUrl,
       points: points,
+      unreadCount: unreadCount,
     );
   }
 

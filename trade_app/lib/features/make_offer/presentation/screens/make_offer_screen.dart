@@ -261,7 +261,9 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
             color: AppColors.textSecondary,
           ),
         ),
-        style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textOnDarkPrimary),
+        style: AppTextStyles.bodyLarge.copyWith(
+          color: AppColors.textOnDarkPrimary,
+        ),
         onChanged: (value) {
           final points = int.tryParse(value);
           context.read<MakeOfferCubit>().updatePoints(points);
@@ -356,7 +358,11 @@ class _MakeOfferViewState extends State<_MakeOfferView> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
                         image: DecorationImage(
-                          image: FileImage(File(state.localImagePaths[index])),
+                          image: ResizeImage(
+                            FileImage(File(state.localImagePaths[index])),
+                            width: 140,
+                            height: 140,
+                          ),
                           fit: BoxFit.cover,
                         ),
                       ),

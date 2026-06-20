@@ -10,6 +10,7 @@ class TradeSummary {
   final String description;
   final String? imageUrl;
   final int? points;
+  final int unreadCount;
 
   const TradeSummary({
     required this.id,
@@ -22,6 +23,7 @@ class TradeSummary {
     required this.description,
     this.imageUrl,
     this.points,
+    this.unreadCount = 0,
   });
 
   String displayNameFor(String? currentUserId) {

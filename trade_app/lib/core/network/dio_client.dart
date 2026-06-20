@@ -120,7 +120,9 @@ class DioClient {
         final requestLog = StringBuffer()
           ..writeln('URL: ${options.uri}')
           ..writeln('Method: ${options.method}')
-          ..writeln('Request Header: ${_formatForLog(options.headers)}');
+          ..writeln(
+            'Request Header: ${_formatForLog(_redactHeaders(options.headers))}',
+          );
 
         _logChunked(requestLog.toString());
         handler.next(options);
@@ -153,7 +155,7 @@ class DioClient {
 
     for (final line in message.split('\n')) {
       if (line.length <= chunkSize) {
-        debugPrintSynchronously(line);
+        debugPrint(line);
         continue;
       }
 
@@ -161,25 +163,84 @@ class DioClient {
         final int end = (i + chunkSize < line.length)
             ? i + chunkSize
             : line.length;
-        debugPrintSynchronously(line.substring(i, end));
+        debugPrint(line.substring(i, end));
       }
     }
   }
 
   String _formatForLog(Object? value) {
+    const maxLogLength = 4000;
+
     if (value == null) {
       return 'null';
     }
 
     if (value is String) {
-      return value;
+      return _trimLogValue(value, maxLogLength);
     }
 
     try {
-      return const JsonEncoder.withIndent('  ').convert(value);
+      return _trimLogValue(
+        const JsonEncoder.withIndent('  ').convert(_sanitizeLogValue(value)),
+        maxLogLength,
+      );
     } catch (_) {
-      return value.toString();
+      return _trimLogValue(value.toString(), maxLogLength);
     }
+  }
+
+  Object? _sanitizeLogValue(Object? value) {
+    if (value is Map) {
+      return value.map((key, dynamic nestedValue) {
+        final keyText = key.toString().toLowerCase();
+        if (_isSensitiveLogKey(keyText)) {
+          return MapEntry(key, '<redacted>');
+        }
+
+        if (nestedValue is String && _looksLikeLargeImagePayload(nestedValue)) {
+          return MapEntry(key, '<image payload omitted>');
+        }
+
+        return MapEntry(key, _sanitizeLogValue(nestedValue));
+      });
+    }
+
+    if (value is List) {
+      return value.map(_sanitizeLogValue).toList();
+    }
+
+    if (value is String && _looksLikeLargeImagePayload(value)) {
+      return '<image payload omitted>';
+    }
+
+    return value;
+  }
+
+  Map<String, dynamic> _redactHeaders(Map<String, dynamic> headers) {
+    return headers.map((key, value) {
+      if (_isSensitiveLogKey(key.toLowerCase())) {
+        return MapEntry(key, '<redacted>');
+      }
+      return MapEntry(key, value);
+    });
+  }
+
+  bool _isSensitiveLogKey(String key) {
+    return key == 'authorization' ||
+        key == 'cookie' ||
+        key == 'set-cookie' ||
+        key.contains('token') ||
+        key.contains('secret') ||
+        key.contains('password');
+  }
+
+  bool _looksLikeLargeImagePayload(String value) {
+    return value.startsWith('data:image/') || value.length > 12000;
+  }
+
+  String _trimLogValue(String value, int maxLength) {
+    if (value.length <= maxLength) return value;
+    return '${value.substring(0, maxLength)}... <truncated ${value.length - maxLength} chars>';
   }
 
   /// Create Error Interceptor

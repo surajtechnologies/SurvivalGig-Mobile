@@ -17,6 +17,9 @@ class UserSession {
   static const String _firstLaunchKey = 'has_launched_before';
   static const String _installMarkerKey = 'local_install_marker_v1';
   static const String _appStorageIdentityKey = 'app_storage_identity_v1';
+  static const String _themeModeKey = 'theme_mode';
+  static const String _updateSnoozeTimestampKey = 'update_snooze_timestamp';
+  static const String _updateSnoozeDurationKey = 'update_snooze_duration_hours';
 
   User? _currentUser;
   bool _isFirstLaunch = true;
@@ -87,8 +90,22 @@ class UserSession {
     _isFirstLaunch = false;
     _hasAuthToken = false;
 
-    await _storage.deleteAll();
-    await prefs.clear();
+    await Future.wait([
+      _storage.delete(key: _userKey),
+      _storage.delete(key: _firstLaunchKey),
+      _storage.delete(key: _themeModeKey),
+      _storage.delete(key: AppConfig.accessTokenKey),
+      _storage.delete(key: AppConfig.refreshTokenKey),
+      _storage.delete(key: AppConfig.homeLocationCityKey),
+      _storage.delete(key: AppConfig.homeLocationPincodeKey),
+    ]);
+
+    await Future.wait([
+      prefs.remove(_installMarkerKey),
+      prefs.remove(_appStorageIdentityKey),
+      prefs.remove(_updateSnoozeTimestampKey),
+      prefs.remove(_updateSnoozeDurationKey),
+    ]);
   }
 
   Future<String> _currentAppStorageIdentity() async {

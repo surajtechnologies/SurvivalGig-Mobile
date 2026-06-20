@@ -18,6 +18,7 @@ abstract class AppUpdateRemoteDataSource {
 
 class AppUpdateRemoteDataSourceImpl implements AppUpdateRemoteDataSource {
   final FirebaseRemoteConfig remoteConfig;
+  bool _hasActivatedConfig = false;
 
   AppUpdateRemoteDataSourceImpl({required this.remoteConfig});
 
@@ -27,10 +28,9 @@ class AppUpdateRemoteDataSourceImpl implements AppUpdateRemoteDataSource {
       await remoteConfig.setConfigSettings(
         RemoteConfigSettings(
           fetchTimeout: const Duration(seconds: 10),
-          minimumFetchInterval:
-              kDebugMode
-                  ? Duration.zero
-                  : const Duration(hours: 1),
+          minimumFetchInterval: kDebugMode
+              ? Duration.zero
+              : const Duration(hours: 1),
         ),
       );
 
@@ -44,6 +44,7 @@ class AppUpdateRemoteDataSourceImpl implements AppUpdateRemoteDataSource {
       });
 
       await remoteConfig.fetchAndActivate();
+      _hasActivatedConfig = true;
     } on Exception catch (e) {
       throw CacheException(
         message: 'Failed to initialize remote config: $e',
@@ -57,11 +58,12 @@ class AppUpdateRemoteDataSourceImpl implements AppUpdateRemoteDataSource {
     required bool isSnoozed,
   }) async {
     try {
-      await remoteConfig.fetchAndActivate();
+      if (!_hasActivatedConfig) {
+        await remoteConfig.fetchAndActivate();
+        _hasActivatedConfig = true;
+      }
 
-      final forceUpdateVersion = remoteConfig.getString(
-        'force_update_version',
-      );
+      final forceUpdateVersion = remoteConfig.getString('force_update_version');
       final latestVersion = remoteConfig.getString('latest_version');
       final updateMessage = remoteConfig.getString('update_message');
       final androidStoreUrl = remoteConfig.getString('android_store_url');

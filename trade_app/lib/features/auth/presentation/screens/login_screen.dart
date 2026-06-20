@@ -4,6 +4,7 @@ import '../../../../config/di/service_locator.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../app_update/presentation/cubit/app_update_cubit.dart';
 import '../../../app_update/presentation/widgets/update_guard.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 import '../cubit/auth_cubit.dart';
@@ -43,7 +44,12 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
   void _openHomeRoot() {
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const UpdateGuard(child: HomeScreen())),
+      MaterialPageRoute(
+        builder: (_) => BlocProvider<AppUpdateCubit>(
+          create: (_) => sl<AppUpdateCubit>(),
+          child: const UpdateGuard(child: HomeScreen()),
+        ),
+      ),
       (_) => false,
     );
   }

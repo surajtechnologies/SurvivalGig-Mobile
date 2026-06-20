@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/image_data_url.dart';
 import '../../domain/entities/create_listing.dart';
@@ -266,7 +267,7 @@ class PostListingCubit extends Cubit<PostListingState> {
     try {
       // Read file and convert to base64 with MIME type prefix
       final bytes = await file.readAsBytes();
-      final base64Image = imageBytesToDataUrl(bytes);
+      final base64Image = await compute(imageBytesToDataUrl, bytes);
 
       // Upload image to server
       final result = await uploadImagesUseCase(base64Images: [base64Image]);

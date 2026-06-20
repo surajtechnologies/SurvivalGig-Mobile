@@ -50,17 +50,52 @@ class _PostListingView extends StatefulWidget {
 
 class _PostListingViewState extends State<_PostListingView> {
   final _formKey = GlobalKey<FormState>();
+  final _descriptionFieldKey = GlobalKey();
+  final _scrollController = ScrollController();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _pointsController = TextEditingController();
+  final _descriptionFocusNode = FocusNode();
   final _imagePicker = ImagePicker();
 
   @override
+  void initState() {
+    super.initState();
+    _descriptionFocusNode.addListener(_handleDescriptionFocusChange);
+  }
+
+  @override
   void dispose() {
+    _descriptionFocusNode
+      ..removeListener(_handleDescriptionFocusChange)
+      ..dispose();
+    _scrollController.dispose();
     _titleController.dispose();
     _descriptionController.dispose();
     _pointsController.dispose();
     super.dispose();
+  }
+
+  void _handleDescriptionFocusChange() {
+    if (_descriptionFocusNode.hasFocus) {
+      _ensureDescriptionFieldVisible();
+    }
+  }
+
+  Future<void> _ensureDescriptionFieldVisible() async {
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (!mounted || !_descriptionFocusNode.hasFocus) return;
+
+    final fieldContext = _descriptionFieldKey.currentContext;
+    if (fieldContext == null) return;
+    if (!fieldContext.mounted) return;
+
+    await Scrollable.ensureVisible(
+      fieldContext,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      alignment: 0.18,
+    );
   }
 
   Future<void> _pickImage() async {
@@ -195,9 +230,14 @@ class _PostListingViewState extends State<_PostListingView> {
           body: Stack(
             children: [
               SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
+                controller: _scrollController,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.fromLTRB(
+                  24,
+                  16,
+                  24,
+                  MediaQuery.viewInsetsOf(context).bottom + 32,
                 ),
                 child: Form(
                   key: _formKey,
@@ -237,17 +277,21 @@ class _PostListingViewState extends State<_PostListingView> {
                       const SizedBox(height: 20),
 
                       // 7. Description
-                      _buildTextField(
-                        controller: _descriptionController,
-                        label: 'Description',
-                        hint: 'Describe your post in detail',
-                        onChanged: (value) {
-                          context.read<PostListingCubit>().updateDescription(
-                            value,
-                          );
-                        },
-                        maxLines: 4,
-                        maxLength: 250,
+                      KeyedSubtree(
+                        key: _descriptionFieldKey,
+                        child: _buildTextField(
+                          controller: _descriptionController,
+                          focusNode: _descriptionFocusNode,
+                          label: 'Description',
+                          hint: 'Describe your post in detail',
+                          onChanged: (value) {
+                            context.read<PostListingCubit>().updateDescription(
+                              value,
+                            );
+                          },
+                          maxLines: 4,
+                          maxLength: 250,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Align(
@@ -397,6 +441,9 @@ class _PostListingViewState extends State<_PostListingView> {
                           File(localPath),
                           width: 100,
                           height: 100,
+                          cacheWidth: 200,
+                          cacheHeight: 200,
+                          filterQuality: FilterQuality.low,
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -1036,16 +1083,27 @@ class _PostListingViewState extends State<_PostListingView> {
           permission == LocationPermission.whileInUse;
       if (!hasPermission) return defaultListingLocation;
 
+      final lastKnownPosition = await Geolocator.getLastKnownPosition();
+      if (_isRecentEnough(lastKnownPosition)) {
+        return LatLng(lastKnownPosition!.latitude, lastKnownPosition.longitude);
+      }
+
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 6),
         ),
       );
       return LatLng(position.latitude, position.longitude);
     } catch (_) {
       return defaultListingLocation;
     }
+  }
+
+  bool _isRecentEnough(Position? position) {
+    final timestamp = position?.timestamp;
+    if (timestamp == null) return false;
+    return DateTime.now().difference(timestamp).inMinutes <= 10;
   }
 
   Future<void> _useCurrentLocation() async {
@@ -1131,6 +1189,7 @@ class _PostListingViewState extends State<_PostListingView> {
   /// Build Text Field
   Widget _buildTextField({
     required TextEditingController controller,
+    FocusNode? focusNode,
     required String label,
     required String hint,
     required ValueChanged<String> onChanged,
@@ -1157,6 +1216,7 @@ class _PostListingViewState extends State<_PostListingView> {
           ),
           child: TextFormField(
             controller: controller,
+            focusNode: focusNode,
             maxLines: maxLines,
             maxLength: maxLength,
             maxLengthEnforcement: maxLength == null

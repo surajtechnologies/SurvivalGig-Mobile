@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:trade_app/config/di/service_locator.dart';
+import 'package:trade_app/core/theme/app_colors.dart';
 import 'package:trade_app/core/theme/app_theme.dart';
 import 'package:trade_app/core/utils/fcm_notifications.dart';
 import 'package:trade_app/core/utils/user_session.dart';
@@ -29,17 +30,15 @@ final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  debugPrint(
-    'FCM onBackgroundMessage: id=${message.messageId} data=${message.data} '
-    'notificationTitle=${message.notification?.title}',
-  );
+  if (kDebugMode) {
+    debugPrint('FCM onBackgroundMessage: id=${message.messageId}');
+  }
 }
 
 Future<void> main() async {
   await runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
-      await dotenv.load(fileName: ".env");
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
@@ -47,52 +46,15 @@ Future<void> main() async {
 
       final shouldEnableFirebase = _isFirebaseSupportedPlatform();
 
-      if (shouldEnableFirebase) {
-        await Firebase.initializeApp();
-        await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
-        await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
-          true,
-        );
-
-        FlutterError.onError =
-            FirebaseCrashlytics.instance.recordFlutterFatalError;
-
-        PlatformDispatcher.instance.onError = (error, stack) {
-          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-          return true;
-        };
-
-        FirebaseMessaging.onBackgroundMessage(
-          _firebaseMessagingBackgroundHandler,
-        );
-      }
-
-      // Initialize dependency injection
+      // Initialize dependency injection before runApp so the app shell can render
+      // while slower platform/session setup continues in the bootstrap gate.
       setupServiceLocator();
 
-      final userSession = sl<UserSession>();
-      final didResetLocalState = await userSession
-          .prepareLocalStorageForCurrentInstall();
+      final bootstrapFuture = _bootstrapApp(
+        shouldEnableFirebase: shouldEnableFirebase,
+      );
 
-      if (shouldEnableFirebase && didResetLocalState) {
-        await sl<PushNotificationService>().deleteToken();
-      }
-
-      // Load user session only after reinstall/version reset checks.
-      await userSession.loadUser();
-
-      if (shouldEnableFirebase) {
-        await FirebaseAnalytics.instance.logAppOpen();
-
-        await sl<PushNotificationService>().initialize();
-
-        // Attempt Android native Play Store in-app update
-        if (defaultTargetPlatform == TargetPlatform.android) {
-          sl<PerformNativeUpdateUseCase>().call();
-        }
-      }
-
-      runApp(const MyApp());
+      runApp(MyApp(bootstrapFuture: bootstrapFuture));
     },
     (error, stack) {
       // Best-effort: avoid throwing again if Firebase wasn't initialized.
@@ -107,6 +69,42 @@ Future<void> main() async {
   );
 }
 
+Future<void> _bootstrapApp({required bool shouldEnableFirebase}) async {
+  await dotenv.load(fileName: ".env");
+
+  if (shouldEnableFirebase) {
+    await Firebase.initializeApp();
+    await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  }
+
+  final userSession = sl<UserSession>();
+  final didResetLocalState = await userSession
+      .prepareLocalStorageForCurrentInstall();
+
+  if (shouldEnableFirebase && didResetLocalState) {
+    unawaited(sl<PushNotificationService>().deleteToken());
+  }
+
+  // Load user session only after reinstall/version reset checks.
+  await userSession.loadUser();
+
+  if (shouldEnableFirebase) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_runPostFirstFrameStartupTasks());
+    });
+  }
+}
+
 bool _isFirebaseSupportedPlatform() {
   if (kIsWeb) {
     return false;
@@ -116,8 +114,31 @@ bool _isFirebaseSupportedPlatform() {
       defaultTargetPlatform == TargetPlatform.iOS;
 }
 
+Future<void> _runPostFirstFrameStartupTasks() async {
+  try {
+    await Future<void>.delayed(const Duration(seconds: 2));
+    await FirebaseAnalytics.instance.logAppOpen();
+
+    await sl<PushNotificationService>().initialize();
+
+    // Attempt Android native Play Store in-app update.
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      unawaited(sl<PerformNativeUpdateUseCase>().call());
+    }
+  } catch (error, stack) {
+    try {
+      await FirebaseCrashlytics.instance.recordError(error, stack);
+    } catch (_) {
+      debugPrint('Post-frame startup task failed: $error');
+      debugPrintStack(stackTrace: stack);
+    }
+  }
+}
+
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  final Future<void> bootstrapFuture;
+
+  const MyApp({super.key, required this.bootstrapFuture});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -125,6 +146,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   StreamSubscription<void>? _sessionExpiredSubscription;
+  DateTime? _lastResumeTokenSyncAt;
 
   @override
   void initState() {
@@ -144,11 +166,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed &&
-        sl<UserSession>().isLoggedIn &&
-        _isFirebaseSupportedPlatform()) {
-      unawaited(sl<PushNotificationService>().syncTokenForAuthenticatedUser());
+    if (state != AppLifecycleState.resumed ||
+        !sl<UserSession>().isLoggedIn ||
+        !_isFirebaseSupportedPlatform()) {
+      return;
     }
+
+    final now = DateTime.now();
+    final lastSync = _lastResumeTokenSyncAt;
+    if (lastSync != null && now.difference(lastSync).inMinutes < 10) {
+      return;
+    }
+    _lastResumeTokenSyncAt = now;
+    unawaited(sl<PushNotificationService>().syncTokenForAuthenticatedUser());
   }
 
   void _resetToLoginRoot() {
@@ -165,13 +195,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final userSession = sl<UserSession>();
-
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<LoadingCubit>(create: (context) => sl<LoadingCubit>()),
-        BlocProvider<AppUpdateCubit>(create: (context) => sl<AppUpdateCubit>()),
-      ],
+    return BlocProvider<LoadingCubit>(
+      create: (context) => sl<LoadingCubit>(),
       child: MaterialApp(
         navigatorKey: appNavigatorKey,
         title: 'SurvivalGig',
@@ -185,16 +210,39 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           );
         },
         // Open authenticated routes only when both user and token are present.
-        home: _getHomeScreen(userSession),
+        home: FutureBuilder<void>(
+          future: widget.bootstrapFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const _BootstrapLoadingScreen();
+            }
+            return _getHomeScreen(sl<UserSession>());
+          },
+        ),
       ),
     );
   }
 
   Widget _getHomeScreen(UserSession userSession) {
     if (userSession.isLoggedIn) {
-      return const UpdateGuard(child: HomeScreen());
+      return BlocProvider<AppUpdateCubit>(
+        create: (context) => sl<AppUpdateCubit>(),
+        child: const UpdateGuard(child: HomeScreen()),
+      );
     }
 
     return const LoginLandingScreen();
+  }
+}
+
+class _BootstrapLoadingScreen extends StatelessWidget {
+  const _BootstrapLoadingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: AppColors.dashboardBackground,
+      body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+    );
   }
 }

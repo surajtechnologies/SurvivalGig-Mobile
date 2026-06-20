@@ -23,6 +23,7 @@ class TradeListItem extends StatelessWidget {
     final initial = displayName.trim().isEmpty
         ? '?'
         : displayName.trim()[0].toUpperCase();
+    final hasUnreadMessages = trade.unreadCount > 0;
 
     return InkWell(
       onTap: onTap,
@@ -104,8 +105,42 @@ class TradeListItem extends StatelessWidget {
                 ],
               ),
             ),
+            if (hasUnreadMessages) ...[
+              SizedBox(width: AppDimensions.spacingSm),
+              _UnreadCountBadge(count: trade.unreadCount),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _UnreadCountBadge extends StatelessWidget {
+  final int count;
+
+  const _UnreadCountBadge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final label = count > 99 ? '99+' : count.toString();
+
+    return Container(
+      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: const BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        style: AppTextStyles.bodySmall.copyWith(
+          color: AppColors.white,
+          fontWeight: FontWeight.w800,
+          height: 1,
+        ),
+        maxLines: 1,
       ),
     );
   }

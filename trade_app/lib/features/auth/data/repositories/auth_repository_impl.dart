@@ -40,18 +40,10 @@ class AuthRepositoryImpl implements AuthRepository {
     required this.userSession,
   });
 
-  void _printGoogleIdTokenUntruncated(String idToken) {
+  void _logGoogleIdTokenReceived(String idToken) {
     if (!kDebugMode) return;
 
-    const int chunkSize = 800;
-    debugPrintSynchronously('GOOGLE_ID_TOKEN_START');
-    for (int start = 0; start < idToken.length; start += chunkSize) {
-      final int end = (start + chunkSize < idToken.length)
-          ? start + chunkSize
-          : idToken.length;
-      debugPrintSynchronously(idToken.substring(start, end));
-    }
-    debugPrintSynchronously('GOOGLE_ID_TOKEN_END');
+    debugPrint('Google ID token received (${idToken.length} chars).');
   }
 
   @override
@@ -117,7 +109,7 @@ class AuthRepositoryImpl implements AuthRepository {
       await dioClient.saveAccessToken(response.accessToken);
       await dioClient.saveRefreshToken(response.refreshToken);
 
-      _printGoogleIdTokenUntruncated(idToken);
+      _logGoogleIdTokenReceived(idToken);
 
       final user = response.user.toEntity();
       await userSession.setUser(user);

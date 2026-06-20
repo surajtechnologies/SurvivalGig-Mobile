@@ -67,13 +67,14 @@ class _ResetPasswordScreenContentState
 
   // Email validation
   String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
+    final email = value?.trim() ?? '';
+    if (email.isEmpty) {
       return 'Email address is required';
     }
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
-    if (!emailRegex.hasMatch(value)) {
+    if (!emailRegex.hasMatch(email)) {
       return 'You have entered invalid email address. Please re-enter your email address.';
     }
     return null;

@@ -70,7 +70,7 @@ class _ResetPasswordViewState extends State<_ResetPasswordView> {
       },
       builder: (context, state) {
         if (state is ResetPasswordInitial) {
-          return const Center(child: CircularProgressIndicator());
+          return _buildLoadingState();
         }
 
         if (state is ResetPasswordError) {
@@ -81,8 +81,36 @@ class _ResetPasswordViewState extends State<_ResetPasswordView> {
           return _buildLoadedState(state);
         }
 
-        return const SizedBox.shrink();
+        return _buildLoadingState();
       },
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Scaffold(
+      backgroundColor: AppColors.dashboardBackground,
+      appBar: AppBar(
+        backgroundColor: AppColors.dashboardBackground,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back,
+            color: AppColors.textOnDarkPrimary,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Reset Password',
+          style: AppTextStyles.headlineMedium.copyWith(
+            color: AppColors.textOnDarkPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      ),
     );
   }
 
@@ -93,7 +121,10 @@ class _ResetPasswordViewState extends State<_ResetPasswordView> {
         backgroundColor: AppColors.dashboardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textOnDarkPrimary),
+          icon: const Icon(
+            Icons.arrow_back,
+            color: AppColors.textOnDarkPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -279,7 +310,9 @@ class _ResetPasswordViewState extends State<_ResetPasswordView> {
       controller: controller,
       enabled: enabled,
       obscureText: obscureText,
-      style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textOnDarkPrimary),
+      style: AppTextStyles.bodyLarge.copyWith(
+        color: AppColors.textOnDarkPrimary,
+      ),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: AppTextStyles.bodyLarge.copyWith(
@@ -360,6 +393,26 @@ class _ResetPasswordViewState extends State<_ResetPasswordView> {
 
   Widget _buildErrorState(ResetPasswordError state) {
     return Scaffold(
+      backgroundColor: AppColors.dashboardBackground,
+      appBar: AppBar(
+        backgroundColor: AppColors.dashboardBackground,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back,
+            color: AppColors.textOnDarkPrimary,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Reset Password',
+          style: AppTextStyles.headlineMedium.copyWith(
+            color: AppColors.textOnDarkPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(AppDimensions.spacingLg),

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
@@ -1238,21 +1239,15 @@ class _ListingImageCarouselState extends State<_ListingImageCarousel> {
           ),
         );
       },
-      child: Image.network(
-        url,
+      child: CachedNetworkImage(
+        imageUrl: url,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
+        errorWidget: (context, url, error) {
           return widget.placeholder;
         },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
+        progressIndicatorBuilder: (context, url, loadingProgress) {
           return Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
-                  : null,
-            ),
+            child: CircularProgressIndicator(value: loadingProgress.progress),
           );
         },
       ),
@@ -1348,25 +1343,20 @@ class _ListingImageGalleryScreenState
                     child: InteractiveViewer(
                       minScale: 1,
                       maxScale: 4,
-                      child: Image.network(
-                        photos[index].url,
+                      child: CachedNetworkImage(
+                        imageUrl: photos[index].url,
                         fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
+                        errorWidget: (context, url, error) {
                           return widget.placeholder;
                         },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) {
-                            return child;
-                          }
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          );
-                        },
+                        progressIndicatorBuilder:
+                            (context, url, loadingProgress) {
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.progress,
+                                ),
+                              );
+                            },
                       ),
                     ),
                   );
@@ -1437,10 +1427,10 @@ class _ListingImageGalleryScreenState
                           borderRadius: BorderRadius.circular(
                             AppDimensions.radiusMd,
                           ),
-                          child: Image.network(
-                            photos[index].url,
+                          child: CachedNetworkImage(
+                            imageUrl: photos[index].url,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
+                            errorWidget: (context, url, error) {
                               return widget.placeholder;
                             },
                           ),

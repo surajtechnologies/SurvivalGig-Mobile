@@ -26,20 +26,35 @@ class HomeLocationDataSourceImpl implements HomeLocationDataSource {
         return null;
       }
 
+      final lastKnownPosition = await Geolocator.getLastKnownPosition();
+      if (_isRecentEnough(lastKnownPosition)) {
+        return _toCoordinate(lastKnownPosition!);
+      }
+
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 6),
         ),
       );
 
-      return MapCoordinateModel(
-        latitude: position.latitude,
-        longitude: position.longitude,
-      );
+      return _toCoordinate(position);
     } catch (_) {
       return null;
     }
+  }
+
+  MapCoordinateModel _toCoordinate(Position position) {
+    return MapCoordinateModel(
+      latitude: position.latitude,
+      longitude: position.longitude,
+    );
+  }
+
+  bool _isRecentEnough(Position? position) {
+    final timestamp = position?.timestamp;
+    if (timestamp == null) return false;
+    return DateTime.now().difference(timestamp).inMinutes <= 10;
   }
 
   @override

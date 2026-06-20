@@ -162,6 +162,7 @@ class ListingDetailRemoteDataSourceImpl
       final response = await dioClient.dio.get(
         ApiEndpoints.getUserReviews(userId),
         queryParameters: {'page': page, 'limit': limit},
+        options: Options(extra: {'skipLoading': true}),
       );
 
       if (response.statusCode == 200) {
@@ -305,6 +306,7 @@ class ListingDetailRemoteDataSourceImpl
       final response = await dioClient.dio.get(
         ApiEndpoints.listingTrades(listingId),
         queryParameters: {'page': 1, 'limit': 100},
+        options: Options(extra: {'skipLoading': true}),
       );
 
       if (response.statusCode == 200) {

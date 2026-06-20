@@ -3,6 +3,8 @@ class TradeDetail {
   final String id;
   final String status;
   final String offeredByName;
+  final String buyerName;
+  final String sellerName;
   final String title;
   final String description;
   final String? imageUrl;
@@ -17,6 +19,8 @@ class TradeDetail {
     required this.id,
     required this.status,
     required this.offeredByName,
+    this.buyerName = '',
+    this.sellerName = '',
     required this.title,
     required this.description,
     this.imageUrl,
@@ -39,5 +43,32 @@ class TradeDetail {
     if (id == buyerId) return buyerConfirmed;
     if (id == sellerId) return sellerConfirmed;
     return false;
+  }
+
+  String displayNameFor(String? currentUserId, {String? fallbackName}) {
+    final userId = currentUserId?.trim() ?? '';
+    final fallback = fallbackName?.trim() ?? '';
+
+    if (userId.isNotEmpty && userId == sellerId && buyerName.isNotEmpty) {
+      return buyerName;
+    }
+
+    if (userId.isNotEmpty && userId == buyerId && sellerName.isNotEmpty) {
+      return sellerName;
+    }
+
+    if (fallback.isNotEmpty) {
+      return fallback;
+    }
+
+    if (buyerName.isNotEmpty && buyerId != userId) {
+      return buyerName;
+    }
+
+    if (sellerName.isNotEmpty && sellerId != userId) {
+      return sellerName;
+    }
+
+    return offeredByName.isNotEmpty ? offeredByName : 'User';
   }
 }

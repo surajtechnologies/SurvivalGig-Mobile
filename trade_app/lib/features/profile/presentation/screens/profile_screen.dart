@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../config/di/service_locator.dart';
 import '../../../../core/constants/app_dimensions.dart';
@@ -588,10 +589,10 @@ class _ProfileAvatarButton extends StatelessWidget {
 
   Widget _buildAvatarContent() {
     if (imageUrl != null && imageUrl!.trim().isNotEmpty) {
-      return Image.network(
-        imageUrl!,
+      return CachedNetworkImage(
+        imageUrl: imageUrl!,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _buildInitial(),
+        errorWidget: (context, url, error) => _buildInitial(),
       );
     }
     return _buildInitial();

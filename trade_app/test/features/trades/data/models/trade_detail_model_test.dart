@@ -26,4 +26,57 @@ void main() {
     expect(trade.hasConfirmed('buyer-id'), isFalse);
     expect(trade.hasConfirmed('seller-id'), isTrue);
   });
+
+  test('uses buyer name separately from listing owner name', () {
+    final trade = TradeDetailModel.fromResponse({
+      'success': true,
+      'trade': {
+        'id': 'trade-id',
+        'status': 'PENDING',
+        'buyerId': 'buyer-id',
+        'sellerId': 'seller-id',
+        'buyer': {'id': 'buyer-id', 'name': 'Buyer Person'},
+        'seller': {'id': 'seller-id', 'name': 'Seller Person'},
+        'listing': {
+          'id': 'listing-id',
+          'title': 'Vintage Camera',
+          'description': 'Listing description',
+          'user': {'id': 'seller-id', 'name': 'Listed Person'},
+        },
+      },
+    }).toEntity();
+
+    expect(trade.buyerName, 'Buyer Person');
+    expect(trade.sellerName, 'Seller Person');
+    expect(trade.offeredByName, 'Listed Person');
+    expect(trade.displayNameFor('buyer-id'), 'Seller Person');
+    expect(trade.displayNameFor('seller-id'), 'Buyer Person');
+  });
+
+  test(
+    'falls back to listing owner id and responder id for participant names',
+    () {
+      final trade = TradeDetailModel.fromResponse({
+        'success': true,
+        'trade': {
+          'id': 'trade-id',
+          'status': 'PENDING',
+          'listingOwnerId': 'seller-id',
+          'responderId': 'buyer-id',
+          'buyer': {'id': 'buyer-id', 'name': 'Buyer Person'},
+          'listing': {
+            'id': 'listing-id',
+            'title': 'Vintage Camera',
+            'description': 'Listing description',
+            'user': {'id': 'seller-id', 'name': 'Listed Person'},
+          },
+        },
+      }).toEntity();
+
+      expect(trade.buyerId, 'buyer-id');
+      expect(trade.sellerId, 'seller-id');
+      expect(trade.displayNameFor('buyer-id'), 'Listed Person');
+      expect(trade.displayNameFor('seller-id'), 'Buyer Person');
+    },
+  );
 }
