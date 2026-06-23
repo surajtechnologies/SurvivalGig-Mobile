@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -58,7 +60,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<HomeCubit>()..loadInitialData(),
+      create: (_) => sl<HomeCubit>(),
       child: const _HomeView(),
     );
   }
@@ -73,6 +75,8 @@ class _HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<_HomeView> {
   int _selectedNavIndex = 0;
+  int _chatRefreshSignal = 0;
+  int _walletRefreshSignal = 0;
   final Set<int> _visitedNavIndices = {0};
   GoogleMapController? _googleMapController;
   bool _locationPermissionGranted = false;
@@ -92,7 +96,7 @@ class _HomeViewState extends State<_HomeView> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkLocationPermission();
+      unawaited(_loadHomeAfterLocationPermission());
       _preparePinIcons();
     });
   }
@@ -152,14 +156,38 @@ class _HomeViewState extends State<_HomeView> {
     return data?.buffer.asUint8List() ?? Uint8List(0);
   }
 
-  Future<void> _checkLocationPermission() async {
-    final permission = await Geolocator.checkPermission();
+  Future<void> _loadHomeAfterLocationPermission() async {
+    await _requestLocationPermissionIfNeeded();
     if (!mounted) return;
-    setState(() {
-      _locationPermissionGranted =
-          permission == LocationPermission.always ||
-          permission == LocationPermission.whileInUse;
-    });
+    await context.read<HomeCubit>().loadInitialData();
+  }
+
+  Future<void> _requestLocationPermissionIfNeeded() async {
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (_shouldRequestLocationPermission(permission)) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (!mounted) return;
+      setState(() {
+        _locationPermissionGranted =
+            permission == LocationPermission.always ||
+            permission == LocationPermission.whileInUse;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _locationPermissionGranted = false;
+      });
+    }
+  }
+
+  bool _shouldRequestLocationPermission(LocationPermission permission) {
+    if (kIsWeb) return false;
+    final isSupportedPlatform =
+        defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+    return isSupportedPlatform && permission == LocationPermission.denied;
   }
 
   void _onGoogleMapCreated(GoogleMapController controller) {
@@ -227,6 +255,7 @@ class _HomeViewState extends State<_HomeView> {
     if (tradeId.isEmpty || !mounted) return;
     setState(() {
       _selectedNavIndex = 1;
+      _chatRefreshSignal++;
       _visitedNavIndices.add(1);
     });
     await Navigator.push<bool>(
@@ -323,6 +352,11 @@ class _HomeViewState extends State<_HomeView> {
 
     setState(() {
       _selectedNavIndex = index;
+      if (index == 1) {
+        _chatRefreshSignal++;
+      } else if (index == 3) {
+        _walletRefreshSignal++;
+      }
       _visitedNavIndices.add(index);
     });
   }
@@ -344,7 +378,7 @@ class _HomeViewState extends State<_HomeView> {
           _moveCameraTo(state.cameraTarget!, zoom: 14);
           if (_googleMapController == null) return;
           context.read<HomeCubit>().clearCameraTarget();
-          _checkLocationPermission();
+          unawaited(_requestLocationPermissionIfNeeded());
         }
       },
       child: SizedBox.expand(
@@ -360,12 +394,22 @@ class _HomeViewState extends State<_HomeView> {
                     _buildMapTab(),
                     _buildVisitedTab(
                       index: 1,
-                      child: const _TabSurface(child: TradesScreen()),
+                      child: _TabSurface(
+                        child: TradesScreen(
+                          isVisible: _selectedNavIndex == 1,
+                          refreshSignal: _chatRefreshSignal,
+                        ),
+                      ),
                     ),
                     const SizedBox.shrink(),
                     _buildVisitedTab(
                       index: 3,
-                      child: const _TabSurface(child: WalletScreen()),
+                      child: _TabSurface(
+                        child: WalletScreen(
+                          isVisible: _selectedNavIndex == 3,
+                          refreshSignal: _walletRefreshSignal,
+                        ),
+                      ),
                     ),
                     _buildVisitedTab(
                       index: 4,
@@ -1244,35 +1288,231 @@ class _ListingPhotoStrip extends StatelessWidget {
         itemBuilder: (context, index) {
           return AspectRatio(
             aspectRatio: 1.35,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-              child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  color: AppColors.dashboardSurfaceElevated,
-                ),
-                child: CachedNetworkImage(
-                  imageUrl: photos[index].url,
-                  fit: BoxFit.cover,
-                  errorWidget: (context, url, error) => Center(
-                    child: Icon(
-                      Icons.broken_image_rounded,
-                      color: accentColor.withValues(alpha: 0.72),
-                      size: AppDimensions.iconSizeLg,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => _MapListingImageGalleryScreen(
+                      photos: photos,
+                      initialIndex: index,
+                      accentColor: accentColor,
                     ),
                   ),
-                  progressIndicatorBuilder: (context, url, progress) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.primary,
+                );
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    color: AppColors.dashboardSurfaceElevated,
+                  ),
+                  child: CachedNetworkImage(
+                    imageUrl: photos[index].url,
+                    fit: BoxFit.cover,
+                    errorWidget: (context, url, error) => Center(
+                      child: Icon(
+                        Icons.broken_image_rounded,
+                        color: accentColor.withValues(alpha: 0.72),
+                        size: AppDimensions.iconSizeLg,
                       ),
-                    );
-                  },
+                    ),
+                    progressIndicatorBuilder: (context, url, progress) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primary,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _MapListingImageGalleryScreen extends StatefulWidget {
+  final List<ListingPhoto> photos;
+  final int initialIndex;
+  final Color accentColor;
+
+  const _MapListingImageGalleryScreen({
+    required this.photos,
+    required this.initialIndex,
+    required this.accentColor,
+  });
+
+  @override
+  State<_MapListingImageGalleryScreen> createState() =>
+      _MapListingImageGalleryScreenState();
+}
+
+class _MapListingImageGalleryScreenState
+    extends State<_MapListingImageGalleryScreen> {
+  late final PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final thumbnailSize =
+        AppDimensions.chatListImageSize + AppDimensions.spacingLg;
+
+    return Scaffold(
+      backgroundColor: AppColors.black,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close, color: AppColors.white),
+              ),
+            ),
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: widget.photos.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  return Center(
+                    child: InteractiveViewer(
+                      minScale: 1,
+                      maxScale: 4,
+                      child: CachedNetworkImage(
+                        imageUrl: widget.photos[index].url,
+                        fit: BoxFit.contain,
+                        errorWidget: (context, url, error) =>
+                            _buildImageError(),
+                        progressIndicatorBuilder: (context, url, progress) {
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: progress.progress,
+                              color: AppColors.primary,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            if (widget.photos.length > 1) ...[
+              SizedBox(height: AppDimensions.spacingMd),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(widget.photos.length, (index) {
+                  final isSelected = index == _currentIndex;
+                  return Container(
+                    width: isSelected
+                        ? AppDimensions.spacingMd
+                        : AppDimensions.spacingSm,
+                    height: AppDimensions.spacingSm,
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.spacingXs / 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.white
+                          : AppColors.textOnDarkSecondary,
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.spacingSm,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              SizedBox(height: AppDimensions.spacingMd),
+              SizedBox(
+                height: thumbnailSize,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppDimensions.spacingLg,
+                  ),
+                  itemCount: widget.photos.length,
+                  separatorBuilder: (_, _) =>
+                      SizedBox(width: AppDimensions.spacingMd),
+                  itemBuilder: (context, index) {
+                    final isSelected = index == _currentIndex;
+                    return GestureDetector(
+                      onTap: () {
+                        _pageController.animateToPage(
+                          index,
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      child: Container(
+                        width: thumbnailSize,
+                        height: thumbnailSize,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            AppDimensions.radiusMd,
+                          ),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.transparent,
+                            width: AppDimensions.spacingXs / 2,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            AppDimensions.radiusMd,
+                          ),
+                          child: CachedNetworkImage(
+                            imageUrl: widget.photos[index].url,
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) =>
+                                _buildImageError(),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: AppDimensions.spacingLg),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageError() {
+    return DecoratedBox(
+      decoration: const BoxDecoration(color: AppColors.dashboardSurface),
+      child: Center(
+        child: Icon(
+          Icons.broken_image_rounded,
+          color: widget.accentColor.withValues(alpha: 0.72),
+          size: AppDimensions.iconSizeXl,
+        ),
       ),
     );
   }
@@ -1892,9 +2132,9 @@ class _PendingOfferBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.12),
+        color: AppColors.primary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(
@@ -1905,17 +2145,17 @@ class _PendingOfferBanner extends StatelessWidget {
           children: [
             const Icon(
               Icons.pending_actions_rounded,
-              color: AppColors.warning,
+              color: AppColors.primary,
               size: AppDimensions.iconSizeSm,
             ),
             SizedBox(width: AppDimensions.spacingXs),
             Expanded(
               child: Text(
-                'You already have a pending offer for this listing',
-                maxLines: 1,
+                'You already have a pending offer for this listing. Waiting for the poster\'s response.',
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.warning,
+                  color: AppColors.primary,
                   fontWeight: FontWeight.w800,
                 ),
               ),

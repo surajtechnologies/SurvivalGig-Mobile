@@ -220,6 +220,7 @@ class FcmNotifications implements PushNotificationService {
   }
 
   Future<void> _uploadToken(String token) async {
+    debugPrint('FCM Token: $token');
     final userId = _userSession.currentUser?.id;
     if (userId == null || !_userSession.isLoggedIn) return;
     if (_lastUploadedToken == token && _lastUploadedUserId == userId) return;

@@ -13,12 +13,14 @@ import 'package:trade_app/core/theme/app_colors.dart';
 import 'package:trade_app/core/theme/app_theme.dart';
 import 'package:trade_app/core/utils/fcm_notifications.dart';
 import 'package:trade_app/core/utils/user_session.dart';
+import 'package:trade_app/features/auth/domain/entities/user.dart';
 import 'package:trade_app/features/auth/presentation/screens/login_landing_screen.dart';
 import 'package:trade_app/features/common/presentation/cubit/loading_cubit.dart';
 import 'package:trade_app/features/home/presentation/screens/home_screen.dart';
 import 'package:trade_app/features/app_update/presentation/cubit/app_update_cubit.dart';
 import 'package:trade_app/features/app_update/presentation/widgets/update_guard.dart';
 import 'package:trade_app/features/app_update/domain/usecases/perform_native_update_usecase.dart';
+import 'package:trade_app/features/profile/data/datasources/profile_remote_datasource.dart';
 import 'package:trade_app/shared/widgets/loading_overlay.dart';
 import 'package:trade_app/shared/widgets/keyboard_dismiss_scope.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -97,11 +99,28 @@ Future<void> _bootstrapApp({required bool shouldEnableFirebase}) async {
 
   // Load user session only after reinstall/version reset checks.
   await userSession.loadUser();
+  await _hydrateMissingUserSession(userSession);
 
   if (shouldEnableFirebase) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_runPostFirstFrameStartupTasks());
     });
+  }
+}
+
+Future<void> _hydrateMissingUserSession(UserSession userSession) async {
+  if (userSession.currentUser != null || !userSession.hasValidAuthToken) return;
+
+  try {
+    final profile = await sl<ProfileRemoteDataSource>().getProfile();
+    if (profile.id.trim().isEmpty) return;
+
+    await userSession.setUser(
+      User(id: profile.id, email: profile.email, name: profile.fullName),
+    );
+  } catch (error, stackTrace) {
+    debugPrint('Unable to hydrate user session from stored token: $error');
+    debugPrintStack(stackTrace: stackTrace);
   }
 }
 
@@ -209,7 +228,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             child: LoadingOverlay(child: child ?? const SizedBox.shrink()),
           );
         },
-        // Open authenticated routes only when both user and token are present.
+        // Open authenticated routes when a usable auth token is present.
         home: FutureBuilder<void>(
           future: widget.bootstrapFuture,
           builder: (context, snapshot) {

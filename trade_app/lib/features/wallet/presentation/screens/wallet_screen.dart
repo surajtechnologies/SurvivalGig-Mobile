@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../config/di/service_locator.dart';
@@ -12,19 +14,64 @@ import '../widgets/wallet_transaction_item.dart';
 
 /// Wallet screen (Bottom tab)
 class WalletScreen extends StatelessWidget {
-  const WalletScreen({super.key});
+  final bool isVisible;
+  final int refreshSignal;
+
+  const WalletScreen({
+    super.key,
+    this.isVisible = true,
+    this.refreshSignal = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => sl<WalletCubit>()..loadWallet(),
-      child: const _WalletView(),
+      child: _WalletView(isVisible: isVisible, refreshSignal: refreshSignal),
     );
   }
 }
 
-class _WalletView extends StatelessWidget {
-  const _WalletView();
+class _WalletView extends StatefulWidget {
+  final bool isVisible;
+  final int refreshSignal;
+
+  const _WalletView({required this.isVisible, required this.refreshSignal});
+
+  @override
+  State<_WalletView> createState() => _WalletViewState();
+}
+
+class _WalletViewState extends State<_WalletView> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didUpdateWidget(covariant _WalletView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final becameVisible = widget.isVisible && !oldWidget.isVisible;
+    final requestedRefresh =
+        widget.isVisible && widget.refreshSignal != oldWidget.refreshSignal;
+    if (becameVisible || requestedRefresh) {
+      unawaited(context.read<WalletCubit>().refresh());
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && widget.isVisible) {
+      unawaited(context.read<WalletCubit>().refresh());
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../config/di/service_locator.dart';
@@ -12,36 +14,66 @@ import '../widgets/trade_list_item.dart';
 
 /// Trades screen (Chat tab)
 class TradesScreen extends StatelessWidget {
-  const TradesScreen({super.key});
+  final bool isVisible;
+  final int refreshSignal;
+
+  const TradesScreen({
+    super.key,
+    this.isVisible = true,
+    this.refreshSignal = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => sl<TradesCubit>()..loadTrades(),
-      child: const _TradesView(),
+      child: _TradesView(isVisible: isVisible, refreshSignal: refreshSignal),
     );
   }
 }
 
 class _TradesView extends StatefulWidget {
-  const _TradesView();
+  final bool isVisible;
+  final int refreshSignal;
+
+  const _TradesView({required this.isVisible, required this.refreshSignal});
 
   @override
   State<_TradesView> createState() => _TradesViewState();
 }
 
-class _TradesViewState extends State<_TradesView> {
+class _TradesViewState extends State<_TradesView> with WidgetsBindingObserver {
   late final ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
   }
 
   @override
+  void didUpdateWidget(covariant _TradesView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final becameVisible = widget.isVisible && !oldWidget.isVisible;
+    final requestedRefresh =
+        widget.isVisible && widget.refreshSignal != oldWidget.refreshSignal;
+    if (becameVisible || requestedRefresh) {
+      unawaited(context.read<TradesCubit>().refresh());
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && widget.isVisible) {
+      unawaited(context.read<TradesCubit>().refresh());
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();

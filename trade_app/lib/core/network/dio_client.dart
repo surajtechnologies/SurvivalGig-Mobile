@@ -71,15 +71,24 @@ class DioClient {
     return InterceptorsWrapper(
       onRequest: (options, handler) async {
         // Skip auth for auth endpoints
-        if (options.path.contains('/auth/login') ||
-            options.path.contains('/auth/register') ||
-            options.path.contains('/auth/mobile')) {
+        if (_isAuthEndpoint(options.path)) {
           return handler.next(options);
         }
 
         // Attach access token
         final token = await _storage.read(key: AppConfig.accessTokenKey);
-        if (token != null) {
+        if (token != null && token.isNotEmpty) {
+          if (UserSession.isJwtExpired(token)) {
+            await _expireSession();
+            return handler.reject(
+              DioException(
+                requestOptions: options,
+                type: DioExceptionType.cancel,
+                error: 'Access token expired',
+              ),
+            );
+          }
+
           options.headers['Authorization'] = 'Bearer $token';
         }
 
@@ -93,7 +102,7 @@ class DioClient {
               requestOptions: response.requestOptions,
               response: response,
               type: DioExceptionType.badResponse,
-              error: 'No token provided',
+              error: 'Unauthorized',
             ),
           );
         }
@@ -293,14 +302,7 @@ class DioClient {
     }
 
     final statusCode = response?.statusCode ?? error?.response?.statusCode;
-    if (statusCode == 401) {
-      return true;
-    }
-
-    return _containsNoTokenProvided(response?.data) ||
-        _containsNoTokenProvided(error?.response?.data) ||
-        _containsNoTokenProvided(error?.message) ||
-        _containsNoTokenProvided(error?.error);
+    return statusCode == 401;
   }
 
   bool _isAuthEndpoint(String path) {
@@ -311,24 +313,6 @@ class DioClient {
         path.contains('/auth/reset-password') ||
         path.contains('/auth/verify-email') ||
         path.contains('/auth/resend-verification');
-  }
-
-  bool _containsNoTokenProvided(Object? value) {
-    if (value == null) return false;
-
-    if (value is String) {
-      return value.toLowerCase().contains('no token provided');
-    }
-
-    if (value is Map) {
-      return value.values.any(_containsNoTokenProvided);
-    }
-
-    if (value is Iterable) {
-      return value.any(_containsNoTokenProvided);
-    }
-
-    return value.toString().toLowerCase().contains('no token provided');
   }
 
   Future<void> _expireSession() async {

@@ -33,8 +33,11 @@ class UserSession {
   /// Get the current logged-in user
   User? get currentUser => _currentUser;
 
-  /// Check if user is logged in
-  bool get isLoggedIn => _currentUser != null && _hasAuthToken;
+  /// Check if user has a usable local auth session.
+  bool get isLoggedIn => _hasAuthToken;
+
+  /// Check if a non-expired access token is available locally.
+  bool get hasValidAuthToken => _hasAuthToken;
 
   /// Check if this is the first app launch
   bool get isFirstLaunch => _isFirstLaunch;
@@ -63,26 +66,19 @@ class UserSession {
     await _clearPersistedLocalStorage(prefs);
   }
 
-  /// Reset local state when this is a fresh install or a new app version/build.
+  /// Record local install metadata without touching auth state.
+  ///
+  /// App install markers and version/build changes must not clear auth. The
+  /// user should be sent back to login only when the stored token is
+  /// expired/missing, a 401 is received, or they explicitly log out.
   Future<bool> prepareLocalStorageForCurrentInstall() async {
     final prefs = await SharedPreferences.getInstance();
     final currentIdentity = await _currentAppStorageIdentity();
-    final hasInstallMarker = prefs.getBool(_installMarkerKey) ?? false;
-    final storedIdentity = prefs.getString(_appStorageIdentityKey);
-
-    final shouldReset =
-        !hasInstallMarker ||
-        storedIdentity == null ||
-        storedIdentity != currentIdentity;
-
-    if (shouldReset) {
-      await _clearPersistedLocalStorage(prefs);
-    }
 
     await prefs.setBool(_installMarkerKey, true);
     await prefs.setString(_appStorageIdentityKey, currentIdentity);
 
-    return shouldReset;
+    return false;
   }
 
   Future<void> _clearPersistedLocalStorage(SharedPreferences prefs) async {
@@ -140,16 +136,16 @@ class UserSession {
     final hasLaunchedBefore = await _storage.read(key: _firstLaunchKey);
     _isFirstLaunch = hasLaunchedBefore == null;
 
-    _hasAuthToken = await _hasStoredAccessToken();
-    if (!_hasAuthToken) {
-      await clearUser();
+    final tokenState = await _storedAccessTokenState();
+    _hasAuthToken = tokenState == _AccessTokenState.valid;
+    if (tokenState != _AccessTokenState.valid) {
+      await _clearAuthSessionKeys();
       return;
     }
 
     // Load user
     final userString = await _storage.read(key: _userKey);
     if (userString == null) {
-      await _clearAuthSessionKeys();
       return;
     }
 
@@ -158,14 +154,51 @@ class UserSession {
       _currentUser = _userFromJson(userJson);
     } catch (e) {
       debugPrint('Error loading user session: $e');
-      // Invalid stored data, clear it
-      await _clearAuthSessionKeys();
+      _currentUser = null;
+      await _storage.delete(key: _userKey);
     }
   }
 
   Future<bool> _hasStoredAccessToken() async {
     final token = await _storage.read(key: AppConfig.accessTokenKey);
-    return token != null && token.isNotEmpty;
+    return token != null && token.isNotEmpty && !isJwtExpired(token);
+  }
+
+  Future<_AccessTokenState> _storedAccessTokenState() async {
+    final token = await _storage.read(key: AppConfig.accessTokenKey);
+    if (token == null || token.isEmpty) return _AccessTokenState.missing;
+    if (isJwtExpired(token)) return _AccessTokenState.expired;
+    return _AccessTokenState.valid;
+  }
+
+  static bool isJwtExpired(String token, {DateTime? now}) {
+    final parts = token.split('.');
+    if (parts.length != 3) return false;
+
+    try {
+      final payload = utf8.decode(
+        base64Url.decode(base64Url.normalize(parts[1])),
+      );
+      final json = jsonDecode(payload);
+      if (json is! Map<String, dynamic>) return false;
+
+      final exp = json['exp'];
+      final int? expirySeconds = switch (exp) {
+        int value => value,
+        num value => value.toInt(),
+        String value => int.tryParse(value),
+        _ => null,
+      };
+      if (expirySeconds == null) return false;
+
+      final expiry = DateTime.fromMillisecondsSinceEpoch(
+        expirySeconds * 1000,
+        isUtc: true,
+      );
+      return !expiry.isAfter((now ?? DateTime.now()).toUtc());
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> _clearAuthSessionKeys() async {
@@ -206,3 +239,5 @@ class UserSession {
     );
   }
 }
+
+enum _AccessTokenState { missing, expired, valid }
