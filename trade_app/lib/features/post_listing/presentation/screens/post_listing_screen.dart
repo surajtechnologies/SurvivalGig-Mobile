@@ -79,11 +79,15 @@ class _PostListingViewState extends State<_PostListingView> {
   void _handleDescriptionFocusChange() {
     if (_descriptionFocusNode.hasFocus) {
       _ensureDescriptionFieldVisible();
+      Future<void>.delayed(
+        const Duration(milliseconds: 650),
+        _ensureDescriptionFieldVisible,
+      );
     }
   }
 
   Future<void> _ensureDescriptionFieldVisible() async {
-    await Future<void>.delayed(const Duration(milliseconds: 350));
+    await Future<void>.delayed(const Duration(milliseconds: 120));
     if (!mounted || !_descriptionFocusNode.hasFocus) return;
 
     final fieldContext = _descriptionFieldKey.currentContext;
@@ -94,7 +98,7 @@ class _PostListingViewState extends State<_PostListingView> {
       fieldContext,
       duration: const Duration(milliseconds: 260),
       curve: Curves.easeOutCubic,
-      alignment: 0.18,
+      alignment: 0.08,
     );
   }
 
@@ -204,15 +208,18 @@ class _PostListingViewState extends State<_PostListingView> {
 
         return Scaffold(
           backgroundColor: AppColors.dashboardBackground,
+          resizeToAvoidBottomInset: true,
           appBar: AppBar(
             backgroundColor: AppColors.dashboardBackground,
             surfaceTintColor: AppColors.transparent,
             elevation: 0,
+            toolbarHeight: 52,
             centerTitle: true,
             title: Text(
               'New Post',
               style: AppTextStyles.headlineSmall.copyWith(
                 color: AppColors.textOnDarkPrimary,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -222,6 +229,7 @@ class _PostListingViewState extends State<_PostListingView> {
                 icon: const Icon(
                   Icons.close,
                   color: AppColors.textOnDarkPrimary,
+                  size: 22,
                 ),
                 onPressed: () => Navigator.of(context).pop(false),
               ),
@@ -234,10 +242,10 @@ class _PostListingViewState extends State<_PostListingView> {
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: EdgeInsets.fromLTRB(
-                  24,
-                  16,
-                  24,
-                  MediaQuery.viewInsetsOf(context).bottom + 32,
+                  20,
+                  12,
+                  20,
+                  MediaQuery.viewInsetsOf(context).bottom + 24,
                 ),
                 child: Form(
                   key: _formKey,
@@ -246,7 +254,7 @@ class _PostListingViewState extends State<_PostListingView> {
                     children: [
                       // 1. I am - Dropdown (Offering/Needing)
                       _buildListingTypeDropdown(formState),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
                       // 2. Post Title
                       _buildTextField(
@@ -258,23 +266,23 @@ class _PostListingViewState extends State<_PostListingView> {
                         },
                         maxLength: 100,
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
                       // 3. Photos Section
                       _buildPhotosSection(formState),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
                       // 4. Category Dropdown
                       _buildCategoryDropdown(formState),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
                       // 5. What You Need in Exchange
                       _buildExchangeSection(formState),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
                       // 6. Listing Location
                       _buildListingLocationSection(formState),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
                       // 7. Description
                       KeyedSubtree(
@@ -289,6 +297,13 @@ class _PostListingViewState extends State<_PostListingView> {
                               value,
                             );
                           },
+                          onTap: () {
+                            _ensureDescriptionFieldVisible();
+                          },
+                          scrollPadding: EdgeInsets.only(
+                            bottom:
+                                MediaQuery.viewInsetsOf(context).bottom + 140,
+                          ),
                           maxLines: 4,
                           maxLength: 250,
                         ),
@@ -300,18 +315,19 @@ class _PostListingViewState extends State<_PostListingView> {
                           '(${formState.description.length}/250)',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.textOnDarkSecondary,
+                            fontSize: 11,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
 
                       // Urgency Level
                       _buildUrgencyDropdown(formState),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
                       // Expiry Date
                       _buildExpiryDatePicker(formState),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
                       // Post Button
                       SizedBox(
@@ -327,7 +343,7 @@ class _PostListingViewState extends State<_PostListingView> {
                             foregroundColor: formState.isFormValid
                                 ? AppColors.black
                                 : AppColors.textOnDarkSecondary,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -336,12 +352,13 @@ class _PostListingViewState extends State<_PostListingView> {
                           child: Text(
                             isSubmitting ? 'Posting...' : 'Post',
                             style: AppTextStyles.bodyLarge.copyWith(
+                              fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -361,11 +378,12 @@ class _PostListingViewState extends State<_PostListingView> {
         Text(
           'I am',
           style: AppTextStyles.bodyMedium.copyWith(
+            fontSize: 13,
             fontWeight: FontWeight.w500,
             color: AppColors.textOnDarkPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
             color: AppColors.dashboardSurfaceElevated,
@@ -381,8 +399,8 @@ class _PostListingViewState extends State<_PostListingView> {
               filled: true,
               fillColor: AppColors.dashboardSurfaceElevated,
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
+                horizontal: 14,
+                vertical: 12,
               ),
             ),
             icon: const Icon(
@@ -394,8 +412,9 @@ class _PostListingViewState extends State<_PostListingView> {
                 value: type,
                 child: Text(
                   type.displayName,
-                  style: AppTextStyles.bodyLarge.copyWith(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textOnDarkPrimary,
+                    fontSize: 14,
                   ),
                 ),
               );
@@ -430,17 +449,17 @@ class _PostListingViewState extends State<_PostListingView> {
                 final isUploaded = index < formState.uploadedImageUrls.length;
 
                 return Container(
-                  width: 100,
-                  height: 100,
-                  margin: const EdgeInsets.only(right: 12),
+                  width: 88,
+                  height: 88,
+                  margin: const EdgeInsets.only(right: 10),
                   child: Stack(
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.file(
                           File(localPath),
-                          width: 100,
-                          height: 100,
+                          width: 88,
+                          height: 88,
                           cacheWidth: 200,
                           cacheHeight: 200,
                           filterQuality: FilterQuality.low,
@@ -451,8 +470,8 @@ class _PostListingViewState extends State<_PostListingView> {
                       // Upload indicator
                       if (isUploading)
                         Container(
-                          width: 100,
-                          height: 100,
+                          width: 88,
+                          height: 88,
                           decoration: BoxDecoration(
                             color: AppColors.black.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(12),
@@ -504,8 +523,8 @@ class _PostListingViewState extends State<_PostListingView> {
                 GestureDetector(
                   onTap: formState.isUploadingImage ? null : _pickImage,
                   child: Container(
-                    width: 100,
-                    height: 100,
+                    width: 88,
+                    height: 88,
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: AppColors.primary.withValues(alpha: 0.5),
@@ -519,7 +538,7 @@ class _PostListingViewState extends State<_PostListingView> {
                       children: [
                         Icon(
                           Icons.add,
-                          size: 28,
+                          size: 24,
                           color: AppColors.primary.withValues(alpha: 0.7),
                         ),
                         const SizedBox(height: 4),
@@ -527,6 +546,7 @@ class _PostListingViewState extends State<_PostListingView> {
                           'Add Photo',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.primary.withValues(alpha: 0.7),
+                            fontSize: 11,
                           ),
                         ),
                       ],
@@ -541,6 +561,7 @@ class _PostListingViewState extends State<_PostListingView> {
           'These photos will appear in the post. You can add a maximum of 3 photos per post.',
           style: AppTextStyles.bodySmall.copyWith(
             color: AppColors.textOnDarkSecondary,
+            fontSize: 11,
           ),
         ),
       ],
@@ -558,11 +579,12 @@ class _PostListingViewState extends State<_PostListingView> {
         Text(
           'Category',
           style: AppTextStyles.bodyMedium.copyWith(
+            fontSize: 13,
             fontWeight: FontWeight.w500,
             color: AppColors.textOnDarkPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
             color: AppColors.dashboardSurfaceElevated,
@@ -596,8 +618,8 @@ class _PostListingViewState extends State<_PostListingView> {
                       filled: true,
                       fillColor: AppColors.dashboardSurfaceElevated,
                       contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
+                        horizontal: 14,
+                        vertical: 12,
                       ),
                     ),
                     child: Row(
@@ -607,10 +629,11 @@ class _PostListingViewState extends State<_PostListingView> {
                             selectedCategory?.name ?? 'Select a category',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.bodyLarge.copyWith(
+                            style: AppTextStyles.bodyMedium.copyWith(
                               color: selectedCategory == null
                                   ? AppColors.textOnDarkSecondary
                                   : AppColors.textOnDarkPrimary,
+                              fontSize: 14,
                             ),
                           ),
                         ),
@@ -705,7 +728,7 @@ class _PostListingViewState extends State<_PostListingView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+                  padding: const EdgeInsets.fromLTRB(18, 12, 10, 6),
                   child: Row(
                     children: [
                       Expanded(
@@ -713,6 +736,7 @@ class _PostListingViewState extends State<_PostListingView> {
                           'Category',
                           style: AppTextStyles.headlineSmall.copyWith(
                             color: AppColors.textOnDarkPrimary,
+                            fontSize: 15,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -743,13 +767,15 @@ class _PostListingViewState extends State<_PostListingView> {
 
                       return ListTile(
                         contentPadding: EdgeInsets.only(
-                          left: 20 + (item.depth * 18),
-                          right: 16,
+                          left: 18 + (item.depth * 16),
+                          right: 14,
                         ),
+                        dense: true,
                         title: Text(
                           category.name,
-                          style: AppTextStyles.bodyLarge.copyWith(
+                          style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.textOnDarkPrimary,
+                            fontSize: 14,
                             fontWeight: isSelected
                                 ? FontWeight.w700
                                 : FontWeight.w500,
@@ -784,11 +810,12 @@ class _PostListingViewState extends State<_PostListingView> {
               ? 'What You Need in Exchange'
               : 'What can I offer in Exchange',
           style: AppTextStyles.bodyMedium.copyWith(
+            fontSize: 13,
             fontWeight: FontWeight.w500,
             color: AppColors.textOnDarkPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
             color: AppColors.dashboardSurfaceElevated,
@@ -804,8 +831,8 @@ class _PostListingViewState extends State<_PostListingView> {
               filled: true,
               fillColor: AppColors.dashboardSurfaceElevated,
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
+                horizontal: 14,
+                vertical: 12,
               ),
             ),
             icon: const Icon(
@@ -817,8 +844,9 @@ class _PostListingViewState extends State<_PostListingView> {
                 value: type,
                 child: Text(
                   type.displayName,
-                  style: AppTextStyles.bodyLarge.copyWith(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textOnDarkPrimary,
+                    fontSize: 14,
                   ),
                 ),
               );
@@ -834,7 +862,7 @@ class _PostListingViewState extends State<_PostListingView> {
         // Show points input when Points is selected
         if (formState.priceMode == PriceMode.points ||
             formState.priceMode == PriceMode.both) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Container(
             decoration: BoxDecoration(
               color: AppColors.dashboardSurfaceElevated,
@@ -852,17 +880,23 @@ class _PostListingViewState extends State<_PostListingView> {
                 filled: true,
                 fillColor: AppColors.dashboardSurfaceElevated,
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+                  horizontal: 14,
+                  vertical: 12,
                 ),
                 hintText: '100 pts',
-                hintStyle: AppTextStyles.bodyLarge.copyWith(
+                hintStyle: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textOnDarkSecondary,
+                  fontSize: 14,
                 ),
                 suffixText: 'pts',
                 suffixStyle: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textOnDarkSecondary,
+                  fontSize: 13,
                 ),
+              ),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textOnDarkPrimary,
+                fontSize: 14,
               ),
               onChanged: (value) {
                 context.read<PostListingCubit>().updatePricePoints(value);
@@ -874,7 +908,7 @@ class _PostListingViewState extends State<_PostListingView> {
         // Show exchange description input when Skill is selected
         if (formState.priceMode == PriceMode.skill ||
             formState.priceMode == PriceMode.both) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Container(
             decoration: BoxDecoration(
               color: AppColors.dashboardSurfaceElevated,
@@ -892,13 +926,18 @@ class _PostListingViewState extends State<_PostListingView> {
                 filled: true,
                 fillColor: AppColors.dashboardSurfaceElevated,
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+                  horizontal: 14,
+                  vertical: 12,
                 ),
                 hintText: 'What do you want in exchange?',
-                hintStyle: AppTextStyles.bodyLarge.copyWith(
+                hintStyle: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textOnDarkSecondary,
+                  fontSize: 14,
                 ),
+              ),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textOnDarkPrimary,
+                fontSize: 14,
               ),
               onChanged: (value) {
                 context.read<PostListingCubit>().updateBarterWanted(value);
@@ -929,13 +968,14 @@ class _PostListingViewState extends State<_PostListingView> {
           'Listing Location',
           style: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.textOnDarkPrimary,
+            fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppColors.dashboardSurfaceElevated,
             borderRadius: BorderRadius.circular(12),
@@ -952,9 +992,9 @@ class _PostListingViewState extends State<_PostListingView> {
                 color: hasLocation
                     ? AppColors.primary
                     : AppColors.textOnDarkSecondary,
-                size: 22,
+                size: 20,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -965,6 +1005,7 @@ class _PostListingViewState extends State<_PostListingView> {
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textOnDarkPrimary,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -975,6 +1016,7 @@ class _PostListingViewState extends State<_PostListingView> {
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textOnDarkSecondary,
+                        fontSize: 11,
                       ),
                     ),
                   ],
@@ -983,7 +1025,7 @@ class _PostListingViewState extends State<_PostListingView> {
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Row(
           children: [
             Expanded(
@@ -995,7 +1037,7 @@ class _PostListingViewState extends State<_PostListingView> {
                     : () => _openMapLocationPicker(formState),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(
               child: _buildLocationAction(
                 icon: Icons.my_location_rounded,
@@ -1021,7 +1063,7 @@ class _PostListingViewState extends State<_PostListingView> {
     bool isLoading = false,
   }) {
     return SizedBox(
-      height: 48,
+      height: 42,
       child: OutlinedButton.icon(
         onPressed: onPressed,
         icon: isLoading
@@ -1033,8 +1075,13 @@ class _PostListingViewState extends State<_PostListingView> {
                   color: AppColors.primary,
                 ),
               )
-            : Icon(icon, size: 18),
-        label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            : Icon(icon, size: 16),
+        label: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w700),
+        ),
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
           disabledForegroundColor: AppColors.textOnDarkSecondary,
@@ -1197,6 +1244,8 @@ class _PostListingViewState extends State<_PostListingView> {
     int? maxLength,
     TextInputType keyboardType = TextInputType.text,
     List<TextInputFormatter>? inputFormatters,
+    VoidCallback? onTap,
+    EdgeInsets? scrollPadding,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1204,11 +1253,12 @@ class _PostListingViewState extends State<_PostListingView> {
         Text(
           label,
           style: AppTextStyles.bodyMedium.copyWith(
+            fontSize: 13,
             fontWeight: FontWeight.w500,
             color: AppColors.textOnDarkPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
             color: AppColors.dashboardSurfaceElevated,
@@ -1224,6 +1274,9 @@ class _PostListingViewState extends State<_PostListingView> {
                 : MaxLengthEnforcement.enforced,
             keyboardType: keyboardType,
             inputFormatters: inputFormatters,
+            scrollPadding:
+                scrollPadding ?? const EdgeInsets.fromLTRB(20, 20, 20, 80),
+            onTap: onTap,
             decoration: InputDecoration(
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -1232,14 +1285,19 @@ class _PostListingViewState extends State<_PostListingView> {
               filled: true,
               fillColor: AppColors.dashboardSurfaceElevated,
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
+                horizontal: 14,
+                vertical: 12,
               ),
               hintText: hint,
-              hintStyle: AppTextStyles.bodyLarge.copyWith(
+              hintStyle: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textOnDarkSecondary,
+                fontSize: 14,
               ),
               counterText: '',
+            ),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textOnDarkPrimary,
+              fontSize: 14,
             ),
             onChanged: onChanged,
           ),
@@ -1258,10 +1316,11 @@ class _PostListingViewState extends State<_PostListingView> {
           'Urgency Level',
           style: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.textOnDarkPrimary,
+            fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         DropdownButtonFormField<String>(
           initialValue: formState.urgencyLevel,
           decoration: InputDecoration(
@@ -1273,14 +1332,36 @@ class _PostListingViewState extends State<_PostListingView> {
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
-              vertical: 14,
+              vertical: 12,
             ),
           ),
-          hint: const Text('Select urgency'),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textOnDarkPrimary,
+            fontSize: 14,
+          ),
+          hint: Text(
+            'Select urgency',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textOnDarkSecondary,
+              fontSize: 14,
+            ),
+          ),
           items: [
-            const DropdownMenuItem<String>(value: null, child: Text('None')),
+            DropdownMenuItem<String>(
+              value: null,
+              child: Text(
+                'None',
+                style: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
+              ),
+            ),
             ...levels.map(
-              (l) => DropdownMenuItem<String>(value: l, child: Text(l)),
+              (l) => DropdownMenuItem<String>(
+                value: l,
+                child: Text(
+                  l,
+                  style: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
+                ),
+              ),
             ),
           ],
           onChanged: (v) =>
@@ -1303,10 +1384,11 @@ class _PostListingViewState extends State<_PostListingView> {
           'Expiry Date',
           style: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.textOnDarkPrimary,
+            fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         GestureDetector(
           onTap: () async {
             final picked = await showDatePicker(
@@ -1323,15 +1405,15 @@ class _PostListingViewState extends State<_PostListingView> {
             }
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
             decoration: BoxDecoration(
               border: Border.all(color: AppColors.dashboardSurfaceElevated),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
-                const Icon(Icons.calendar_today_outlined, size: 18),
-                const SizedBox(width: 10),
+                const Icon(Icons.calendar_today_outlined, size: 16),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     label,
@@ -1339,6 +1421,7 @@ class _PostListingViewState extends State<_PostListingView> {
                       color: formState.expiresAt == null
                           ? AppColors.textOnDarkSecondary
                           : AppColors.textOnDarkPrimary,
+                      fontSize: 14,
                     ),
                   ),
                 ),
@@ -1346,7 +1429,7 @@ class _PostListingViewState extends State<_PostListingView> {
                   GestureDetector(
                     onTap: () =>
                         context.read<PostListingCubit>().updateExpiresAt(null),
-                    child: const Icon(Icons.close, size: 18),
+                    child: const Icon(Icons.close, size: 16),
                   ),
               ],
             ),

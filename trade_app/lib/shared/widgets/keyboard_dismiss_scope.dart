@@ -44,6 +44,34 @@ class KeyboardDismissScope extends StatelessWidget {
   }
 }
 
+class HideIosKeyboardDoneToolbar extends StatelessWidget {
+  final Widget child;
+
+  const HideIosKeyboardDoneToolbar({super.key, required this.child});
+
+  static bool isActiveForFocusedInput() {
+    final focusedContext = FocusManager.instance.primaryFocus?.context;
+    if (focusedContext == null) return false;
+    return focusedContext
+            .getElementForInheritedWidgetOfExactType<
+              _HideIosKeyboardDoneToolbarScope
+            >() !=
+        null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _HideIosKeyboardDoneToolbarScope(child: child);
+  }
+}
+
+class _HideIosKeyboardDoneToolbarScope extends InheritedWidget {
+  const _HideIosKeyboardDoneToolbarScope({required super.child});
+
+  @override
+  bool updateShouldNotify(_HideIosKeyboardDoneToolbarScope oldWidget) => false;
+}
+
 class _IosKeyboardDoneToolbar extends StatelessWidget {
   const _IosKeyboardDoneToolbar();
 
@@ -51,6 +79,9 @@ class _IosKeyboardDoneToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     if (keyboardInset <= 0) return const SizedBox.shrink();
+    if (HideIosKeyboardDoneToolbar.isActiveForFocusedInput()) {
+      return const SizedBox.shrink();
+    }
 
     return Positioned(
       left: 0,

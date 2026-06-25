@@ -104,19 +104,20 @@ class _WalletViewState extends State<_WalletView> with WidgetsBindingObserver {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
           AppDimensions.spacingMd,
-          AppDimensions.spacingLg,
+          AppDimensions.spacingMd,
           AppDimensions.spacingMd,
           AppDimensions.spacingXl,
         ),
         children: [
           _buildWalletSummary(state.walletSummary),
-          SizedBox(height: AppDimensions.spacingLg),
+          SizedBox(height: AppDimensions.spacingMd),
           _buildStatsRow(state.transactions),
-          SizedBox(height: AppDimensions.spacingXl),
+          SizedBox(height: AppDimensions.spacingLg),
           Text(
             'Transaction History',
             style: AppTextStyles.headlineLarge.copyWith(
               color: AppColors.textOnDarkPrimary,
+              fontSize: 22,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -138,7 +139,7 @@ class _WalletViewState extends State<_WalletView> with WidgetsBindingObserver {
   Widget _buildWalletSummary(WalletSummary walletSummary) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(AppDimensions.spacingXl),
+      padding: EdgeInsets.all(AppDimensions.spacingLg),
       decoration: BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
@@ -155,12 +156,12 @@ class _WalletViewState extends State<_WalletView> with WidgetsBindingObserver {
         children: [
           Text(
             'Total Balance',
-            style: AppTextStyles.bodyLarge.copyWith(
+            style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.black.withValues(alpha: 0.72),
               fontWeight: FontWeight.w800,
             ),
           ),
-          SizedBox(height: AppDimensions.spacingMd),
+          SizedBox(height: AppDimensions.spacingSm),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -168,7 +169,7 @@ class _WalletViewState extends State<_WalletView> with WidgetsBindingObserver {
                 '${walletSummary.currentPoints}',
                 style: AppTextStyles.displayLarge.copyWith(
                   color: AppColors.black,
-                  fontSize: 72,
+                  fontSize: 64,
                   fontWeight: FontWeight.w800,
                   height: 1,
                 ),
@@ -178,7 +179,7 @@ class _WalletViewState extends State<_WalletView> with WidgetsBindingObserver {
                 padding: EdgeInsets.only(bottom: AppDimensions.spacingSm),
                 child: Text(
                   'pts',
-                  style: AppTextStyles.headlineLarge.copyWith(
+                  style: AppTextStyles.headlineMedium.copyWith(
                     color: AppColors.black.withValues(alpha: 0.72),
                     fontWeight: FontWeight.w800,
                   ),
@@ -186,7 +187,7 @@ class _WalletViewState extends State<_WalletView> with WidgetsBindingObserver {
               ),
             ],
           ),
-          SizedBox(height: AppDimensions.spacingMd),
+          SizedBox(height: AppDimensions.spacingSm),
           Container(
             padding: EdgeInsets.symmetric(
               horizontal: AppDimensions.spacingSm,
@@ -207,8 +208,9 @@ class _WalletViewState extends State<_WalletView> with WidgetsBindingObserver {
                 SizedBox(width: AppDimensions.spacingXs),
                 Text(
                   '${walletSummary.pointsInEscrow} pts in escrow',
-                  style: AppTextStyles.bodyMedium.copyWith(
+                  style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.black.withValues(alpha: 0.66),
+                    fontSize: 13,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -356,7 +358,7 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: AppDimensions.spacingSm,
-        vertical: AppDimensions.spacingMd,
+        vertical: AppDimensions.spacingSm + 2,
       ),
       decoration: BoxDecoration(
         color: AppColors.dashboardSurface,
@@ -366,8 +368,8 @@ class _StatCard extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.18),
               shape: BoxShape.circle,
@@ -379,6 +381,7 @@ class _StatCard extends StatelessWidget {
             value,
             style: AppTextStyles.headlineSmall.copyWith(
               color: AppColors.textOnDarkPrimary,
+              fontSize: 15,
               fontWeight: FontWeight.w800,
             ),
             maxLines: 1,
@@ -389,6 +392,7 @@ class _StatCard extends StatelessWidget {
             label,
             style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.textOnDarkSecondary,
+              fontSize: 11,
               fontWeight: FontWeight.w700,
             ),
           ),

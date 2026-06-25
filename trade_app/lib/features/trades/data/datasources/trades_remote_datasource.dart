@@ -60,6 +60,7 @@ class TradesRemoteDataSourceImpl implements TradesRemoteDataSource {
       final response = await dioClient.dio.get(
         ApiEndpoints.trades,
         queryParameters: {'page': page, 'limit': limit},
+        options: Options(extra: {'skipLoading': true}),
       );
 
       if (response.statusCode == 200) {
@@ -93,6 +94,7 @@ class TradesRemoteDataSourceImpl implements TradesRemoteDataSource {
     try {
       final response = await dioClient.dio.get(
         ApiEndpoints.getTradeById(tradeId),
+        options: Options(extra: {'skipLoading': true}),
       );
 
       if (response.statusCode == 200) {
@@ -186,9 +188,7 @@ class TradesRemoteDataSourceImpl implements TradesRemoteDataSource {
       final response = await dioClient.dio.get(
         ApiEndpoints.tradeMessages(tradeId),
         queryParameters: queryParameters.isEmpty ? null : queryParameters,
-        options: Options(
-          extra: {'skipLoading': since != null},
-        ),
+        options: Options(extra: {'skipLoading': true}),
       );
 
       if (response.statusCode == 200) {
@@ -223,6 +223,7 @@ class TradesRemoteDataSourceImpl implements TradesRemoteDataSource {
       final response = await dioClient.dio.post(
         ApiEndpoints.tradeMessages(tradeId),
         data: {'content': content},
+        options: Options(extra: {'skipLoading': true}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -250,7 +251,10 @@ class TradesRemoteDataSourceImpl implements TradesRemoteDataSource {
 
   Future<void> _patchAction(String path, {required String successCode}) async {
     try {
-      final response = await dioClient.dio.patch(path);
+      final response = await dioClient.dio.patch(
+        path,
+        options: Options(extra: {'skipLoading': true}),
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return;

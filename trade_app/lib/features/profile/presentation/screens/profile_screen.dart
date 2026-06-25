@@ -211,13 +211,13 @@ class _ProfileViewState extends State<_ProfileView> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(
             AppDimensions.spacingMd,
-            AppDimensions.spacingLg,
+            AppDimensions.spacingMd,
             AppDimensions.spacingMd,
             AppDimensions.spacingXl,
           ),
           children: [
             _buildHeader(),
-            SizedBox(height: AppDimensions.spacingXl),
+            SizedBox(height: AppDimensions.spacingLg),
             Center(
               child: _ProfileAvatarButton(
                 initial: initial,
@@ -235,6 +235,7 @@ class _ProfileViewState extends State<_ProfileView> {
                     state.profile.fullName,
                     style: AppTextStyles.displayMedium.copyWith(
                       color: _profilePrimaryText(context),
+                      fontSize: 24,
                       fontWeight: FontWeight.w800,
                     ),
                     maxLines: 1,
@@ -246,7 +247,7 @@ class _ProfileViewState extends State<_ProfileView> {
                   Icon(
                     Icons.verified_rounded,
                     color: AppColors.primary,
-                    size: AppDimensions.iconSizeLg,
+                    size: AppDimensions.iconSizeMd,
                   ),
                 ],
               ],
@@ -254,17 +255,19 @@ class _ProfileViewState extends State<_ProfileView> {
             SizedBox(height: AppDimensions.spacingSm),
             Text(
               state.profile.email,
-              style: AppTextStyles.bodyLarge.copyWith(
+              style: AppTextStyles.bodyMedium.copyWith(
                 color: _profileSecondaryText(context),
+                fontSize: 13,
                 fontWeight: FontWeight.w700,
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: AppDimensions.spacingXl),
+            SizedBox(height: AppDimensions.spacingLg),
             Text(
               'My Active Listings',
               style: AppTextStyles.headlineLarge.copyWith(
                 color: _profilePrimaryText(context),
+                fontSize: 22,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -357,6 +360,7 @@ class _ProfileViewState extends State<_ProfileView> {
             'Profile',
             style: AppTextStyles.displayLarge.copyWith(
               color: _profilePrimaryText(context),
+              fontSize: 28,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -543,16 +547,16 @@ class _ProfileAvatarButton extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Container(
-            width: 124,
-            height: 124,
+            width: 108,
+            height: 108,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.primary,
               boxShadow: [
                 BoxShadow(
                   color: AppColors.primary.withValues(alpha: 0.28),
-                  blurRadius: 34,
-                  spreadRadius: 8,
+                  blurRadius: 28,
+                  spreadRadius: 6,
                 ),
               ],
             ),
@@ -568,8 +572,8 @@ class _ProfileAvatarButton extends StatelessWidget {
             right: 0,
             bottom: 0,
             child: Container(
-              width: 38,
-              height: 38,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
                 color: _profileSurface(context),
                 shape: BoxShape.circle,
@@ -578,7 +582,7 @@ class _ProfileAvatarButton extends StatelessWidget {
               child: Icon(
                 Icons.camera_alt_rounded,
                 color: AppColors.primary,
-                size: AppDimensions.iconSizeMd,
+                size: AppDimensions.iconSizeSm,
               ),
             ),
           ),
@@ -604,6 +608,7 @@ class _ProfileAvatarButton extends StatelessWidget {
         initial,
         style: AppTextStyles.displayLarge.copyWith(
           color: AppColors.black,
+          fontSize: 28,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -634,7 +639,10 @@ class _ActionTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
       onTap: isLoading ? null : onTap,
       child: Container(
-        padding: EdgeInsets.all(AppDimensions.spacingMd),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppDimensions.spacingMd,
+          vertical: AppDimensions.spacingSm + 2,
+        ),
         decoration: BoxDecoration(
           color: _profileSurface(context),
           borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
@@ -643,8 +651,8 @@ class _ActionTile extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 46,
-              height: 46,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.16),
                 borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
@@ -666,8 +674,9 @@ class _ActionTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: AppTextStyles.bodyLarge.copyWith(
+                    style: AppTextStyles.bodyMedium.copyWith(
                       color: _profilePrimaryText(context),
+                      fontSize: 15,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -676,6 +685,7 @@ class _ActionTile extends StatelessWidget {
                     subtitle,
                     style: AppTextStyles.bodySmall.copyWith(
                       color: _profileSecondaryText(context),
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
                     maxLines: 1,
@@ -687,7 +697,7 @@ class _ActionTile extends StatelessWidget {
             Icon(
               Icons.chevron_right_rounded,
               color: _profileSecondaryText(context),
-              size: AppDimensions.iconSizeLg,
+              size: AppDimensions.iconSizeMd,
             ),
           ],
         ),
@@ -710,11 +720,13 @@ class _SourceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      dense: true,
       leading: Icon(icon, color: AppColors.primary),
       title: Text(
         label,
-        style: AppTextStyles.bodyLarge.copyWith(
+        style: AppTextStyles.bodyMedium.copyWith(
           color: _profilePrimaryText(context),
+          fontSize: 15,
           fontWeight: FontWeight.w800,
         ),
       ),

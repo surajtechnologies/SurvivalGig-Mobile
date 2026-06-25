@@ -71,8 +71,8 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
           return SafeArea(
             child: ListView(
               padding: const EdgeInsets.symmetric(
-                horizontal: 24.0,
-                vertical: 32.0,
+                horizontal: 20.0,
+                vertical: 24.0,
               ),
               children: [
                 // Welcome Text
@@ -81,23 +81,24 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                   textAlign: TextAlign.center,
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
+                    fontSize: 13,
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Main Heading
                 Text(
                   'Post. Do. Earn.',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.displayLarge.copyWith(
-                    fontSize: 36,
+                    fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Description
                 Text(
@@ -105,26 +106,27 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                   textAlign: TextAlign.center,
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
-                    fontSize: 14,
-                    height: 1.6,
+                    fontSize: 13,
+                    height: 1.45,
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
                 // Illustration
                 Image.asset(
                   AppAssets.loginLandingIcon,
-                  height: 200,
+                  height: 180,
                   width: double.infinity,
                   fit: BoxFit.contain,
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
                 // Sign Up Button
                 PrimaryButton(
                   label: 'Sign Up',
+                  height: 52,
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -140,6 +142,7 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                 // Log In Button
                 SecondaryButton(
                   label: 'Log In',
+                  height: 52,
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -148,12 +151,12 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                   },
                 ),
 
-                const SizedBox(height: 28),
+                const SizedBox(height: 22),
 
                 Center(
                   child: Text(
                     'Or continue with',
-                    style: AppTextStyles.bodyLarge.copyWith(
+                    style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
@@ -169,8 +172,8 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                         label: 'Google',
                         icon: Image.asset(
                           AppAssets.googleIcon,
-                          width: 24,
-                          height: 24,
+                          width: 22,
+                          height: 22,
                           fit: BoxFit.contain,
                         ),
                         onTap: () =>
@@ -184,7 +187,7 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                         icon: const Icon(
                           Icons.facebook,
                           color: Color(0xFF1877F2),
-                          size: 24,
+                          size: 22,
                         ),
                         onTap: () =>
                             context.read<AuthCubit>().signInWithFacebook(),
@@ -205,12 +208,14 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                           text: 'By signing up, you agree to our ',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.textSecondary,
+                            fontSize: 11,
                           ),
                         ),
                         TextSpan(
                           text: 'Terms of Service',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.primary,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                           recognizer: null, // TODO: Add tap handler
@@ -219,12 +224,14 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                           text: ' and ',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.textSecondary,
+                            fontSize: 11,
                           ),
                         ),
                         TextSpan(
                           text: 'Privacy Policy',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.primary,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                           recognizer: null, // TODO: Add tap handler
@@ -233,6 +240,7 @@ class _LoginLandingContentState extends State<_LoginLandingContent> {
                           text: '.',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.textSecondary,
+                            fontSize: 11,
                           ),
                         ),
                       ],
@@ -265,22 +273,22 @@ class _SocialLoginButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       onTap: onTap,
       child: Container(
-        height: 58,
+        height: 50,
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppColors.dividerColor),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             icon,
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Text(
               label,
-              style: AppTextStyles.headlineMedium.copyWith(
-                fontSize: 16,
+              style: AppTextStyles.bodyMedium.copyWith(
+                fontSize: 14,
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.w700,
               ),

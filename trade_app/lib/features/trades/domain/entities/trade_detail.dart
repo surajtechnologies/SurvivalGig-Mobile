@@ -14,6 +14,12 @@ class TradeDetail {
   final String sellerId;
   final bool buyerConfirmed;
   final bool sellerConfirmed;
+  final String currentOffererId;
+  final int? offerPoints;
+  final String? offerItemDescription;
+  final String? offerSkillDescription;
+  final String offererName;
+  final String? offerMessage;
 
   const TradeDetail({
     required this.id,
@@ -30,7 +36,20 @@ class TradeDetail {
     required this.sellerId,
     required this.buyerConfirmed,
     required this.sellerConfirmed,
+    this.currentOffererId = '',
+    this.offerPoints,
+    this.offerItemDescription,
+    this.offerSkillDescription,
+    this.offererName = '',
+    this.offerMessage,
   });
+
+  bool get hasOfferDetails {
+    return offerPoints != null ||
+        (offerItemDescription?.trim().isNotEmpty ?? false) ||
+        (offerSkillDescription?.trim().isNotEmpty ?? false) ||
+        (offerMessage?.trim().isNotEmpty ?? false);
+  }
 
   bool isParticipant(String? userId) {
     final id = userId?.trim() ?? '';
@@ -43,6 +62,13 @@ class TradeDetail {
     if (id == buyerId) return buyerConfirmed;
     if (id == sellerId) return sellerConfirmed;
     return false;
+  }
+
+  bool isCurrentOfferer(String? userId) {
+    final id = userId?.trim() ?? '';
+    return id.isNotEmpty &&
+        currentOffererId.trim().isNotEmpty &&
+        id == currentOffererId.trim();
   }
 
   String displayNameFor(String? currentUserId, {String? fallbackName}) {

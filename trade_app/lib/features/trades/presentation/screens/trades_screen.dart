@@ -101,14 +101,15 @@ class _TradesViewState extends State<_TradesView> with WidgetsBindingObserver {
         Padding(
           padding: EdgeInsets.fromLTRB(
             AppDimensions.spacingMd,
-            AppDimensions.spacingLg,
             AppDimensions.spacingMd,
             AppDimensions.spacingMd,
+            AppDimensions.spacingSm,
           ),
           child: Text(
             'Messages',
             style: AppTextStyles.displayLarge.copyWith(
               color: AppColors.textOnDarkPrimary,
+              fontSize: 28,
               fontWeight: FontWeight.w800,
             ),
           ),

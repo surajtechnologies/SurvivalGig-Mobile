@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -5,6 +8,10 @@ import 'package:trade_app/core/utils/user_session.dart';
 import 'package:trade_app/features/auth/domain/usecases/register_device_token_usecase.dart';
 
 abstract class PushNotificationService {
+  Stream<PushNotificationNavigationIntent> get navigationStream;
+
+  PushNotificationNavigationIntent? takePendingNavigationIntent();
+
   Future<void> initialize();
 
   Future<void> syncTokenForAuthenticatedUser();
@@ -12,16 +19,45 @@ abstract class PushNotificationService {
   Future<void> deleteToken();
 }
 
+sealed class PushNotificationNavigationIntent {
+  const PushNotificationNavigationIntent();
+}
+
+class OpenTradeChatNotificationIntent extends PushNotificationNavigationIntent {
+  final String tradeId;
+  final String? messageId;
+  final bool focusOfferSummary;
+
+  const OpenTradeChatNotificationIntent({
+    required this.tradeId,
+    this.messageId,
+    this.focusOfferSummary = false,
+  });
+}
+
 class FcmNotifications implements PushNotificationService {
   static const String androidChannelId = 'high_importance_channel';
   static const String androidChannelName = 'High Importance Notifications';
   static const String androidChannelDescription =
       'Used for important push notifications.';
+  static const Set<String> _tradeChatNotificationTypes = {
+    'trade_buy_now',
+    'chat_new_message',
+    'trade_new_offer',
+    'trade_counter_offer',
+    'counter_offer',
+    'trade_accepted',
+    'trade_rejected',
+  };
 
   final FirebaseMessaging? _messagingOverride;
   final FlutterLocalNotificationsPlugin _localNotifications;
   final RegisterDeviceTokenUseCase _registerDeviceTokenUseCase;
   final UserSession _userSession;
+  final StreamController<PushNotificationNavigationIntent>
+  _navigationController =
+      StreamController<PushNotificationNavigationIntent>.broadcast();
+  PushNotificationNavigationIntent? _pendingNavigationIntent;
 
   Future<void>? _activeSync;
   String? _lastUploadedToken;
@@ -42,6 +78,17 @@ class FcmNotifications implements PushNotificationService {
 
   FirebaseMessaging get _messaging =>
       _messagingOverride ?? FirebaseMessaging.instance;
+
+  @override
+  Stream<PushNotificationNavigationIntent> get navigationStream =>
+      _navigationController.stream;
+
+  @override
+  PushNotificationNavigationIntent? takePendingNavigationIntent() {
+    final intent = _pendingNavigationIntent;
+    _pendingNavigationIntent = null;
+    return intent;
+  }
 
   bool get _isSupportedPlatform {
     if (kIsWeb) return false;
@@ -78,7 +125,7 @@ class FcmNotifications implements PushNotificationService {
     }
 
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-    FirebaseMessaging.onMessageOpenedApp.listen(_logOpenedMessage);
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleOpenedMessage);
     _messaging.onTokenRefresh.listen(
       _handleTokenRefresh,
       onError: (Object error, StackTrace stackTrace) {
@@ -90,7 +137,7 @@ class FcmNotifications implements PushNotificationService {
     try {
       final initialMessage = await _messaging.getInitialMessage();
       if (initialMessage != null) {
-        _logOpenedMessage(initialMessage);
+        _handleOpenedMessage(initialMessage);
       }
     } catch (error, stackTrace) {
       debugPrint('Unable to read the initial FCM message: $error');
@@ -267,7 +314,10 @@ class FcmNotifications implements PushNotificationService {
       iOS: iosInit,
     );
 
-    await _localNotifications.initialize(initSettings);
+    await _localNotifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: _handleLocalNotificationTap,
+    );
 
     final android = _localNotifications
         .resolvePlatformSpecificImplementation<
@@ -282,6 +332,22 @@ class FcmNotifications implements PushNotificationService {
       importance: Importance.high,
     );
     await android.createNotificationChannel(channel);
+  }
+
+  Future<void> _handleLocalNotificationTap(
+    NotificationResponse response,
+  ) async {
+    final payload = response.payload;
+    if (payload == null || payload.isEmpty) return;
+
+    try {
+      final decoded = jsonDecode(payload);
+      if (decoded is! Map<String, dynamic>) return;
+      _emitNavigationIntentFromData(decoded);
+    } catch (error, stackTrace) {
+      debugPrint('Unable to read local notification payload: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
@@ -311,13 +377,165 @@ class FcmNotifications implements PushNotificationService {
       notification.title,
       notification.body,
       NotificationDetails(android: androidDetails, iOS: iosDetails),
+      payload: jsonEncode(message.data),
     );
   }
 
-  void _logOpenedMessage(RemoteMessage message) {
+  void _handleOpenedMessage(RemoteMessage message) {
     if (kDebugMode) {
       debugPrint('FCM notification opened: id=${message.messageId}');
     }
+    _emitNavigationIntentFromData(message.data);
+  }
+
+  void _emitNavigationIntentFromData(Map<String, dynamic> data) {
+    final type = data['type']?.toString().trim();
+    final tradeId = _extractTradeId(data);
+    final messageId = _extractMessageId(data);
+    final isTradeChatPayload =
+        (type != null && _tradeChatNotificationTypes.contains(type)) ||
+        _containsTradeMessagesRoute(data);
+    if (tradeId == null || tradeId.isEmpty || !isTradeChatPayload) {
+      return;
+    }
+
+    final intent = OpenTradeChatNotificationIntent(
+      tradeId: tradeId,
+      messageId: messageId,
+      focusOfferSummary:
+          type == 'trade_new_offer' ||
+          type == 'trade_counter_offer' ||
+          type == 'counter_offer',
+    );
+    if (!_navigationController.hasListener) {
+      _pendingNavigationIntent = intent;
+    }
+    _navigationController.add(intent);
+  }
+
+  String? _extractTradeId(Map<String, dynamic> data) {
+    final directTradeId =
+        _readString(data['tradeId']) ??
+        _readString(data['trade_id']) ??
+        _readString(data['trade']) ??
+        _readString(data['id']);
+    if (directTradeId != null) return directTradeId;
+
+    for (final key in const [
+      'route',
+      'path',
+      'url',
+      'deepLink',
+      'deeplink',
+      'link',
+      'screen',
+    ]) {
+      final route = _readString(data[key]);
+      final tradeId = _extractTradeIdFromRoute(route);
+      if (tradeId != null) return tradeId;
+    }
+
+    for (final key in const ['data', 'payload', 'params']) {
+      final nested = data[key];
+      if (nested is Map<String, dynamic>) {
+        final tradeId = _extractTradeId(nested);
+        if (tradeId != null) return tradeId;
+      }
+      if (nested is String && nested.trim().startsWith('{')) {
+        try {
+          final decoded = jsonDecode(nested);
+          if (decoded is Map<String, dynamic>) {
+            final tradeId = _extractTradeId(decoded);
+            if (tradeId != null) return tradeId;
+          }
+        } catch (_) {
+          // Ignore invalid nested JSON payloads.
+        }
+      }
+    }
+
+    return null;
+  }
+
+  String? _extractMessageId(Map<String, dynamic> data) {
+    final directMessageId =
+        _readString(data['messageId']) ??
+        _readString(data['message_id']) ??
+        _readString(data['chatMessageId']) ??
+        _readString(data['chat_message_id']);
+    if (directMessageId != null) return directMessageId;
+
+    for (final key in const ['data', 'payload', 'params']) {
+      final nested = data[key];
+      if (nested is Map<String, dynamic>) {
+        final messageId = _extractMessageId(nested);
+        if (messageId != null) return messageId;
+      }
+      if (nested is String && nested.trim().startsWith('{')) {
+        try {
+          final decoded = jsonDecode(nested);
+          if (decoded is Map<String, dynamic>) {
+            final messageId = _extractMessageId(decoded);
+            if (messageId != null) return messageId;
+          }
+        } catch (_) {
+          // Ignore invalid nested JSON payloads.
+        }
+      }
+    }
+
+    return null;
+  }
+
+  String? _extractTradeIdFromRoute(String? route) {
+    if (route == null) return null;
+    final match = RegExp(r'/trades/([^/?#]+)/messages').firstMatch(route);
+    final tradeId = match?.group(1)?.trim();
+    return tradeId == null || tradeId.isEmpty ? null : tradeId;
+  }
+
+  bool _containsTradeMessagesRoute(Map<String, dynamic> data) {
+    for (final key in const [
+      'route',
+      'path',
+      'url',
+      'deepLink',
+      'deeplink',
+      'link',
+      'screen',
+    ]) {
+      if (_extractTradeIdFromRoute(_readString(data[key])) != null) {
+        return true;
+      }
+    }
+
+    for (final key in const ['data', 'payload', 'params']) {
+      final nested = data[key];
+      if (nested is Map<String, dynamic> &&
+          _containsTradeMessagesRoute(nested)) {
+        return true;
+      }
+      if (nested is String && nested.trim().startsWith('{')) {
+        try {
+          final decoded = jsonDecode(nested);
+          if (decoded is Map<String, dynamic> &&
+              _containsTradeMessagesRoute(decoded)) {
+            return true;
+          }
+        } catch (_) {
+          // Ignore invalid nested JSON payloads.
+        }
+      }
+    }
+
+    return false;
+  }
+
+  String? _readString(dynamic value) {
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+    return null;
   }
 
   @override

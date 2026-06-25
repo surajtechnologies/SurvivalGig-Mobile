@@ -28,7 +28,10 @@ class WalletTransactionItem extends StatelessWidget {
           ).formatShortDate(transaction.createdAt!.toLocal());
 
     return Container(
-      padding: EdgeInsets.all(AppDimensions.spacingMd),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppDimensions.spacingMd,
+        vertical: AppDimensions.spacingSm + 2,
+      ),
       decoration: BoxDecoration(
         color: AppColors.dashboardSurface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
@@ -38,8 +41,8 @@ class WalletTransactionItem extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 58,
-            height: 58,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
               color: pointsColor.withValues(alpha: 0.14),
               shape: BoxShape.circle,
@@ -49,10 +52,10 @@ class WalletTransactionItem extends StatelessWidget {
                   ? Icons.arrow_downward_rounded
                   : Icons.arrow_upward_rounded,
               color: pointsColor,
-              size: AppDimensions.iconSizeLg,
+              size: AppDimensions.iconSizeLg - 4,
             ),
           ),
-          SizedBox(width: AppDimensions.spacingMd),
+          SizedBox(width: AppDimensions.spacingSm + 2),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,30 +64,39 @@ class WalletTransactionItem extends StatelessWidget {
                   descriptionText,
                   style: AppTextStyles.bodyLarge.copyWith(
                     color: AppColors.textOnDarkPrimary,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                    height: 1.25,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: AppDimensions.spacingXs),
-                Text(
-                  dateText,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textOnDarkSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                SizedBox(height: AppDimensions.spacingXs + 1),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        dateText,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textOnDarkSecondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    SizedBox(width: AppDimensions.spacingSm),
+                    Text(
+                      pointsText,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: pointsColor,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ),
-          SizedBox(width: AppDimensions.spacingSm),
-          Text(
-            pointsText,
-            style: AppTextStyles.headlineSmall.copyWith(
-              color: pointsColor,
-              fontWeight: FontWeight.w800,
             ),
           ),
         ],

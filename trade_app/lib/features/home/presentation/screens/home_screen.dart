@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart'
@@ -13,6 +11,7 @@ import '../../../../config/di/service_locator.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/fcm_notifications.dart';
 import '../../../../core/utils/user_session.dart';
 import '../../../auth/presentation/screens/login_landing_screen.dart';
 import '../../domain/entities/listing.dart';
@@ -37,6 +36,8 @@ const _kDefaultCamera = CameraPosition(
 );
 
 const _kPostRefreshDelta = 0.05;
+const _kOfferMapMarkerAsset = 'assets/icons/location_offer.png';
+const _kRequestMapMarkerAsset = 'assets/icons/location_request.png';
 
 const _kDarkMapStyle = '''
 [
@@ -81,6 +82,8 @@ class _HomeViewState extends State<_HomeView> {
   GoogleMapController? _googleMapController;
   bool _locationPermissionGranted = false;
   Timer? _idleDebounce;
+  StreamSubscription<PushNotificationNavigationIntent>?
+  _pushNavigationSubscription;
   Map<String, BitmapDescriptor> _pinIcons = const {};
   int _pinIconVersion = 0;
   String? _markerCacheKey;
@@ -95,29 +98,41 @@ class _HomeViewState extends State<_HomeView> {
   @override
   void initState() {
     super.initState();
+    final pushNotificationService = sl<PushNotificationService>();
+    _pushNavigationSubscription = pushNotificationService.navigationStream
+        .listen(_handlePushNavigationIntent);
+    final pendingPushIntent = pushNotificationService
+        .takePendingNavigationIntent();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_loadHomeAfterLocationPermission());
       _preparePinIcons();
+      if (pendingPushIntent != null) {
+        _handlePushNavigationIntent(pendingPushIntent);
+      }
     });
   }
 
   @override
   void dispose() {
     _idleDebounce?.cancel();
+    _pushNavigationSubscription?.cancel();
     _googleMapController?.dispose();
     super.dispose();
   }
 
   Future<void> _preparePinIcons() async {
-    final pinBytes = <String, Uint8List>{
-      'request': await _createPinBytes(AppColors.requestPin),
-      'offer': await _createPinBytes(AppColors.offerPin),
-      'item': await _createPinBytes(AppColors.itemPin),
-      'hybrid': await _createPinBytes(AppColors.hybridPin),
-    };
+    final offerMarker = await _loadMarkerIcon(
+      assetPath: _kOfferMapMarkerAsset,
+      fallbackHue: BitmapDescriptor.hueGreen,
+    );
+    final requestMarker = await _loadMarkerIcon(
+      assetPath: _kRequestMapMarkerAsset,
+      fallbackHue: BitmapDescriptor.hueRed,
+    );
     final icons = <String, BitmapDescriptor>{
-      for (final entry in pinBytes.entries)
-        entry.key: BitmapDescriptor.bytes(entry.value),
+      'request': requestMarker,
+      'offer': offerMarker,
+      'default': offerMarker,
     };
 
     if (!mounted) return;
@@ -128,32 +143,18 @@ class _HomeViewState extends State<_HomeView> {
     });
   }
 
-  Future<Uint8List> _createPinBytes(Color color) async {
-    const size = 68.0;
-    const center = Offset(size / 2, 22);
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-
-    final glowPaint = Paint()
-      ..color = color.withValues(alpha: 0.10)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-    canvas.drawCircle(center, 13, glowPaint);
-
-    final pinPath = Path()
-      ..addOval(Rect.fromCircle(center: center, radius: 16))
-      ..moveTo(center.dx - 9, center.dy + 12)
-      ..lineTo(center.dx, size - 7)
-      ..lineTo(center.dx + 9, center.dy + 12)
-      ..close();
-    canvas.drawShadow(pinPath, AppColors.black.withValues(alpha: 0.4), 3, true);
-    canvas.drawPath(pinPath, Paint()..color = color);
-    canvas.drawCircle(center, 9, Paint()..color = AppColors.dashboardSurface);
-    canvas.drawCircle(center, 5, Paint()..color = color);
-
-    final picture = recorder.endRecording();
-    final image = await picture.toImage(size.toInt(), size.toInt());
-    final data = await image.toByteData(format: ui.ImageByteFormat.png);
-    return data?.buffer.asUint8List() ?? Uint8List(0);
+  Future<BitmapDescriptor> _loadMarkerIcon({
+    required String assetPath,
+    required double fallbackHue,
+  }) async {
+    try {
+      return await BitmapDescriptor.asset(
+        const ImageConfiguration(size: Size(42, 42)),
+        assetPath,
+      );
+    } catch (_) {
+      return BitmapDescriptor.defaultMarkerWithHue(fallbackHue);
+    }
   }
 
   Future<void> _loadHomeAfterLocationPermission() async {
@@ -263,6 +264,43 @@ class _HomeViewState extends State<_HomeView> {
       MaterialPageRoute(
         builder: (_) =>
             TradeDetailScreen(tradeId: tradeId, openingMessage: openingMessage),
+      ),
+    );
+  }
+
+  void _handlePushNavigationIntent(PushNotificationNavigationIntent intent) {
+    if (!mounted) return;
+    if (intent is OpenTradeChatNotificationIntent) {
+      unawaited(_openTradeChatFromNotification(intent));
+    }
+  }
+
+  Future<void> _openTradeChatFromNotification(
+    OpenTradeChatNotificationIntent intent,
+  ) async {
+    final tradeId = intent.tradeId.trim();
+    if (tradeId.isEmpty || !mounted) return;
+
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.popUntil((route) => route.isFirst);
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _selectedNavIndex = 1;
+      _chatRefreshSignal++;
+      _visitedNavIndices.add(1);
+    });
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TradeDetailScreen(
+          tradeId: tradeId,
+          targetMessageId: intent.messageId,
+          focusOfferSummary: intent.focusOfferSummary,
+        ),
       ),
     );
   }
@@ -552,10 +590,6 @@ class _HomeViewState extends State<_HomeView> {
   }
 
   BitmapDescriptor _pinIconFor(MapListing listing) {
-    if (listing.isHybrid) {
-      return _pinIcons['hybrid'] ??
-          BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
-    }
     if (listing.isRequest) {
       return _pinIcons['request'] ??
           BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
@@ -564,12 +598,8 @@ class _HomeViewState extends State<_HomeView> {
       return _pinIcons['offer'] ??
           BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
     }
-    if (listing.isItem) {
-      return _pinIcons['item'] ??
-          BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet);
-    }
-    return _pinIcons['hybrid'] ??
-        BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
+    return _pinIcons['default'] ??
+        BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
   }
 
   Future<void> _showListingBottomSheet(MapListing listing) async {
@@ -634,20 +664,22 @@ class _HomeViewState extends State<_HomeView> {
                 'Survival Gig',
                 style: AppTextStyles.displayMedium.copyWith(
                   color: AppColors.primary,
+                  fontSize: 25,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               Text(
                 'Community Exchange',
-                style: AppTextStyles.bodyMedium.copyWith(
+                style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.textOnDarkSecondary,
+                  fontSize: 13,
                 ),
               ),
               SizedBox(height: AppDimensions.spacingSm),
               GestureDetector(
                 onTap: _openSearch,
                 child: Container(
-                  height: 50,
+                  height: 44,
                   decoration: BoxDecoration(
                     color: AppColors.dashboardSearch,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
@@ -661,14 +693,15 @@ class _HomeViewState extends State<_HomeView> {
                       Icon(
                         Icons.search_rounded,
                         color: AppColors.textOnDarkSecondary,
-                        size: AppDimensions.iconSizeMd,
+                        size: AppDimensions.iconSizeMd - 2,
                       ),
                       SizedBox(width: AppDimensions.spacingSm),
                       Expanded(
                         child: Text(
                           'Search address or postcode...',
-                          style: AppTextStyles.bodyLarge.copyWith(
+                          style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.textOnDarkTertiary,
+                            fontSize: 14,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -699,8 +732,8 @@ class _HomeViewState extends State<_HomeView> {
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 180),
                               padding: EdgeInsets.symmetric(
-                                horizontal: AppDimensions.spacingMd,
-                                vertical: AppDimensions.spacingSm,
+                                horizontal: AppDimensions.spacingSm + 2,
+                                vertical: AppDimensions.spacingXs + 2,
                               ),
                               decoration: BoxDecoration(
                                 color: isActive
@@ -715,10 +748,11 @@ class _HomeViewState extends State<_HomeView> {
                               ),
                               child: Text(
                                 filter.label,
-                                style: AppTextStyles.bodyMedium.copyWith(
+                                style: AppTextStyles.bodySmall.copyWith(
                                   color: isActive
                                       ? AppColors.black
                                       : AppColors.textOnDarkSecondary,
+                                  fontSize: 12,
                                   fontWeight: isActive
                                       ? FontWeight.w800
                                       : FontWeight.w600,
@@ -1082,7 +1116,7 @@ class _MapListingDetailSheet extends StatelessWidget {
                                 child: Padding(
                                   padding: EdgeInsets.fromLTRB(
                                     AppDimensions.spacingMd,
-                                    AppDimensions.spacingSm,
+                                    AppDimensions.spacingMd,
                                     AppDimensions.spacingMd,
                                     AppDimensions.spacingLg,
                                   ),
@@ -1142,39 +1176,16 @@ class _MapListingDetailSheet extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Center(
-          child: Container(
-            width: 44,
-            height: 5,
-            decoration: BoxDecoration(
-              color: AppColors.textOnDarkTertiary,
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-        ),
-        SizedBox(height: AppDimensions.spacingMd),
-        Align(
-          alignment: Alignment.centerRight,
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: () => Navigator.pop(context),
-            child: const Padding(
-              padding: EdgeInsets.all(6),
-              child: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: AppColors.textOnDarkSecondary,
-                size: 26,
-              ),
-            ),
-          ),
-        ),
-        SizedBox(height: AppDimensions.spacingMd),
         Text(
           listing?.title ?? mapListing.title,
           style: AppTextStyles.headlineLarge.copyWith(
             color: AppColors.textOnDarkPrimary,
+            fontSize: 24,
+            height: 1.18,
             fontWeight: FontWeight.w800,
           ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
         SizedBox(height: AppDimensions.spacingSm),
         _MapListingMetaRow(mapListing: mapListing, listing: listing),
@@ -1252,6 +1263,7 @@ class _MapListingMetaRow extends StatelessWidget {
 class _ListingPhotoStrip extends StatelessWidget {
   final Listing? listing;
   final Color accentColor;
+  static const double _stripHeight = 158;
 
   const _ListingPhotoStrip({required this.listing, required this.accentColor});
 
@@ -1259,8 +1271,9 @@ class _ListingPhotoStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final photos = listing?.photos ?? const <ListingPhoto>[];
     if (photos.isEmpty) {
-      return AspectRatio(
-        aspectRatio: 16 / 8,
+      return SizedBox(
+        height: _stripHeight,
+        width: double.infinity,
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: AppColors.dashboardSurfaceElevated,
@@ -1271,7 +1284,7 @@ class _ListingPhotoStrip extends StatelessWidget {
             child: Icon(
               Icons.image_rounded,
               color: accentColor.withValues(alpha: 0.72),
-              size: AppDimensions.iconSizeXl,
+              size: AppDimensions.iconSizeLg,
             ),
           ),
         ),
@@ -1279,9 +1292,10 @@ class _ListingPhotoStrip extends StatelessWidget {
     }
 
     return SizedBox(
-      height: 158,
+      height: _stripHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         itemCount: photos.length,
         separatorBuilder: (context, index) =>
             SizedBox(width: AppDimensions.spacingSm),
@@ -2060,12 +2074,12 @@ class _SheetLoadingBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: AppDimensions.spacingLg),
+      padding: EdgeInsets.symmetric(vertical: AppDimensions.spacingSm),
       child: Row(
         children: [
           const SizedBox(
-            width: 18,
-            height: 18,
+            width: 14,
+            height: 14,
             child: CircularProgressIndicator(
               strokeWidth: 2,
               color: AppColors.primary,
@@ -2074,8 +2088,9 @@ class _SheetLoadingBlock extends StatelessWidget {
           SizedBox(width: AppDimensions.spacingSm),
           Text(
             'Loading details...',
-            style: AppTextStyles.bodyMedium.copyWith(
+            style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.textOnDarkSecondary,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),

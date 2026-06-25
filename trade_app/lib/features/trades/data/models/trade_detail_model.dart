@@ -17,6 +17,12 @@ class TradeDetailModel {
   final String sellerId;
   final bool buyerConfirmed;
   final bool sellerConfirmed;
+  final String currentOffererId;
+  final int? offerPoints;
+  final String? offerItemDescription;
+  final String? offerSkillDescription;
+  final String offererName;
+  final String? offerMessage;
 
   const TradeDetailModel({
     required this.id,
@@ -33,6 +39,12 @@ class TradeDetailModel {
     required this.sellerId,
     required this.buyerConfirmed,
     required this.sellerConfirmed,
+    this.currentOffererId = '',
+    this.offerPoints,
+    this.offerItemDescription,
+    this.offerSkillDescription,
+    this.offererName = '',
+    this.offerMessage,
   });
 
   factory TradeDetailModel.fromResponse(dynamic data) {
@@ -54,11 +66,22 @@ class TradeDetailModel {
 
     final status = _readString(trade['status']) ?? 'PENDING';
 
+    final buyerOfferPoints =
+        _readInt(trade['buyerOfferPoints']) ??
+        _readInt(trade['buyer_offer_points']);
+    final sellerOfferPoints =
+        _readInt(trade['sellerOfferPoints']) ??
+        _readInt(trade['seller_offer_points']);
+    final offerPoints =
+        _positiveInt(buyerOfferPoints) ??
+        _positiveInt(sellerOfferPoints) ??
+        _positiveInt(_readInt(trade['offerPoints'])) ??
+        _positiveInt(_readInt(trade['offer_points']));
     final points =
         _readInt(listing?['pricePoints']) ??
+        _readInt(listing?['price_points']) ??
         _readInt(trade['pricePoints']) ??
-        _readInt(trade['buyerOfferPoints']) ??
-        _readInt(trade['sellerOfferPoints']) ??
+        _readInt(trade['price_points']) ??
         _readInt(trade['points']);
 
     final imageUrl = _normalizeImageUrl(
@@ -92,6 +115,51 @@ class TradeDetailModel {
         listingOwnerIdCandidate ??
         '';
     final listingOwnerId = listingOwnerIdCandidate ?? sellerId;
+    final currentOffererId =
+        _readString(trade['currentOffererId']) ??
+        _readString(trade['current_offerer_id']) ??
+        _readString(trade['offererId']) ??
+        _readString(trade['offerer_id']) ??
+        responderId;
+    final offererName = _extractOffererName(
+      trade: trade,
+      currentOffererId: currentOffererId,
+      buyerId: buyerId,
+      sellerId: sellerId,
+      buyerName: buyerName,
+      sellerName: sellerName,
+      fallbackName: offeredByName,
+    );
+    final offerItemDescription = _extractOfferDescription(trade, const [
+      'buyerOfferItems',
+      'buyer_offer_items',
+      'offerItems',
+      'offer_items',
+      'offerItem',
+      'offer_item',
+      'sellerOfferItems',
+      'seller_offer_items',
+    ]);
+    final offerSkillDescription = _extractOfferDescription(trade, const [
+      'buyerOfferServices',
+      'buyer_offer_services',
+      'buyerOfferSkills',
+      'buyer_offer_skills',
+      'offerServices',
+      'offer_services',
+      'offerSkills',
+      'offer_skills',
+      'offerSkill',
+      'offer_skill',
+      'sellerOfferServices',
+      'seller_offer_services',
+    ]);
+    final offerMessage =
+        _readString(trade['message']) ??
+        _readString(trade['offerMessage']) ??
+        _readString(trade['offer_message']) ??
+        _readString(trade['counterMessage']) ??
+        _readString(trade['counter_message']);
     final ownerConfirmed = _readBool(trade['ownerConfirmed']);
     final responderConfirmed = _readBool(trade['responderConfirmed']);
     final buyerConfirmed =
@@ -133,6 +201,12 @@ class TradeDetailModel {
       sellerId: sellerId,
       buyerConfirmed: buyerConfirmed,
       sellerConfirmed: sellerConfirmed,
+      currentOffererId: currentOffererId,
+      offerPoints: offerPoints,
+      offerItemDescription: offerItemDescription,
+      offerSkillDescription: offerSkillDescription,
+      offererName: offererName,
+      offerMessage: offerMessage,
     );
   }
 
@@ -152,6 +226,12 @@ class TradeDetailModel {
       sellerId: sellerId,
       buyerConfirmed: buyerConfirmed,
       sellerConfirmed: sellerConfirmed,
+      currentOffererId: currentOffererId,
+      offerPoints: offerPoints,
+      offerItemDescription: offerItemDescription,
+      offerSkillDescription: offerSkillDescription,
+      offererName: offererName,
+      offerMessage: offerMessage,
     );
   }
 
@@ -185,6 +265,11 @@ class TradeDetailModel {
     if (value is num) return value.toInt();
     if (value is String) return int.tryParse(value);
     return null;
+  }
+
+  static int? _positiveInt(int? value) {
+    if (value == null || value <= 0) return null;
+    return value;
   }
 
   static bool? _readBool(dynamic value) {
@@ -338,6 +423,67 @@ class TradeDetailModel {
         _readString(user['fullName']) ??
         _readString(user['full_name']) ??
         _readString(user['username']);
+  }
+
+  static String _extractOffererName({
+    required Map<String, dynamic> trade,
+    required String currentOffererId,
+    required String buyerId,
+    required String sellerId,
+    required String buyerName,
+    required String sellerName,
+    required String fallbackName,
+  }) {
+    final currentOfferer = trade['currentOfferer'];
+    if (currentOfferer is Map<String, dynamic>) {
+      final name = _extractUserName(currentOfferer);
+      if (name != null) return name;
+    }
+
+    final offerer = trade['offerer'];
+    if (offerer is Map<String, dynamic>) {
+      final name = _extractUserName(offerer);
+      if (name != null) return name;
+    }
+
+    if (currentOffererId.isNotEmpty && currentOffererId == buyerId) {
+      return buyerName.isNotEmpty ? buyerName : fallbackName;
+    }
+
+    if (currentOffererId.isNotEmpty && currentOffererId == sellerId) {
+      return sellerName.isNotEmpty ? sellerName : fallbackName;
+    }
+
+    return buyerName.isNotEmpty ? buyerName : fallbackName;
+  }
+
+  static String? _extractOfferDescription(
+    Map<String, dynamic> trade,
+    List<String> keys,
+  ) {
+    for (final key in keys) {
+      final value = trade[key];
+      final description = _readDescription(value);
+      if (description != null) return description;
+    }
+    return null;
+  }
+
+  static String? _readDescription(dynamic value) {
+    if (value is Map<String, dynamic>) {
+      return _readString(value['description']) ??
+          _readString(value['title']) ??
+          _readString(value['name']);
+    }
+
+    if (value is List && value.isNotEmpty) {
+      for (final item in value) {
+        final description = _readDescription(item);
+        if (description != null) return description;
+      }
+    }
+
+    return null;
   }
 
   static String? _extractUserId(dynamic user) {

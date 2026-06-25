@@ -30,14 +30,14 @@ class TradeListItem extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: AppDimensions.chatListItemPadding,
-          vertical: AppDimensions.spacingMd,
+          vertical: AppDimensions.spacingSm + 2,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 58,
-              height: 58,
+              width: 50,
+              height: 50,
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.18),
                 shape: BoxShape.circle,
@@ -50,12 +50,13 @@ class TradeListItem extends StatelessWidget {
                   initial,
                   style: AppTextStyles.headlineLarge.copyWith(
                     color: AppColors.primary,
+                    fontSize: 22,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
             ),
-            SizedBox(width: AppDimensions.spacingMd),
+            SizedBox(width: AppDimensions.spacingSm + 2),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,6 +68,7 @@ class TradeListItem extends StatelessWidget {
                           displayName,
                           style: AppTextStyles.headlineSmall.copyWith(
                             color: AppColors.textOnDarkPrimary,
+                            fontSize: 15,
                             fontWeight: FontWeight.w800,
                           ),
                           maxLines: 1,
@@ -78,6 +80,7 @@ class TradeListItem extends StatelessWidget {
                           '${trade.points} pts',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.textOnDarkSecondary,
+                            fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -86,8 +89,9 @@ class TradeListItem extends StatelessWidget {
                   SizedBox(height: AppDimensions.spacingXs),
                   Text(
                     trade.title,
-                    style: AppTextStyles.bodyMedium.copyWith(
+                    style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.primary,
+                      fontSize: 13,
                       fontWeight: FontWeight.w800,
                     ),
                     maxLines: 1,
@@ -96,8 +100,9 @@ class TradeListItem extends StatelessWidget {
                   SizedBox(height: AppDimensions.spacingXs),
                   Text(
                     trade.description,
-                    style: AppTextStyles.bodyMedium.copyWith(
+                    style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textOnDarkSecondary,
+                      fontSize: 13,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -126,8 +131,8 @@ class _UnreadCountBadge extends StatelessWidget {
     final label = count > 99 ? '99+' : count.toString();
 
     return Container(
-      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: const BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -137,6 +142,7 @@ class _UnreadCountBadge extends StatelessWidget {
         label,
         style: AppTextStyles.bodySmall.copyWith(
           color: AppColors.white,
+          fontSize: 11,
           fontWeight: FontWeight.w800,
           height: 1,
         ),

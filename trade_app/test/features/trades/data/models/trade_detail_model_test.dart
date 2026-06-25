@@ -79,4 +79,29 @@ void main() {
       expect(trade.displayNameFor('seller-id'), 'Buyer Person');
     },
   );
+
+  test('keeps listing points separate from newly offered points', () {
+    final trade = TradeDetailModel.fromResponse({
+      'success': true,
+      'trade': {
+        'id': 'trade-id',
+        'status': 'PENDING',
+        'listingOwnerId': 'seller-id',
+        'responderId': 'buyer-id',
+        'currentOffererId': 'buyer-id',
+        'buyerOfferPoints': 125,
+        'listing': {
+          'id': 'listing-id',
+          'title': 'Vintage Camera',
+          'description': 'Listing description',
+          'pricePoints': 200,
+        },
+      },
+    }).toEntity();
+
+    expect(trade.points, 200);
+    expect(trade.offerPoints, 125);
+    expect(trade.isCurrentOfferer('buyer-id'), isTrue);
+    expect(trade.isCurrentOfferer('seller-id'), isFalse);
+  });
 }

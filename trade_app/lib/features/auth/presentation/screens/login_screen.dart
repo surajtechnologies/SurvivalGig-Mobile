@@ -92,7 +92,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
           'Log In to SurvivalGig',
           style: AppTextStyles.headlineSmall.copyWith(
             color: AppColors.textPrimary,
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -116,8 +116,8 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
           return SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(
-                horizontal: 24.0,
-                vertical: 32.0,
+                horizontal: 20.0,
+                vertical: 24.0,
               ),
               child: Form(
                 key: _formKey,
@@ -131,8 +131,9 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       enabled: !isLoading,
-                      style: AppTextStyles.bodyLarge.copyWith(
+                      style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textPrimary,
+                        fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
                       onFieldSubmitted: (_) =>
@@ -152,14 +153,15 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                       },
                       decoration: InputDecoration(
                         hintText: 'Enter Email Address',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(
+                        hintStyle: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.textSecondary,
+                          fontSize: 13,
                         ),
                         filled: true,
                         fillColor: AppColors.white,
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 16.0,
+                          horizontal: 14.0,
+                          vertical: 13.0,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.0),
@@ -196,6 +198,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                         errorMaxLines: 2,
                         errorStyle: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.error,
+                          fontSize: 12,
                           height: 1.4,
                         ),
                         suffixIcon: _emailController.text.isNotEmpty
@@ -214,7 +217,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                       ),
                     ),
 
-                    const SizedBox(height: 16.0),
+                    const SizedBox(height: 14.0),
 
                     // Password Field
                     TextFormField(
@@ -223,8 +226,9 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                       obscureText: !_showPassword,
                       textInputAction: TextInputAction.done,
                       enabled: !isLoading,
-                      style: AppTextStyles.bodyLarge.copyWith(
+                      style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textPrimary,
+                        fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
                       onFieldSubmitted: (_) => _handleLogin(),
@@ -239,14 +243,15 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                       },
                       decoration: InputDecoration(
                         hintText: 'Enter Password',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(
+                        hintStyle: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.textSecondary,
+                          fontSize: 13,
                         ),
                         filled: true,
                         fillColor: AppColors.white,
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 16.0,
+                          horizontal: 14.0,
+                          vertical: 13.0,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.0),
@@ -283,6 +288,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                         errorMaxLines: 2,
                         errorStyle: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.error,
+                          fontSize: 12,
                           height: 1.4,
                         ),
                         suffixIcon: IconButton(
@@ -303,10 +309,10 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
 
                     // API Error Message
                     if (_apiErrorMessage != null) ...[
-                      const SizedBox(height: 16.0),
+                      const SizedBox(height: 14.0),
                       Text(
                         _apiErrorMessage!,
-                        style: AppTextStyles.bodyMedium.copyWith(
+                        style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.error,
                           height: 1.4,
                         ),
@@ -331,19 +337,21 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                               },
                         child: Text(
                           'Forgot password?',
-                          style: AppTextStyles.bodyMedium.copyWith(
+                          style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.primary,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 24.0),
+                    const SizedBox(height: 20.0),
 
                     // Login Button
                     PrimaryButton(
                       label: isLoading ? 'Logging in...' : 'Log In',
+                      height: 52,
                       onPressed: isLoading ? null : _handleLogin,
                     ),
                   ],

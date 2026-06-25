@@ -72,39 +72,41 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
   }) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: AppTextStyles.bodyMedium.copyWith(
+      hintStyle: AppTextStyles.bodySmall.copyWith(
         color: AppColors.textSecondary,
+        fontSize: 13,
         fontWeight: FontWeight.w400,
       ),
       filled: true,
       fillColor: AppColors.white,
       contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16.0,
-        vertical: 16.0,
+        horizontal: 14.0,
+        vertical: 13.0,
       ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14.0),
+        borderRadius: BorderRadius.circular(12.0),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14.0),
+        borderRadius: BorderRadius.circular(12.0),
         borderSide: const BorderSide(color: AppColors.dividerColor, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14.0),
+        borderRadius: BorderRadius.circular(12.0),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14.0),
+        borderRadius: BorderRadius.circular(12.0),
         borderSide: const BorderSide(color: AppColors.error, width: 1.4),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14.0),
+        borderRadius: BorderRadius.circular(12.0),
         borderSide: const BorderSide(color: AppColors.error, width: 1.4),
       ),
       errorMaxLines: 3,
       errorStyle: AppTextStyles.bodySmall.copyWith(
         color: AppColors.error,
+        fontSize: 12,
         height: 1.4,
       ),
       suffixIcon: suffixIcon,
@@ -126,7 +128,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
         title: Text(
           'Create Account',
           style: AppTextStyles.headlineMedium.copyWith(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
           ),
@@ -172,15 +174,15 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
           return SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(
-                horizontal: 24.0,
-                vertical: 20.0,
+                horizontal: 20.0,
+                vertical: 16.0,
               ),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
 
                     // Name Field
                     TextFormField(
@@ -189,8 +191,9 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                       keyboardType: TextInputType.name,
                       textInputAction: TextInputAction.next,
                       enabled: !isLoading,
-                      style: AppTextStyles.bodyLarge.copyWith(
+                      style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textPrimary,
+                        fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
                       onFieldSubmitted: (_) => _emailFocusNode.requestFocus(),
@@ -206,7 +209,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                       decoration: _fieldDecoration(hintText: 'Enter Full Name'),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
 
                     // Email Field
                     TextFormField(
@@ -215,8 +218,9 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       enabled: !isLoading,
-                      style: AppTextStyles.bodyLarge.copyWith(
+                      style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textPrimary,
+                        fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
                       onFieldSubmitted: (_) =>
@@ -238,7 +242,7 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
 
                     // Password Field
                     TextFormField(
@@ -247,8 +251,9 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                       obscureText: !_showPassword,
                       textInputAction: TextInputAction.done,
                       enabled: !isLoading,
-                      style: AppTextStyles.bodyLarge.copyWith(
+                      style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textPrimary,
+                        fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
                       onFieldSubmitted: (_) => _handleSignup(),
@@ -302,32 +307,33 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                       'Include at least 8 characters and 1 special character.',
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textSecondary,
-                        fontSize: 13,
+                        fontSize: 12,
                       ),
                     ),
 
                     // API Error Message
                     if (_apiErrorMessage != null) ...[
-                      const SizedBox(height: 16.0),
+                      const SizedBox(height: 14.0),
                       Text(
                         _apiErrorMessage!,
-                        style: AppTextStyles.bodyMedium.copyWith(
+                        style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.error,
                           height: 1.4,
                         ),
                       ),
                     ],
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
 
                     // Create Account Button
                     PrimaryButton(
                       label: 'Create Account',
+                      height: 52,
                       isLoading: isLoading,
                       onPressed: isLoading ? null : _handleSignup,
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     // Terms and Privacy
                     RichText(
@@ -338,14 +344,14 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                             text: 'By signing up, you agree to our ',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.textSecondary,
-                              fontSize: 12,
+                              fontSize: 11,
                             ),
                           ),
                           TextSpan(
                             text: 'Terms of Service',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.primary,
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -353,14 +359,14 @@ class _SignupScreenContentState extends State<_SignupScreenContent> {
                             text: ' and ',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.textSecondary,
-                              fontSize: 12,
+                              fontSize: 11,
                             ),
                           ),
                           TextSpan(
                             text: 'Privacy Policy.',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.primary,
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
