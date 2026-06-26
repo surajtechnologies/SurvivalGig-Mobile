@@ -50,7 +50,6 @@ class _PostListingView extends StatefulWidget {
 
 class _PostListingViewState extends State<_PostListingView> {
   final _formKey = GlobalKey<FormState>();
-  final _descriptionFieldKey = GlobalKey();
   final _scrollController = ScrollController();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -59,47 +58,13 @@ class _PostListingViewState extends State<_PostListingView> {
   final _imagePicker = ImagePicker();
 
   @override
-  void initState() {
-    super.initState();
-    _descriptionFocusNode.addListener(_handleDescriptionFocusChange);
-  }
-
-  @override
   void dispose() {
-    _descriptionFocusNode
-      ..removeListener(_handleDescriptionFocusChange)
-      ..dispose();
+    _descriptionFocusNode.dispose();
     _scrollController.dispose();
     _titleController.dispose();
     _descriptionController.dispose();
     _pointsController.dispose();
     super.dispose();
-  }
-
-  void _handleDescriptionFocusChange() {
-    if (_descriptionFocusNode.hasFocus) {
-      _ensureDescriptionFieldVisible();
-      Future<void>.delayed(
-        const Duration(milliseconds: 650),
-        _ensureDescriptionFieldVisible,
-      );
-    }
-  }
-
-  Future<void> _ensureDescriptionFieldVisible() async {
-    await Future<void>.delayed(const Duration(milliseconds: 120));
-    if (!mounted || !_descriptionFocusNode.hasFocus) return;
-
-    final fieldContext = _descriptionFieldKey.currentContext;
-    if (fieldContext == null) return;
-    if (!fieldContext.mounted) return;
-
-    await Scrollable.ensureVisible(
-      fieldContext,
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
-      alignment: 0.08,
-    );
   }
 
   Future<void> _pickImage() async {
@@ -285,28 +250,22 @@ class _PostListingViewState extends State<_PostListingView> {
                       const SizedBox(height: 16),
 
                       // 7. Description
-                      KeyedSubtree(
-                        key: _descriptionFieldKey,
-                        child: _buildTextField(
-                          controller: _descriptionController,
-                          focusNode: _descriptionFocusNode,
-                          label: 'Description',
-                          hint: 'Describe your post in detail',
-                          onChanged: (value) {
-                            context.read<PostListingCubit>().updateDescription(
-                              value,
-                            );
-                          },
-                          onTap: () {
-                            _ensureDescriptionFieldVisible();
-                          },
-                          scrollPadding: EdgeInsets.only(
-                            bottom:
-                                MediaQuery.viewInsetsOf(context).bottom + 140,
-                          ),
-                          maxLines: 4,
-                          maxLength: 250,
-                        ),
+                      _buildTextField(
+                        controller: _descriptionController,
+                        focusNode: _descriptionFocusNode,
+                        label: 'Description',
+                        hint: 'Describe your post in detail',
+                        onChanged: (value) {
+                          context.read<PostListingCubit>().updateDescription(
+                            value,
+                          );
+                        },
+                        // Keep the whole multi-line field above the keyboard by
+                        // reserving space below the caret when it scrolls into
+                        // view. Fixed (not keyboard-inset based) to avoid jitter.
+                        scrollPadding: const EdgeInsets.fromLTRB(20, 20, 20, 220),
+                        maxLines: 4,
+                        maxLength: 250,
                       ),
                       const SizedBox(height: 8),
                       Align(

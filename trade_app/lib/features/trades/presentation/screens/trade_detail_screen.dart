@@ -308,6 +308,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
     final shouldShowConfirm =
         status == 'ACCEPTED' &&
         detail.isParticipant(currentUserId) &&
+        isListingOwner &&
         !detail.hasConfirmed(currentUserId);
 
     return Column(
@@ -590,7 +591,7 @@ class _TradeDetailViewState extends State<_TradeDetailView> {
                   ),
                 )
               : Text(
-                  'Confirm Trade',
+                  'Complete Trade',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.white,
                     fontSize: 12,

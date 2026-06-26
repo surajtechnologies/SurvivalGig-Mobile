@@ -76,6 +76,7 @@ class AppTextStyles {
     fontSize: 16,
     fontWeight: FontWeight.bold,
     height: 1.5,
+    leadingDistribution: TextLeadingDistribution.even,
     letterSpacing: 0,
     color: Color(0xFF000000),
   );
@@ -84,6 +85,7 @@ class AppTextStyles {
     fontSize: 14,
     fontWeight: FontWeight.w600,
     height: 1.4,
+    leadingDistribution: TextLeadingDistribution.even,
     letterSpacing: 0,
     color: Color(0xFF000000),
   );

@@ -90,6 +90,14 @@ class _HomeViewState extends State<_HomeView> {
   Set<Marker> _markerCache = const {};
   String? _openListingSheetId;
 
+  // Forces the GoogleMap platform view to be recreated when returning to the
+  // map tab. IndexedStack paints inactive tabs offstage, which detaches the
+  // native map surface and leaves the map and markers blank on return.
+  int _mapPlatformViewToken = 0;
+  // Last camera position, preserved across platform-view recreation so the
+  // map reopens exactly where the user left it.
+  CameraPosition? _lastCameraPosition;
+
   // Last bounds sent to the API — used to skip duplicate requests
   // that occur when marker updates trigger onCameraIdle internally.
   double? _lastSwLat, _lastSwLng, _lastNeLat, _lastNeLng;
@@ -388,12 +396,16 @@ class _HomeViewState extends State<_HomeView> {
       return;
     }
 
+    final returningToMap = index == 0 && _selectedNavIndex != 0;
     setState(() {
       _selectedNavIndex = index;
       if (index == 1) {
         _chatRefreshSignal++;
       } else if (index == 3) {
         _walletRefreshSignal++;
+      }
+      if (returningToMap) {
+        _mapPlatformViewToken++;
       }
       _visitedNavIndices.add(index);
     });
@@ -524,9 +536,11 @@ class _HomeViewState extends State<_HomeView> {
     final initialCamera = _initialCameraPositionFor(state);
 
     return GoogleMap(
+      key: ValueKey('home-map-$_mapPlatformViewToken'),
       initialCameraPosition: initialCamera,
       onMapCreated: _onGoogleMapCreated,
       onCameraIdle: _onCameraIdle,
+      onCameraMove: (position) => _lastCameraPosition = position,
       markers: _buildMarkers(listings),
       myLocationEnabled: _locationPermissionGranted,
       myLocationButtonEnabled: false,
@@ -539,6 +553,9 @@ class _HomeViewState extends State<_HomeView> {
   }
 
   CameraPosition _initialCameraPositionFor(HomeState state) {
+    // Reopen where the user left off after the platform view is recreated.
+    final lastCamera = _lastCameraPosition;
+    if (lastCamera != null) return lastCamera;
     if (state is HomeLoaded) {
       final target = state.cameraTarget ?? state.userLocation;
       if (target != null) {

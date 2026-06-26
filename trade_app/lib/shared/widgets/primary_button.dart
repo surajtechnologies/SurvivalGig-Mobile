@@ -46,6 +46,10 @@ class PrimaryButton extends StatelessWidget {
               )
             : Text(
                 label,
+                textHeightBehavior: const TextHeightBehavior(
+                  applyHeightToFirstAscent: false,
+                  applyHeightToLastDescent: false,
+                ),
                 style: AppTextStyles.buttonLarge.copyWith(
                   color: AppColors.textPrimary,
                 ),

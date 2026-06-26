@@ -50,6 +50,10 @@ class SecondaryButton extends StatelessWidget {
               )
             : Text(
                 label,
+                textHeightBehavior: const TextHeightBehavior(
+                  applyHeightToFirstAscent: false,
+                  applyHeightToLastDescent: false,
+                ),
                 style: AppTextStyles.buttonLarge.copyWith(color: textColor),
               ),
       ),
